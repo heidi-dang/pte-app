@@ -12,13 +12,36 @@
 
 ## Speaking Scoring
 
-Speaking evaluation uses:
+Speaking evaluation is separated into two categories based on response type.
 
-- **Transcript comparison**: Comparison of the speech-to-text transcript against the expected response
-- **Content coverage**: Proportion of required content points addressed
-- **Fluency features**: Speech rate, pause frequency and duration, rhythm
+### Constrained-Response Speaking Tasks
+
+Tasks: Read Aloud, Repeat Sentence, Answer Short Question
+
+These tasks have a single expected response or a limited set of acceptable answers. Scoring uses:
+
+- **Word alignment**: Alignment of speech-to-text output against the expected text
+- **Sequence comparison**: Order and completeness of spoken content relative to expected word sequence
+- **Accepted-answer matching**: Vocabulary-based matching against list of acceptable answers (Answer Short Question)
 - **Pronunciation evidence**: Phonetic accuracy, stress patterns, intelligibility
-- **Timing evidence**: Response duration relative to expected range, preparation time usage
+- **Oral fluency**: Speech rate, pause frequency and duration, rhythm
+
+### Open-Response Speaking Tasks
+
+Tasks: Describe Image, Retell Lecture, Summarize Group Discussion, Respond to a Situation
+
+These tasks have no single correct response. Scoring uses:
+
+- **Content concepts**: Presence and relevance of key content points
+- **Relevance**: Appropriateness of content to the prompt
+- **Main-point coverage**: Proportion of key points addressed
+- **Speaker contribution coverage**: Coverage of different speaker viewpoints where applicable (Summarize Group Discussion)
+- **Situational goal completion**: Appropriateness of response to the scenario (Respond to a Situation)
+- **Organisation**: Logical structure and flow of the spoken response
+- **Pronunciation evidence**: Phonetic accuracy, stress patterns, intelligibility
+- **Oral fluency**: Speech rate, pause frequency and duration, rhythm
+
+**Preparation-time usage** may be shown as coaching feedback but must not be treated as an official scoring trait.
 
 ## Writing Scoring
 
@@ -32,6 +55,33 @@ Writing evaluation uses:
 - **Vocabulary**: Lexical range and appropriateness
 - **Linguistic range**: Variety of sentence structures
 - **Spelling**: Spelling accuracy
+
+## Integrated-Skill Contributions by Task
+
+| Task | Skills Assessed | Contribution |
+|------|----------------|--------------|
+| Read Aloud | Reading, Speaking | Reading comprehension, oral production |
+| Repeat Sentence | Listening, Speaking | Listening accuracy, oral reproduction |
+| Describe Image | Speaking | Visual interpretation, oral description |
+| Retell Lecture | Listening, Speaking | Listening comprehension, oral summarisation |
+| Answer Short Question | Listening | Listening comprehension, concise response |
+| Summarize Group Discussion | Listening, Speaking | Multi-speaker listening, oral summary |
+| Respond to a Situation | Speaking | Situational response, oral production |
+| Summarize Written Text | Reading, Writing | Reading comprehension, written summarisation |
+| Write Essay | Writing | Written composition |
+| Reading and Writing: Fill in the Blanks | Reading, Writing | Reading comprehension, vocabulary, written accuracy |
+| Multiple Choice, Multiple Answers (Reading) | Reading | Reading comprehension |
+| Reorder Paragraph | Reading | Logical organisation |
+| Reading: Fill in the Blanks | Reading | Reading, vocabulary |
+| Multiple Choice, Single Answer (Reading) | Reading | Reading comprehension |
+| Summarize Spoken Text | Listening, Writing | Listening comprehension, written summarisation |
+| Multiple Choice, Multiple Answers (Listening) | Listening | Listening comprehension |
+| Fill in the Blanks (Listening) | Listening, Writing | Listening, spelling, written accuracy |
+| Highlight Correct Summary | Listening, Reading | Listening comprehension, reading comparison |
+| Multiple Choice, Single Answer (Listening) | Listening | Listening comprehension |
+| Select Missing Word | Listening | Listening prediction |
+| Highlight Incorrect Words | Listening, Reading | Listening accuracy, reading verification |
+| Write From Dictation | Listening, Writing | Listening accuracy, written reproduction |
 
 ## Result Storage
 

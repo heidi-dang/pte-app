@@ -5,7 +5,8 @@
   "description": "Production PTE Academic learning platform",
   "scripts": {
     "validate:docs": "node scripts/validate-docs.mjs",
-    "test": "npm run validate:docs"
+    "test:docs": "node --test tests/docs/*.test.mjs",
+    "test": "npm run test:docs && npm run validate:docs"
   },
   "engines": {
     "node": ">=20"

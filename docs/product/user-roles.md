@@ -13,7 +13,9 @@
 - Complete limited diagnostic assessment
 - Access free lessons
 - Complete limited daily practice
-- View basic progress
+- View basic progress and dashboard data
+- Upgrade to a paid plan
+- Update profile
 
 ## Paid Student
 
@@ -38,20 +40,22 @@
 - Edit assigned drafts
 - Upload draft assets
 - Submit content for review
+- Cannot approve, publish or retire content
 
 ## Content Reviewer
 
 - Review content originality
 - Review answer accuracy
 - Review PTE relevance
-- Approve or reject content
+- Approve or reject content based on quality criteria
+- Cannot publish or retire content unless explicitly granted an additional administrator role
 - Cannot alter payments or user subscriptions
 
 ## Administrator
 
 - Manage users
 - Manage teachers
-- Manage content
+- Manage content including publishing and retiring approved content
 - Manage products
 - Manage subscriptions
 - Manage mock tests
@@ -71,10 +75,10 @@
 | Role | View | Create | Edit | Review | Publish | Retire | Delete | Configure | Export |
 |------|------|--------|------|--------|---------|--------|--------|-----------|--------|
 | Guest | Limited | No | No | No | No | No | No | No | No |
-| Free Student | Limited | Limited | No | No | No | No | No | No | No |
+| Free Student | Limited | Limited | Own | No | No | No | No | No | No |
 | Paid Student | Own | Own responses | Own | No | No | No | No | No | Own reports |
 | Teacher | Assigned | Assignments | Own feedback | No | No | No | No | No | Limited |
 | Content Writer | Drafts | Drafts | Own drafts | No | No | No | No | No | No |
-| Content Reviewer | All drafts | No | No | Assigned | Yes | Yes | No | No | No |
-| Administrator | All | Yes | Yes | No | Yes | Yes | Yes | Limited | Yes |
+| Content Reviewer | All drafts | No | No | Assigned | No | No | No | No | No |
+| Administrator | All | Yes | Yes | No | Yes (approved) | Yes (approved) | Yes | Limited | Yes |
 | Super Administrator | All | Yes | Yes | No | Yes | Yes | Yes | Yes | Yes |

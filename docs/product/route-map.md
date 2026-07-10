@@ -27,28 +27,30 @@
 
 ## Student Routes
 
+Entitlements decide which content and usage limits are available. Free students can access all routes below; paid features are gated by entitlement configuration.
+
 | Route | Permitted Roles | Purpose | Primary Data | Loading State | Empty State | Error State | Mobile Requirements |
 |-------|----------------|---------|-------------|--------------|-------------|-------------|--------------------|
 | `/app` | Free student, Paid student | App entry and redirect | User context | Full-page spinner | N/A | Redirect to login | Responsive shell |
-| `/app/onboarding` | Free student | New-user onboarding | Onboarding state | Progress stepper | N/A | Step-specific error with retry | Touch-friendly stepper |
-| `/app/dashboard` | Paid student | Main student dashboard | Progress, plan, recent activity | Dashboard skeleton widgets | Welcome state for new users | Widget-level error fallbacks | Card layout, swipeable |
+| `/app/onboarding` | Free student, Paid student | New-user onboarding | Onboarding state | Progress stepper | N/A | Step-specific error with retry | Touch-friendly stepper |
+| `/app/dashboard` | Free student, Paid student | Main student dashboard | Progress, plan, recent activity | Dashboard skeleton widgets | Welcome state for new users | Widget-level error fallbacks | Card layout, swipeable |
 | `/app/study-plan` | Paid student | Personalised study plan | Plan structure, progress | Plan skeleton | No plan message (needs diagnostic) | Regenerate option on error | Scrollable timeline |
-| `/app/courses` | Paid student | Course listing | enrolled courses | Card skeleton grid | No courses message | Retry | Single-column cards |
-| `/app/courses/[courseId]` | Paid student | Course detail and lessons | Course content, lessons | Course skeleton | N/A | Course not found | Accordion lessons |
-| `/app/lessons/[lessonId]` | Paid student | Lesson content | Lesson data, progress | Lesson skeleton | N/A | Lesson not found, progress not saved | Responsive content |
-| `/app/practice` | Paid student | Practice entry and selection | Question types, history | Card skeleton | Start practice prompt | Retry | Scrollable categories |
-| `/app/practice/[questionType]` | Paid student | Practice by question type | Question, timer, input | Question skeleton | No questions available | Question load failure | Full-width input areas |
-| `/app/practice/session/[sessionId]` | Paid student | Active practice session | Questions, timer, responses | Session skeleton | N/A | Session not found, expired, resume | Optimised for touch input |
-| `/app/mock-tests` | Paid student | Mock exam listing | Available attempts, history | Card skeleton | No mocks available message | Retry | Scrollable list |
-| `/app/mock-tests/[mockId]` | Paid student | Mock exam detail and start | Mock configuration | Skeleton | N/A | Mock not found | Touch-friendly start |
+| `/app/courses` | Free student, Paid student | Course listing | enrolled courses | Card skeleton grid | No courses message | Retry | Single-column cards |
+| `/app/courses/[courseId]` | Free student, Paid student | Course detail and lessons | Course content, lessons | Course skeleton | N/A | Course not found | Accordion lessons |
+| `/app/lessons/[lessonId]` | Free student, Paid student | Lesson content | Lesson data, progress | Lesson skeleton | N/A | Lesson not found, progress not saved | Responsive content |
+| `/app/practice` | Free student, Paid student | Practice entry and selection | Question types, history | Card skeleton | Start practice prompt | Retry | Scrollable categories |
+| `/app/practice/[questionType]` | Free student, Paid student | Practice by question type | Question, timer, input | Question skeleton | No questions available | Question load failure | Full-width input areas |
+| `/app/practice/session/[sessionId]` | Free student, Paid student | Active practice session | Questions, timer, responses | Session skeleton | N/A | Session not found, expired, resume | Optimised for touch input |
+| `/app/mock-tests` | Free student, Paid student | Mock exam listing | Available attempts, history | Card skeleton | No mocks available message | Retry | Scrollable list |
+| `/app/mock-tests/[mockId]` | Free student, Paid student | Mock exam detail and start | Mock configuration | Skeleton | N/A | Mock not found | Touch-friendly start |
 | `/app/mock-attempts/[attemptId]` | Paid student | Active or past mock attempt | Questions, timer, responses | Attempt skeleton | N/A | Attempt not found, expired, resume | Section-navigation optimised |
 | `/app/results/[reportId]` | Paid student | Score report | Scores, breakdown, comparison | Report skeleton | N/A | Report not found | Scrollable report sections |
 | `/app/mistakes` | Paid student | Mistake notebook | Mistake list, filters | List skeleton | No mistakes message, start practising prompt | Retry | Filterable list |
 | `/app/vocabulary` | Paid student | Vocabulary notebook | Vocabulary list, review schedule | List skeleton | No vocabulary yet | Retry | Swipeable cards |
-| `/app/progress` | Paid student | Detailed progress tracking | Charts, trends, history | Chart skeleton | Start practising prompt | Chart load failure | Scrollable with charts |
+| `/app/progress` | Free student, Paid student | Progress tracking | Charts, trends, history | Chart skeleton | Start practising prompt | Chart load failure | Scrollable with charts |
 | `/app/teacher-feedback` | Paid student | Teacher review results | Feedback list | List skeleton | No feedback yet | Retry | List view |
-| `/app/subscription` | Paid student | Manage subscription | Plan, status, payment history | Skeleton | N/A | Payment error with support link | Touch-friendly |
-| `/app/profile` | Paid student | Edit profile | User data | Form skeleton | N/A | Save failure with retry | Touch-friendly form |
+| `/app/subscription` | Free student, Paid student | View and manage subscription | Plan, status, payment history | Skeleton | N/A | Payment error with support link | Touch-friendly |
+| `/app/profile` | Free student, Paid student | Edit profile | User data | Form skeleton | N/A | Save failure with retry | Touch-friendly form |
 
 ## Teacher Routes
 
