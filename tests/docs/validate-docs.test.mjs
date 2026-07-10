@@ -8,17 +8,30 @@ const fixturesDir = resolve(import.meta.dirname, 'fixtures');
 const root = resolve(import.meta.dirname, '../../');
 
 import {
-  resetValidation, getAllErrors, getAllWarnings,
-  requiredFile, checkUnresolvedMarkers, checkContent,
-  validateTaskManifest, validateOfficialReferenceRegister,
-  validateFreeStudentRoutes, validateAtoZPhases,
-  validateTaskReferences, validateReferenceRegisterJson,
-  validateScorecard, validateBlueprintAgainstManifest,
-  validateMockTimerConsistency, validateScoringPrinciplesTable,
+  resetValidation,
+  getAllErrors,
+  getAllWarnings,
+  requiredFile,
+  checkUnresolvedMarkers,
+  checkContent,
+  validateTaskManifest,
+  validateOfficialReferenceRegister,
+  validateFreeStudentRoutes,
+  validateAtoZPhases,
+  validateTaskReferences,
+  validateReferenceRegisterJson,
+  validateScorecard,
+  validateBlueprintAgainstManifest,
+  validateMockTimerConsistency,
+  validateScoringPrinciplesTable,
   validateAssessmentAcceptanceConsistency,
-  validateScoringNarrativeConsistency, validateRoleRouteConsistency,
-  validateContentPublicationAuthority, validateStudentAssessmentRoutes,
-  validateAll, errors, warnings
+  validateScoringNarrativeConsistency,
+  validateRoleRouteConsistency,
+  validateContentPublicationAuthority,
+  validateStudentAssessmentRoutes,
+  validateAll,
+  errors,
+  warnings,
 } from '../../scripts/validate-docs.mjs';
 
 function fixturePath(name) {
@@ -50,12 +63,13 @@ async function withManifest(content, fn) {
   try {
     await fn(path);
   } finally {
-    try { rmSync(path); } catch {}
+    try {
+      rmSync(path);
+    } catch {}
   }
 }
 
 describe('Documentation Validator', () => {
-
   describe('validateTaskManifest — canonical contract', () => {
     it('passes the exact canonical fixture', async () => {
       const content = readFixture('canonical-pte-task-contract.json');
@@ -68,191 +82,197 @@ describe('Documentation Validator', () => {
 
     it('rejects Read Aloud assessed as Reading', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      const t = tasks.find((x) => x.canonicalId === 'read_aloud');
       t.officialSkillsAssessed = ['Reading'];
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('read_aloud') && e.includes('officialSkillsAssessed')));
+        assert.ok(getAllErrors().some((e) => e.includes('read_aloud') && e.includes('officialSkillsAssessed')));
       });
     });
 
     it('rejects Reading Dropdown writing contribution', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'reading_writing_fill_blanks');
+      const t = tasks.find((x) => x.canonicalId === 'reading_writing_fill_blanks');
       t.scoreContributions = ['Reading', 'Writing'];
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('reading_writing_fill_blanks') && e.includes('scoreContributions')));
+        assert.ok(
+          getAllErrors().some((e) => e.includes('reading_writing_fill_blanks') && e.includes('scoreContributions')),
+        );
       });
     });
 
     it('rejects Listening Fill in the Blanks assessed as Writing', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'listening_fill_blanks');
+      const t = tasks.find((x) => x.canonicalId === 'listening_fill_blanks');
       t.officialSkillsAssessed = ['Listening', 'Writing'];
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('listening_fill_blanks') && e.includes('officialSkillsAssessed')));
+        assert.ok(
+          getAllErrors().some((e) => e.includes('listening_fill_blanks') && e.includes('officialSkillsAssessed')),
+        );
       });
     });
 
     it('rejects Reading Multiple Answers maximum 300', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'reading_multiple_answers');
+      const t = tasks.find((x) => x.canonicalId === 'reading_multiple_answers');
       t.promptLength.maximum = 300;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('promptLength') && e.includes('maximum')));
+        assert.ok(getAllErrors().some((e) => e.includes('promptLength') && e.includes('maximum')));
       });
     });
 
     it('rejects Reorder Paragraph measured as paragraphs range 4-7', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'reorder_paragraph');
+      const t = tasks.find((x) => x.canonicalId === 'reorder_paragraph');
       t.promptLength.maximum = 7;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('reorder_paragraph') && e.includes('promptLength')));
+        assert.ok(getAllErrors().some((e) => e.includes('reorder_paragraph') && e.includes('promptLength')));
       });
     });
 
     it('rejects Reading Drag and Drop maximum 200', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'reading_fill_blanks');
+      const t = tasks.find((x) => x.canonicalId === 'reading_fill_blanks');
       t.promptLength.maximum = 200;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('reading_fill_blanks') && e.includes('promptLength')));
+        assert.ok(getAllErrors().some((e) => e.includes('reading_fill_blanks') && e.includes('promptLength')));
       });
     });
 
     it('rejects Listening Multiple Answers 90-second maximum', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'listening_multiple_answers');
+      const t = tasks.find((x) => x.canonicalId === 'listening_multiple_answers');
       t.promptLength.maximum = 90;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('listening_multiple_answers') && e.includes('promptLength')));
+        assert.ok(getAllErrors().some((e) => e.includes('listening_multiple_answers') && e.includes('promptLength')));
       });
     });
 
     it('rejects Listening Fill in the Blanks null range', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'listening_fill_blanks');
+      const t = tasks.find((x) => x.canonicalId === 'listening_fill_blanks');
       t.promptLength.minimum = null;
       t.promptLength.maximum = null;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('promptLength')));
+        assert.ok(getAllErrors().some((e) => e.includes('promptLength')));
       });
     });
 
     it('rejects Highlight Correct Summary missing 30-second minimum', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'highlight_correct_summary');
+      const t = tasks.find((x) => x.canonicalId === 'highlight_correct_summary');
       t.promptLength.minimum = 0;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('highlight_correct_summary') && e.includes('promptLength')));
+        assert.ok(getAllErrors().some((e) => e.includes('highlight_correct_summary') && e.includes('promptLength')));
       });
     });
 
     it('rejects Select Missing Word 60-second maximum', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'select_missing_word');
+      const t = tasks.find((x) => x.canonicalId === 'select_missing_word');
       t.promptLength.maximum = 60;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('select_missing_word') && e.includes('promptLength')));
+        assert.ok(getAllErrors().some((e) => e.includes('select_missing_word') && e.includes('promptLength')));
       });
     });
 
     it('rejects Highlight Incorrect Words 60-second maximum', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'highlight_incorrect_words');
+      const t = tasks.find((x) => x.canonicalId === 'highlight_incorrect_words');
       t.promptLength.maximum = 60;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('highlight_incorrect_words') && e.includes('promptLength')));
+        assert.ok(getAllErrors().some((e) => e.includes('highlight_incorrect_words') && e.includes('promptLength')));
       });
     });
 
     it('rejects Write From Dictation range other than 3-5', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'write_from_dictation');
+      const t = tasks.find((x) => x.canonicalId === 'write_from_dictation');
       t.promptLength.maximum = 9;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('write_from_dictation') && e.includes('promptLength')));
+        assert.ok(getAllErrors().some((e) => e.includes('write_from_dictation') && e.includes('promptLength')));
       });
     });
 
     it('rejects unknown reference ID', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      const t = tasks.find((x) => x.canonicalId === 'read_aloud');
       t.referenceIds = ['source-99'];
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('unknown reference')));
+        assert.ok(getAllErrors().some((e) => e.includes('unknown reference')));
       });
     });
 
     it('rejects invalid reference date', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      const t = tasks.find((x) => x.canonicalId === 'read_aloud');
       t.lastVerifiedAt = 'not-a-date';
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('lastVerifiedAt')));
+        assert.ok(getAllErrors().some((e) => e.includes('lastVerifiedAt')));
       });
     });
 
     it('rejects negative maximum in timing', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      const t = tasks.find((x) => x.canonicalId === 'read_aloud');
       t.promptLength.maximum = -5;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('negative maximum') || e.includes('minimum (0) exceeds maximum')));
+        assert.ok(
+          getAllErrors().some((e) => e.includes('negative maximum') || e.includes('minimum (0) exceeds maximum')),
+        );
       });
     });
 
     it('rejects string timing value', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      const t = tasks.find((x) => x.canonicalId === 'read_aloud');
       t.promptLength.maximum = 'sixty';
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('promptLength') || e.includes('maximum')));
+        assert.ok(getAllErrors().some((e) => e.includes('promptLength') || e.includes('maximum')));
       });
     });
 
     it('rejects fixed timing where min does not equal max', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'repeat_sentence');
+      const t = tasks.find((x) => x.canonicalId === 'repeat_sentence');
       t.preparationTiming.mode = 'fixed';
       t.preparationTiming.minimum = 5;
       t.preparationTiming.maximum = 10;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('fixed')));
+        assert.ok(getAllErrors().some((e) => e.includes('fixed')));
       });
     });
 
@@ -260,7 +280,7 @@ describe('Documentation Validator', () => {
       await withManifest(JSON.stringify([loadCanonical()[0]]), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('22 task records')));
+        assert.ok(getAllErrors().some((e) => e.includes('22 task records')));
       });
     });
 
@@ -271,7 +291,7 @@ describe('Documentation Validator', () => {
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('duplicate')));
+        assert.ok(getAllErrors().some((e) => e.includes('duplicate')));
       });
     });
   });
@@ -279,21 +299,25 @@ describe('Documentation Validator', () => {
   describe('validateTaskManifest — general', () => {
     it('rejects deprecated skillsAssessed field', async () => {
       const tasks = loadCanonical();
-      tasks.forEach(t => { t.skillsAssessed = t.officialSkillsAssessed; });
+      tasks.forEach((t) => {
+        t.skillsAssessed = t.officialSkillsAssessed;
+      });
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('deprecated')));
+        assert.ok(getAllErrors().some((e) => e.includes('deprecated')));
       });
     });
 
     it('rejects wrong section count', async () => {
       const tasks = loadCanonical();
-      tasks.forEach(t => { t.section = 'Listening'; });
+      tasks.forEach((t) => {
+        t.section = 'Listening';
+      });
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('Speaking and Writing')));
+        assert.ok(getAllErrors().some((e) => e.includes('Speaking and Writing')));
       });
     });
 
@@ -303,7 +327,7 @@ describe('Documentation Validator', () => {
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('invalid promptType')));
+        assert.ok(getAllErrors().some((e) => e.includes('invalid promptType')));
       });
     });
   });
@@ -312,7 +336,7 @@ describe('Documentation Validator', () => {
     it('detects TODO', () => {
       resetValidation();
       checkUnresolvedMarkers('test.md', 'This has a TODO item');
-      assert.ok(getAllErrors().some(e => e.includes('TODO')));
+      assert.ok(getAllErrors().some((e) => e.includes('TODO')));
     });
 
     it('passes clean content', () => {
@@ -332,7 +356,7 @@ describe('Documentation Validator', () => {
     it('reports missing pattern', () => {
       resetValidation();
       checkContent('test.md', 'Goodbye World', [['Hello', 'Hello', false]]);
-      assert.ok(getAllErrors().some(e => e.includes('Hello')));
+      assert.ok(getAllErrors().some((e) => e.includes('Hello')));
     });
   });
 
@@ -351,7 +375,9 @@ describe('Documentation Validator', () => {
       const path = join(fixturesDir, 'route-map.md');
       writeFixture('route-map.md', valid);
       validateFreeStudentRoutes(path);
-      try { rmSync(path); } catch {}
+      try {
+        rmSync(path);
+      } catch {}
       assert.equal(getAllErrors().length, 0);
     });
 
@@ -360,20 +386,25 @@ describe('Documentation Validator', () => {
       const path = join(fixturesDir, 'route-map.md');
       writeFixture('route-map.md', '| /app | Paid student only | App |');
       validateFreeStudentRoutes(path);
-      try { rmSync(path); } catch {}
+      try {
+        rmSync(path);
+      } catch {}
       assert.ok(getAllErrors().length > 0);
     });
   });
 
   describe('validateAtoZPhases', () => {
-    const valid = '| A | Product |\n| B | Monorepo |\n| C | Shared |\n| D | Database |\n| E | Auth |\n| F | Design |\n| G | Content |\n| H | Course |\n| I | Question |\n| J | Reading |\n| K | Listening |\n| L | Speaking |\n| M | Writing |\n| N | Scoring |\n| O | AI |\n| P | Diagnostic |\n| Q | Mock |\n| R | Dashboard |\n| S | Portals |\n| T | Payments |\n| U | Factory |\n| V | Calibration |\n| W | Notifications |\n| X | QA |\n| Y | Deployment |\n| Z | Launch |';
+    const valid =
+      '| A | Product |\n| B | Monorepo |\n| C | Shared |\n| D | Database |\n| E | Auth |\n| F | Design |\n| G | Content |\n| H | Course |\n| I | Question |\n| J | Reading |\n| K | Listening |\n| L | Speaking |\n| M | Writing |\n| N | Scoring |\n| O | AI |\n| P | Diagnostic |\n| Q | Mock |\n| R | Dashboard |\n| S | Portals |\n| T | Payments |\n| U | Factory |\n| V | Calibration |\n| W | Notifications |\n| X | QA |\n| Y | Deployment |\n| Z | Launch |';
 
     it('passes with all A-Z phases', () => {
       resetValidation();
       const path = join(fixturesDir, 'README.md');
       writeFixture('README.md', valid);
       validateAtoZPhases(path);
-      try { rmSync(path); } catch {}
+      try {
+        rmSync(path);
+      } catch {}
       assert.equal(getAllErrors().length, 0);
     });
 
@@ -382,7 +413,9 @@ describe('Documentation Validator', () => {
       const path = join(fixturesDir, 'README.md');
       writeFixture('README.md', '| A | Product |');
       validateAtoZPhases(path);
-      try { rmSync(path); } catch {}
+      try {
+        rmSync(path);
+      } catch {}
       assert.ok(getAllErrors().length > 0);
     });
   });
@@ -393,7 +426,9 @@ describe('Documentation Validator', () => {
       const path = join(fixturesDir, '.gitkeep');
       writeFixture('.gitkeep', '');
       const result = requiredFile(path);
-      try { rmSync(path); } catch {}
+      try {
+        rmSync(path);
+      } catch {}
       assert.equal(result, '');
       assert.equal(getAllErrors().length, 0);
     });
@@ -403,9 +438,11 @@ describe('Documentation Validator', () => {
       const path = join(fixturesDir, 'empty.md');
       writeFixture('empty.md', '');
       const result = requiredFile(path);
-      try { rmSync(path); } catch {}
+      try {
+        rmSync(path);
+      } catch {}
       assert.equal(result, null);
-      assert.ok(getAllErrors().some(e => e.includes('Empty')));
+      assert.ok(getAllErrors().some((e) => e.includes('Empty')));
     });
   });
 
@@ -456,16 +493,23 @@ describe('Documentation Validator', () => {
       const path = join(fixturesDir, 'register.md');
       writeFixture('register.md', valid);
       validateOfficialReferenceRegister(path);
-      try { rmSync(path); } catch {}
+      try {
+        rmSync(path);
+      } catch {}
       assert.equal(getAllErrors().length, 0);
     });
 
     it('fails when required source URL missing', () => {
       resetValidation();
       const path = join(fixturesDir, 'register.md');
-      writeFixture('register.md', '### Source\n- Source URL: https://example.com\n- Publisher: Unknown\n- Last verified date: 2026-07-10\n- Content covered: nothing');
+      writeFixture(
+        'register.md',
+        '### Source\n- Source URL: https://example.com\n- Publisher: Unknown\n- Last verified date: 2026-07-10\n- Content covered: nothing',
+      );
       validateOfficialReferenceRegister(path);
-      try { rmSync(path); } catch {}
+      try {
+        rmSync(path);
+      } catch {}
       assert.ok(getAllErrors().length > 0);
     });
   });
@@ -475,18 +519,18 @@ describe('Documentation Validator', () => {
   describe('validateTaskManifest — reorder paragraph', () => {
     it('K1: Reorder Paragraph 4-6 paragraphs fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'reorder_paragraph');
+      const t = tasks.find((x) => x.canonicalId === 'reorder_paragraph');
       t.promptLength = { mode: 'range', minimum: 4, maximum: 6, unit: 'paragraphs' };
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('reorder_paragraph') && e.includes('promptLength')));
+        assert.ok(getAllErrors().some((e) => e.includes('reorder_paragraph') && e.includes('promptLength')));
       });
     });
 
     it('K2: Reorder Paragraph 0-150 words passes', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'reorder_paragraph');
+      const t = tasks.find((x) => x.canonicalId === 'reorder_paragraph');
       t.promptLength = { mode: 'range', minimum: 0, maximum: 150, unit: 'words' };
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
@@ -497,12 +541,12 @@ describe('Documentation Validator', () => {
 
     it('K3: Summarize Written Text missing 300-word maximum fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'summarize_written_text');
+      const t = tasks.find((x) => x.canonicalId === 'summarize_written_text');
       t.promptLength = { mode: 'range', minimum: 0, maximum: null, unit: 'words' };
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('summarize_written_text') && e.includes('promptLength')));
+        assert.ok(getAllErrors().some((e) => e.includes('summarize_written_text') && e.includes('promptLength')));
       });
     });
   });
@@ -511,28 +555,28 @@ describe('Documentation Validator', () => {
     it('K4: Summarize Group Discussion using source-4 fails', () => {
       resetValidation();
       const manifest = JSON.parse(readFileSync(join(root, 'docs/content/pte-task-manifest.json'), 'utf-8'));
-      const t = manifest.find(x => x.canonicalId === 'summarize_group_discussion');
+      const t = manifest.find((x) => x.canonicalId === 'summarize_group_discussion');
       t.referenceIds = ['source-1', 'source-4'];
       validateTaskReferences(manifest);
-      assert.ok(getAllErrors().some(e => e.includes('source-4')));
+      assert.ok(getAllErrors().some((e) => e.includes('source-4')));
     });
 
     it('K5: Reading Dropdown using source-2 fails', () => {
       resetValidation();
       const manifest = JSON.parse(readFileSync(join(root, 'docs/content/pte-task-manifest.json'), 'utf-8'));
-      const t = manifest.find(x => x.canonicalId === 'reading_writing_fill_blanks');
+      const t = manifest.find((x) => x.canonicalId === 'reading_writing_fill_blanks');
       t.referenceIds = ['source-1', 'source-2', 'source-6'];
       validateTaskReferences(manifest);
-      assert.ok(getAllErrors().some(e => e.includes('reading_writing_fill_blanks') && e.includes('source-2')));
+      assert.ok(getAllErrors().some((e) => e.includes('reading_writing_fill_blanks') && e.includes('source-2')));
     });
 
     it('K6: Missing source-6 for scoring claims fails', () => {
       resetValidation();
       const manifest = JSON.parse(readFileSync(join(root, 'docs/content/pte-task-manifest.json'), 'utf-8'));
-      const t = manifest.find(x => x.canonicalId === 'read_aloud');
+      const t = manifest.find((x) => x.canonicalId === 'read_aloud');
       t.referenceIds = ['source-1', 'source-2'];
       validateTaskReferences(manifest);
-      assert.ok(getAllErrors().some(e => e.includes('read_aloud') && e.includes('source-6')));
+      assert.ok(getAllErrors().some((e) => e.includes('read_aloud') && e.includes('source-6')));
     });
   });
 
@@ -545,8 +589,10 @@ describe('Documentation Validator', () => {
       const path = join(fixturesDir, 'refs-duplicate-id.json');
       writeFixture('refs-duplicate-id.json', JSON.stringify(modified));
       validateReferenceRegisterJson(path);
-      try { rmSync(path); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('duplicate ID')));
+      try {
+        rmSync(path);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('duplicate ID')));
     });
 
     it('K8: Duplicate reference URL fails', () => {
@@ -557,8 +603,10 @@ describe('Documentation Validator', () => {
       const path = join(fixturesDir, 'refs-duplicate-url.json');
       writeFixture('refs-duplicate-url.json', JSON.stringify(modified));
       validateReferenceRegisterJson(path);
-      try { rmSync(path); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('duplicate URL')));
+      try {
+        rmSync(path);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('duplicate URL')));
     });
 
     it('K9: Invalid calendar date fails', () => {
@@ -569,8 +617,10 @@ describe('Documentation Validator', () => {
       const path = join(fixturesDir, 'refs-bad-date.json');
       writeFixture('refs-bad-date.json', JSON.stringify(modified));
       validateReferenceRegisterJson(path);
-      try { rmSync(path); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('lastVerifiedAt')));
+      try {
+        rmSync(path);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('lastVerifiedAt')));
     });
   });
 
@@ -579,7 +629,7 @@ describe('Documentation Validator', () => {
       resetValidation();
       validateBlueprintAgainstManifest(
         join(root, 'docs/content/pte-task-blueprints.md'),
-        join(root, 'docs/content/pte-task-manifest.json')
+        join(root, 'docs/content/pte-task-manifest.json'),
       );
       assert.equal(getAllErrors().length, 0, `Errors: ${getAllErrors().join(', ')}`);
     });
@@ -589,10 +639,7 @@ describe('Documentation Validator', () => {
       const original = readFileSync(bpPath, 'utf-8');
       writeFileSync(bpPath, original.replace('Read Aloud', 'Read Aloud (modified)'), 'utf-8');
       resetValidation();
-      validateBlueprintAgainstManifest(
-        bpPath,
-        join(root, 'docs/content/pte-task-manifest.json')
-      );
+      validateBlueprintAgainstManifest(bpPath, join(root, 'docs/content/pte-task-manifest.json'));
       writeFileSync(bpPath, original, 'utf-8');
       assert.ok(getAllErrors().length > 0);
     });
@@ -601,35 +648,37 @@ describe('Documentation Validator', () => {
   describe('validateTaskManifest — blueprint contradiction detection', () => {
     it('K16: Listening Fill in the Blanks "no transcript" contradiction fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'listening_fill_blanks');
+      const t = tasks.find((x) => x.canonicalId === 'listening_fill_blanks');
       t.promptTranscriptRequired = false;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('listening_fill_blanks') && e.includes('promptTranscriptRequired')));
+        assert.ok(
+          getAllErrors().some((e) => e.includes('listening_fill_blanks') && e.includes('promptTranscriptRequired')),
+        );
       });
     });
 
     it('K17: Forced-answer validation in mock mode fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'reading_writing_fill_blanks');
+      const t = tasks.find((x) => x.canonicalId === 'reading_writing_fill_blanks');
       t.responseValidation.timedModeForceAnswer = true;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('timedModeForceAnswer')));
+        assert.ok(getAllErrors().some((e) => e.includes('timedModeForceAnswer')));
       });
     });
 
     it('K18: SST post-audio timer wording fails for the correct reason', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'summarize_spoken_text');
+      const t = tasks.find((x) => x.canonicalId === 'summarize_spoken_text');
       t.responseTimingDescription = 'Ten-minute response timer begins after the audio ends';
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('summarize_spoken_text')));
-        assert.ok(getAllErrors().some(e => e.includes('timer')));
+        assert.ok(getAllErrors().some((e) => e.includes('summarize_spoken_text')));
+        assert.ok(getAllErrors().some((e) => e.includes('timer')));
       });
     });
 
@@ -637,11 +686,12 @@ describe('Documentation Validator', () => {
       const bpPath = join(root, 'docs/product/student-journey.md');
       const original = readFileSync(bpPath, 'utf-8');
       try {
-        const contradictory = original + '\n\nInternet interruption: remaining time at interruption reflects the paused timer.\n';
+        const contradictory =
+          original + '\n\nInternet interruption: remaining time at interruption reflects the paused timer.\n';
         writeFileSync(bpPath, contradictory, 'utf-8');
         resetValidation();
         validateMockTimerConsistency();
-        assert.ok(getAllErrors().some(e => e.includes('incorrect mock timer')));
+        assert.ok(getAllErrors().some((e) => e.includes('incorrect mock timer')));
       } finally {
         writeFileSync(bpPath, original, 'utf-8');
       }
@@ -665,8 +715,10 @@ Totals are wrong on purpose.`;
       const path = join(fixturesDir, 'bad-scorecard.md');
       writeFixture('bad-scorecard.md', badScorecard);
       validateScorecard(path);
-      try { rmSync(path); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('points')));
+      try {
+        rmSync(path);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('points')));
     });
 
     it('K21: Full repository contract passes', () => {
@@ -695,56 +747,58 @@ Totals are wrong on purpose.`;
   describe('Scoring model — officialRubricTraits validation', () => {
     it('Objective task with skill names in officialRubricTraits fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'reading_writing_fill_blanks');
+      const t = tasks.find((x) => x.canonicalId === 'reading_writing_fill_blanks');
       t.officialRubricTraits = ['Reading', 'Writing'];
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('officialRubricTraits') && e.includes('reading_writing_fill_blanks')));
+        assert.ok(
+          getAllErrors().some((e) => e.includes('officialRubricTraits') && e.includes('reading_writing_fill_blanks')),
+        );
       });
     });
 
     it('Reading Dropdown with Writing trait fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'reading_writing_fill_blanks');
+      const t = tasks.find((x) => x.canonicalId === 'reading_writing_fill_blanks');
       t.officialRubricTraits = ['Writing'];
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('officialRubricTraits')));
+        assert.ok(getAllErrors().some((e) => e.includes('officialRubricTraits')));
       });
     });
 
     it('Listening Fill in the Blanks with Listening/Writing traits fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'listening_fill_blanks');
+      const t = tasks.find((x) => x.canonicalId === 'listening_fill_blanks');
       t.officialRubricTraits = ['Listening', 'Writing'];
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('officialRubricTraits')));
+        assert.ok(getAllErrors().some((e) => e.includes('officialRubricTraits')));
       });
     });
 
     it('Required rubric-scored task with empty traits fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      const t = tasks.find((x) => x.canonicalId === 'read_aloud');
       t.officialRubricTraits = [];
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('read_aloud') && e.includes('empty')));
+        assert.ok(getAllErrors().some((e) => e.includes('read_aloud') && e.includes('empty')));
       });
     });
 
     it('Negative-marking rule without minimum zero fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'reading_multiple_answers');
+      const t = tasks.find((x) => x.canonicalId === 'reading_multiple_answers');
       t.platformEstimatedScoringRule.minimumItemScore = -1;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('minimumItemScore')));
+        assert.ok(getAllErrors().some((e) => e.includes('minimumItemScore')));
       });
     });
   });
@@ -752,45 +806,45 @@ Totals are wrong on purpose.`;
   describe('Preparation timing assertions', () => {
     it('Listening Multiple Answers preparation not seven seconds fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'listening_multiple_answers');
+      const t = tasks.find((x) => x.canonicalId === 'listening_multiple_answers');
       t.preparationTiming = { mode: 'fixed', minimum: 5, maximum: 5, unit: 'seconds' };
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('preparationTiming')));
+        assert.ok(getAllErrors().some((e) => e.includes('preparationTiming')));
       });
     });
 
     it('Listening Fill in the Blanks preparation not seven seconds fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'listening_fill_blanks');
+      const t = tasks.find((x) => x.canonicalId === 'listening_fill_blanks');
       t.preparationTiming = { mode: 'fixed', minimum: 0, maximum: 0, unit: 'seconds' };
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('preparationTiming')));
+        assert.ok(getAllErrors().some((e) => e.includes('preparationTiming')));
       });
     });
 
     it('Listening Single Answer preparation not five seconds fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'listening_single_answer');
+      const t = tasks.find((x) => x.canonicalId === 'listening_single_answer');
       t.preparationTiming = { mode: 'fixed', minimum: 7, maximum: 7, unit: 'seconds' };
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('preparationTiming')));
+        assert.ok(getAllErrors().some((e) => e.includes('preparationTiming')));
       });
     });
 
     it('Highlight Incorrect Words preparation not ten seconds fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'highlight_incorrect_words');
+      const t = tasks.find((x) => x.canonicalId === 'highlight_incorrect_words');
       t.preparationTiming = { mode: 'fixed', minimum: 5, maximum: 5, unit: 'seconds' };
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('preparationTiming')));
+        assert.ok(getAllErrors().some((e) => e.includes('preparationTiming')));
       });
     });
   });
@@ -798,12 +852,12 @@ Totals are wrong on purpose.`;
   describe('Transcript and mock mode assertions', () => {
     it('Listening Fill in the Blanks mock mode hiding the transcript fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'listening_fill_blanks');
+      const t = tasks.find((x) => x.canonicalId === 'listening_fill_blanks');
       t.promptTranscriptRequired = false;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('promptTranscriptRequired')));
+        assert.ok(getAllErrors().some((e) => e.includes('promptTranscriptRequired')));
       });
     });
   });
@@ -812,7 +866,9 @@ Totals are wrong on purpose.`;
     it('Missing generated blueprint field fails', () => {
       // Verify the generator produces all required fields
       const result = execSync('node scripts/generate-pte-blueprints.mjs --validate', {
-        cwd: root, encoding: 'utf-8', stdio: 'pipe'
+        cwd: root,
+        encoding: 'utf-8',
+        stdio: 'pipe',
       });
       assert.equal(result.trim(), '');
     });
@@ -826,8 +882,10 @@ Totals are wrong on purpose.`;
       refs[0].lastVerifiedAt = '2026-02-31';
       writeFixture('bad-date.json', JSON.stringify(refs));
       validateReferenceRegisterJson(path);
-      try { rmSync(path); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('lastVerifiedAt')));
+      try {
+        rmSync(path);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('lastVerifiedAt')));
     });
 
     it('Invalid non-leap date 2026-02-29 fails', () => {
@@ -837,8 +895,10 @@ Totals are wrong on purpose.`;
       refs[0].lastVerifiedAt = '2026-02-29';
       writeFixture('bad-leap.json', JSON.stringify(refs));
       validateReferenceRegisterJson(path);
-      try { rmSync(path); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('lastVerifiedAt')));
+      try {
+        rmSync(path);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('lastVerifiedAt')));
     });
 
     it('Valid leap date 2028-02-29 passes', () => {
@@ -848,21 +908,23 @@ Totals are wrong on purpose.`;
       refs[0].lastVerifiedAt = '2028-02-29';
       writeFixture('good-leap.json', JSON.stringify(refs));
       validateReferenceRegisterJson(path);
-      try { rmSync(path); } catch {}
-      assert.equal(getAllErrors().filter(e => e.includes('lastVerifiedAt')).length, 0);
+      try {
+        rmSync(path);
+      } catch {}
+      assert.equal(getAllErrors().filter((e) => e.includes('lastVerifiedAt')).length, 0);
     });
   });
 
   describe('Deprecated field detection', () => {
     it('Deprecated officialScoringTraits fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      const t = tasks.find((x) => x.canonicalId === 'read_aloud');
       t.officialScoringTraits = t.officialRubricTraits;
       delete t.officialRubricTraits;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('deprecated') && e.includes('officialScoringTraits')));
+        assert.ok(getAllErrors().some((e) => e.includes('deprecated') && e.includes('officialScoringTraits')));
       });
     });
   });
@@ -884,7 +946,7 @@ Totals are wrong on purpose.`;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('taskPurpose')));
+        assert.ok(getAllErrors().some((e) => e.includes('taskPurpose')));
       });
     });
 
@@ -894,7 +956,7 @@ Totals are wrong on purpose.`;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('studentInterface')));
+        assert.ok(getAllErrors().some((e) => e.includes('studentInterface')));
       });
     });
 
@@ -904,7 +966,7 @@ Totals are wrong on purpose.`;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('feedbackFormat')));
+        assert.ok(getAllErrors().some((e) => e.includes('feedbackFormat')));
       });
     });
 
@@ -914,95 +976,101 @@ Totals are wrong on purpose.`;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('failureRecoveryBehavior')));
+        assert.ok(getAllErrors().some((e) => e.includes('failureRecoveryBehavior')));
       });
     });
 
     it('Forced answer in mock mode fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'reading_writing_fill_blanks');
+      const t = tasks.find((x) => x.canonicalId === 'reading_writing_fill_blanks');
       t.responseValidation.timedModeForceAnswer = true;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('timedModeForceAnswer')));
+        assert.ok(getAllErrors().some((e) => e.includes('timedModeForceAnswer')));
       });
     });
 
     it('Recorded speaking task without resumable upload fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      const t = tasks.find((x) => x.canonicalId === 'read_aloud');
       t.failureRecoveryBehavior.resumableUploadRequired = false;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('resumableUploadRequired')));
+        assert.ok(getAllErrors().some((e) => e.includes('resumableUploadRequired')));
       });
     });
 
     it('Missing official human review for Describe Image fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'describe_image');
+      const t = tasks.find((x) => x.canonicalId === 'describe_image');
       t.officialHumanReviewTraits = [];
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('officialHumanReviewTraits')));
+        assert.ok(getAllErrors().some((e) => e.includes('officialHumanReviewTraits')));
       });
     });
 
     it('Incorrect Write Essay human-review traits fail', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'write_essay');
+      const t = tasks.find((x) => x.canonicalId === 'write_essay');
       t.officialHumanReviewTraits = ['Content'];
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('officialHumanReviewTraits')));
+        assert.ok(getAllErrors().some((e) => e.includes('officialHumanReviewTraits')));
       });
     });
 
     it('Platform scoring labelled official fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'reading_writing_fill_blanks');
-      t.platformEstimatedScoringRule = { type: 'per-correct-blank', correctPoints: 1, incorrectPoints: 0, minimumItemScore: 0, officialPearsonScoring: true };
+      const t = tasks.find((x) => x.canonicalId === 'reading_writing_fill_blanks');
+      t.platformEstimatedScoringRule = {
+        type: 'per-correct-blank',
+        correctPoints: 1,
+        incorrectPoints: 0,
+        minimumItemScore: 0,
+        officialPearsonScoring: true,
+      };
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('official')));
+        assert.ok(getAllErrors().some((e) => e.includes('official')));
       });
     });
 
     it('Retell Lecture audio-only contract fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'retell_lecture');
+      const t = tasks.find((x) => x.canonicalId === 'retell_lecture');
       t.supportsAudiovisualInput = false;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('supportsAudiovisualInput')));
+        assert.ok(getAllErrors().some((e) => e.includes('supportsAudiovisualInput')));
       });
     });
 
     it('Answer Short Question optional-image support missing fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'answer_short_question');
+      const t = tasks.find((x) => x.canonicalId === 'answer_short_question');
       t.optionalAccompanyingImage = false;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('optionalAccompanyingImage')));
+        assert.ok(getAllErrors().some((e) => e.includes('optionalAccompanyingImage')));
       });
     });
 
     it('Describe Image prompt length "1 image" fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'describe_image');
+      const t = tasks.find((x) => x.canonicalId === 'describe_image');
       t.promptLength = { mode: 'fixed', minimum: 1, maximum: 1, unit: 'image' };
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('not-applicable')));
+        assert.ok(getAllErrors().some((e) => e.includes('not-applicable')));
       });
     });
 
@@ -1013,15 +1081,17 @@ Totals are wrong on purpose.`;
       try {
         const mutated = original.replace(
           '| Read Aloud | Speaking | Reading, Speaking |',
-          '| Read Aloud | Reading, Speaking | Reading, Speaking |'
+          '| Read Aloud | Reading, Speaking | Reading, Speaking |',
         );
         const tmpPath = join(fixturesDir, 'tmp-scoring-principles.md');
         writeFixture('tmp-scoring-principles.md', mutated);
         resetValidation();
         validateScoringPrinciplesTable(fixturePath('tmp-scoring-principles.md'));
-        assert.ok(getAllErrors().some(e => e.includes('skills mismatch')));
+        assert.ok(getAllErrors().some((e) => e.includes('skills mismatch')));
       } finally {
-        try { rmSync(fixturePath('tmp-scoring-principles.md')); } catch {}
+        try {
+          rmSync(fixturePath('tmp-scoring-principles.md'));
+        } catch {}
       }
     });
 
@@ -1031,34 +1101,50 @@ Totals are wrong on purpose.`;
       try {
         const mutated = original.replace(
           '| Reading and Writing: Fill in the Blanks | Reading | Reading |',
-          '| Reading and Writing: Fill in the Blanks | Reading, Writing | Reading |'
+          '| Reading and Writing: Fill in the Blanks | Reading, Writing | Reading |',
         );
         const tmpPath = join(fixturesDir, 'tmp-scoring-principles2.md');
         writeFixture('tmp-scoring-principles2.md', mutated);
         resetValidation();
         validateScoringPrinciplesTable(fixturePath('tmp-scoring-principles2.md'));
-        assert.ok(getAllErrors().some(e => e.includes('skills mismatch')));
+        assert.ok(getAllErrors().some((e) => e.includes('skills mismatch')));
       } finally {
-        try { rmSync(fixturePath('tmp-scoring-principles2.md')); } catch {}
+        try {
+          rmSync(fixturePath('tmp-scoring-principles2.md'));
+        } catch {}
       }
     });
 
     it('Generated full blueprint contains every required field', () => {
       // Generate blueprint text and inspect each section for required labels
       const generated = execSync('node scripts/generate-pte-blueprints.mjs --validate', {
-        cwd: root, encoding: 'utf-8', stdio: 'pipe'
+        cwd: root,
+        encoding: 'utf-8',
+        stdio: 'pipe',
       });
       assert.equal(generated.trim(), '');
       // Verify every task section has required fields by loading the generated file
       const bp = readFileSync(join(root, 'docs/content/pte-task-blueprints.md'), 'utf-8');
       const requiredLabels = [
-        'Task purpose', 'Student interface', 'Input media', 'Answer format',
-        'Preparation behaviour', 'Response behaviour',
-        'Official scoring type', 'Official rubric traits', 'Official human-reviewed traits',
-        'Platform estimated-scoring rule', 'Platform estimated-scoring evidence',
-        'Feedback format', 'Content metadata', 'Response validation',
-        'Failure and recovery behaviour', 'Prompt transcript requirement',
-        'Post-attempt transcript availability', 'Official reference IDs', 'Last verified date'
+        'Task purpose',
+        'Student interface',
+        'Input media',
+        'Answer format',
+        'Preparation behaviour',
+        'Response behaviour',
+        'Official scoring type',
+        'Official rubric traits',
+        'Official human-reviewed traits',
+        'Platform estimated-scoring rule',
+        'Platform estimated-scoring evidence',
+        'Feedback format',
+        'Content metadata',
+        'Response validation',
+        'Failure and recovery behaviour',
+        'Prompt transcript requirement',
+        'Post-attempt transcript availability',
+        'Official reference IDs',
+        'Last verified date',
       ];
       // Count sections - each starts with ###
       const sections = bp.match(/^### /gm);
@@ -1085,18 +1171,23 @@ Totals are wrong on purpose.`;
       const tmpPath = join(fixturesDir, 'tmp-write-accept.md');
       writeFixture('tmp-write-accept.md', content);
       validateAssessmentAcceptanceConsistency(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('forbidden pattern')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('forbidden pattern')));
     });
 
     it('Empty timed response contract passes', () => {
       resetValidation();
-      const content = '## Writing\nIn timed practice, an empty response is a valid stored state. The no-response score rule applies. The prompt transcript inherent in the prompt is visible. Listening Fill in the Blanks displays the incomplete transcript with blanks. Highlight Incorrect Words displays the task transcript.\n';
+      const content =
+        '## Writing\nIn timed practice, an empty response is a valid stored state. The no-response score rule applies. The prompt transcript inherent in the prompt is visible. Listening Fill in the Blanks displays the incomplete transcript with blanks. Highlight Incorrect Words displays the task transcript.\n';
       const tmpPath = join(fixturesDir, 'tmp-empty-ok.md');
       writeFixture('tmp-empty-ok.md', content);
       validateAssessmentAcceptanceConsistency(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.equal(getAllErrors().filter(e => e.includes('required concept')).length, 0);
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.equal(getAllErrors().filter((e) => e.includes('required concept')).length, 0);
     });
 
     it('Global no-transcript rule fails', () => {
@@ -1105,24 +1196,32 @@ Totals are wrong on purpose.`;
       const tmpPath = join(fixturesDir, 'tmp-notrans.md');
       writeFixture('tmp-notrans.md', content);
       validateAssessmentAcceptanceConsistency(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('forbidden pattern')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('forbidden pattern')));
     });
 
     it('Prompt-transcript exception contract passes', () => {
       resetValidation();
-      const content = '## Listening\nIn mock mode, prompt transcript is inherent. Listening Fill in the Blanks displays the incomplete transcript with blanks. Highlight Incorrect Words displays the task transcript.\n';
+      const content =
+        '## Listening\nIn mock mode, prompt transcript is inherent. Listening Fill in the Blanks displays the incomplete transcript with blanks. Highlight Incorrect Words displays the task transcript.\n';
       const tmpPath = join(fixturesDir, 'tmp-trans-ex.md');
       writeFixture('tmp-trans-ex.md', content);
       validateAssessmentAcceptanceConsistency(tmpPath);
-      try { rmSync(tmpPath); } catch {}
+      try {
+        rmSync(tmpPath);
+      } catch {}
       // Should not error on "prompt transcript" or the task names
-      assert.equal(getAllErrors().filter(e => e.includes('prompt transcript') || e.includes('Listening Fill')).length, 0);
+      assert.equal(
+        getAllErrors().filter((e) => e.includes('prompt transcript') || e.includes('Listening Fill')).length,
+        0,
+      );
     });
 
     it('Read Aloud human-review is AI-scored only, not objective', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      const t = tasks.find((x) => x.canonicalId === 'read_aloud');
       // Check that read_aloud has rubric-estimate rule and empty human-review traits
       assert.equal(t.platformEstimatedScoringRule.type, 'rubric-estimate');
       assert.equal(t.officialHumanReviewTraits.length, 0);
@@ -1130,41 +1229,45 @@ Totals are wrong on purpose.`;
 
     it('Repeat Sentence human-review is AI-scored only, not objective', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'repeat_sentence');
+      const t = tasks.find((x) => x.canonicalId === 'repeat_sentence');
       assert.equal(t.platformEstimatedScoringRule.type, 'rubric-estimate');
       assert.equal(t.officialHumanReviewTraits.length, 0);
     });
 
     it('Reading objective task is rendered as objective scoring', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'reading_single_answer');
+      const t = tasks.find((x) => x.canonicalId === 'reading_single_answer');
       assert.equal(t.platformEstimatedScoringRule.type, 'correct-incorrect');
       assert.equal(t.officialHumanReviewTraits.length, 0);
     });
 
     it('Read Aloud student interface containing recording button fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'read_aloud');
-      assert.ok(!t.studentInterface.includes('recording button'),
-        'read_aloud studentInterface must not contain "recording button"');
+      const t = tasks.find((x) => x.canonicalId === 'read_aloud');
+      assert.ok(
+        !t.studentInterface.includes('recording button'),
+        'read_aloud studentInterface must not contain "recording button"',
+      );
     });
 
     it('Describe Image student interface containing recording button fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'describe_image');
-      assert.ok(!t.studentInterface.includes('recording button'),
-        'describe_image studentInterface must not contain "recording button"');
+      const t = tasks.find((x) => x.canonicalId === 'describe_image');
+      assert.ok(
+        !t.studentInterface.includes('recording button'),
+        'describe_image studentInterface must not contain "recording button"',
+      );
     });
 
     it('Retell Lecture promptType audio fails', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'retell_lecture');
+      const t = tasks.find((x) => x.canonicalId === 'retell_lecture');
       assert.equal(t.promptType, 'audio-or-video', 'retell_lecture promptType must be audio-or-video');
     });
 
     it('Retell Lecture promptType audio-or-video passes', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'retell_lecture');
+      const t = tasks.find((x) => x.canonicalId === 'retell_lecture');
       assert.equal(t.promptType, 'audio-or-video');
       assert.equal(t.supportsAudiovisualInput, true);
       assert.equal(t.optionalRelatedImage, true);
@@ -1173,32 +1276,32 @@ Totals are wrong on purpose.`;
     it('Stale officialScoringTraits source validation absent', () => {
       resetValidation();
       const manifest = JSON.parse(readFileSync(join(root, 'docs/content/pte-task-manifest.json'), 'utf-8'));
-      const t = manifest.find(x => x.canonicalId === 'read_aloud');
+      const t = manifest.find((x) => x.canonicalId === 'read_aloud');
       t.referenceIds = ['source-1', 'source-2'];
       validateTaskReferences(manifest);
       // Should fail due to source-6 missing for scoring contributions
-      assert.ok(getAllErrors().some(e => e.includes('source-6')));
+      assert.ok(getAllErrors().some((e) => e.includes('source-6')));
     });
 
     it('Missing source-6 for human-reviewed traits fails', () => {
       resetValidation();
       const manifest = JSON.parse(readFileSync(join(root, 'docs/content/pte-task-manifest.json'), 'utf-8'));
-      const t = manifest.find(x => x.canonicalId === 'describe_image');
+      const t = manifest.find((x) => x.canonicalId === 'describe_image');
       t.referenceIds = ['source-1', 'source-2', 'source-5'];
       // describe_image has officialHumanReviewTraits ['Content']
       validateTaskReferences(manifest);
-      assert.ok(getAllErrors().some(e => e.includes('source-6') && e.includes('human-review')));
+      assert.ok(getAllErrors().some((e) => e.includes('source-6') && e.includes('human-review')));
     });
 
     it('SST post-audio timer wording fails for the correct reason', async () => {
       const tasks = loadCanonical();
-      const t = tasks.find(x => x.canonicalId === 'summarize_spoken_text');
+      const t = tasks.find((x) => x.canonicalId === 'summarize_spoken_text');
       t.responseTimingDescription = 'Ten-minute response timer begins after the audio ends';
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('summarize_spoken_text')));
-        assert.ok(getAllErrors().some(e => e.includes('timer')));
+        assert.ok(getAllErrors().some((e) => e.includes('summarize_spoken_text')));
+        assert.ok(getAllErrors().some((e) => e.includes('timer')));
       });
     });
 
@@ -1208,15 +1311,17 @@ Totals are wrong on purpose.`;
       try {
         const mutated = original.replace(
           '| Read Aloud | Speaking | Reading, Speaking |',
-          '| Read Aloud | Reading, Speaking | Reading |'
+          '| Read Aloud | Reading, Speaking | Reading |',
         );
         const tmpPath = join(fixturesDir, 'tmp-mutate-ra.md');
         writeFixture('tmp-mutate-ra.md', mutated);
         resetValidation();
         validateScoringPrinciplesTable(fixturePath('tmp-mutate-ra.md'));
-        assert.ok(getAllErrors().some(e => e.includes('skills mismatch')));
+        assert.ok(getAllErrors().some((e) => e.includes('skills mismatch')));
       } finally {
-        try { rmSync(fixturePath('tmp-mutate-ra.md')); } catch {}
+        try {
+          rmSync(fixturePath('tmp-mutate-ra.md'));
+        } catch {}
       }
     });
 
@@ -1226,32 +1331,48 @@ Totals are wrong on purpose.`;
       try {
         const mutated = original.replace(
           '| Reading and Writing: Fill in the Blanks | Reading | Reading |',
-          '| Reading and Writing: Fill in the Blanks | Writing | Reading |'
+          '| Reading and Writing: Fill in the Blanks | Writing | Reading |',
         );
         const tmpPath = join(fixturesDir, 'tmp-mutate-rd.md');
         writeFixture('tmp-mutate-rd.md', mutated);
         resetValidation();
         validateScoringPrinciplesTable(fixturePath('tmp-mutate-rd.md'));
-        assert.ok(getAllErrors().some(e => e.includes('skills mismatch')));
+        assert.ok(getAllErrors().some((e) => e.includes('skills mismatch')));
       } finally {
-        try { rmSync(fixturePath('tmp-mutate-rd.md')); } catch {}
+        try {
+          rmSync(fixturePath('tmp-mutate-rd.md'));
+        } catch {}
       }
     });
 
     it('Generated blueprint contains every required field for all 22 tasks', () => {
       resetValidation();
       execSync('node scripts/generate-pte-blueprints.mjs --validate', {
-        cwd: root, encoding: 'utf-8', stdio: 'pipe'
+        cwd: root,
+        encoding: 'utf-8',
+        stdio: 'pipe',
       });
       const bp = readFileSync(join(root, 'docs/content/pte-task-blueprints.md'), 'utf-8');
       const requiredLabels = [
-        'Task purpose', 'Student interface', 'Input media', 'Answer format',
-        'Preparation behaviour', 'Response behaviour',
-        'Official scoring type', 'Official rubric traits', 'Official human-reviewed traits',
-        'Platform estimated-scoring rule', 'Platform estimated-scoring evidence',
-        'Feedback format', 'Content metadata', 'Response validation',
-        'Failure and recovery behaviour', 'Prompt transcript requirement',
-        'Post-attempt transcript availability', 'Official reference IDs', 'Last verified date'
+        'Task purpose',
+        'Student interface',
+        'Input media',
+        'Answer format',
+        'Preparation behaviour',
+        'Response behaviour',
+        'Official scoring type',
+        'Official rubric traits',
+        'Official human-reviewed traits',
+        'Platform estimated-scoring rule',
+        'Platform estimated-scoring evidence',
+        'Feedback format',
+        'Content metadata',
+        'Response validation',
+        'Failure and recovery behaviour',
+        'Prompt transcript requirement',
+        'Post-attempt transcript availability',
+        'Official reference IDs',
+        'Last verified date',
       ];
       const sections = bp.match(/^### /gm);
       assert.equal(sections ? sections.length : 0, 22, 'Should have 22 task sections');
@@ -1275,8 +1396,10 @@ Totals are wrong on purpose.`;
       writeFixture('tmp-asq-pron.md', badContent);
       resetValidation();
       validateScoringNarrativeConsistency(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('pronunciation')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('pronunciation')));
     });
 
     it('ASQ oral-fluency scoring claim fails', () => {
@@ -1285,15 +1408,20 @@ Totals are wrong on purpose.`;
       writeFixture('tmp-asq-flu.md', badContent);
       resetValidation();
       validateScoringNarrativeConsistency(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('oral fluency')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('oral fluency')));
     });
 
     it('Correct Vocabulary-only ASQ contract passes', () => {
       resetValidation();
       validateScoringNarrativeConsistency('docs/scoring/scoring-principles.md');
-      assert.equal(getAllErrors().filter(e => e.includes('Answer Short Question')).length, 0,
-        'ASQ scoring narrative should be correct in production file');
+      assert.equal(
+        getAllErrors().filter((e) => e.includes('Answer Short Question')).length,
+        0,
+        'ASQ scoring narrative should be correct in production file',
+      );
     });
 
     it('Content Reviewer edit access fails', () => {
@@ -1303,15 +1431,20 @@ Totals are wrong on purpose.`;
       writeFixture('tmp-bad-roles.md', badRoles);
       // Provide a valid route map and the bad roles file
       validateRoleRouteConsistency('docs/product/route-map.md', tmpRoles);
-      try { rmSync(tmpRoles); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('Content Reviewer Edit')));
+      try {
+        rmSync(tmpRoles);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('Content Reviewer Edit')));
     });
 
     it('Read-only Content Reviewer access passes', () => {
       resetValidation();
       validateRoleRouteConsistency('docs/product/route-map.md');
-      assert.equal(getAllErrors().filter(e => e.includes('Content Reviewer edit')).length, 0,
-        'Content Reviewer should not have edit permission');
+      assert.equal(
+        getAllErrors().filter((e) => e.includes('Content Reviewer edit')).length,
+        0,
+        'Content Reviewer should not have edit permission',
+      );
     });
 
     it('Reviewer-triggered automatic publication fails', () => {
@@ -1320,8 +1453,10 @@ Totals are wrong on purpose.`;
       writeFixture('tmp-bad-pub.md', badWorkflow);
       resetValidation();
       validateContentPublicationAuthority(tmpPath, null, null);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('triggered by approval')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('triggered by approval')));
     });
 
     it('Administrator-authorised publication passes', () => {
@@ -1329,10 +1464,13 @@ Totals are wrong on purpose.`;
       validateContentPublicationAuthority(
         'docs/content/content-workflow.md',
         'docs/product/route-map.md',
-        'docs/product/acceptance-criteria.md'
+        'docs/product/acceptance-criteria.md',
       );
-      assert.equal(getAllErrors().filter(e => e.includes('Administrator Publication Authorisation')).length, 0,
-        'Administrator authorisation should be present');
+      assert.equal(
+        getAllErrors().filter((e) => e.includes('Administrator Publication Authorisation')).length,
+        0,
+        'Administrator authorisation should be present',
+      );
     });
 
     it('Missing /content/reviews/[reviewId] fails', () => {
@@ -1342,26 +1480,33 @@ Totals are wrong on purpose.`;
       const tmpPath = join(fixturesDir, 'tmp-no-review-route.md');
       writeFixture('tmp-no-review-route.md', withoutReview);
       validateRoleRouteConsistency(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('/content/reviews/[reviewId]')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('/content/reviews/[reviewId]')));
     });
 
     it('Missing authenticated diagnostic entry route fails', () => {
       resetValidation();
       const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
-      const withoutDiag = content.split('\n').filter(l => !l.includes('/app/diagnostic')).join('\n');
+      const withoutDiag = content
+        .split('\n')
+        .filter((l) => !l.includes('/app/diagnostic'))
+        .join('\n');
       const tmpPath = join(fixturesDir, 'tmp-no-diag.md');
       writeFixture('tmp-no-diag.md', withoutDiag);
       validateStudentAssessmentRoutes(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('/app/diagnostic')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('/app/diagnostic')));
     });
 
     it('Diagnostic results restricted to Paid Student fail', () => {
       resetValidation();
       const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
       const tmpPath = join(fixturesDir, 'tmp-bad-diag.md');
-      const lines = content.split('\n').map(l => {
+      const lines = content.split('\n').map((l) => {
         if (l.includes('/app/diagnostic/results/') && l.includes('Free student')) {
           return l.replace('Free student, ', '');
         }
@@ -1369,19 +1514,26 @@ Totals are wrong on purpose.`;
       });
       writeFixture('tmp-bad-diag.md', lines.join('\n'));
       validateStudentAssessmentRoutes(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('/app/diagnostic/results/')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('/app/diagnostic/results/')));
     });
 
     it('Missing section-test route fails', () => {
       resetValidation();
       const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
-      const withoutSec = content.split('\n').filter(l => !l.includes('/app/section-tests')).join('\n');
+      const withoutSec = content
+        .split('\n')
+        .filter((l) => !l.includes('/app/section-tests'))
+        .join('\n');
       const tmpPath = join(fixturesDir, 'tmp-no-sectest.md');
       writeFixture('tmp-no-sectest.md', withoutSec);
       validateStudentAssessmentRoutes(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('/app/section-tests')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('/app/section-tests')));
     });
 
     it('The corrected full repository passes', () => {
@@ -1398,90 +1550,111 @@ Totals are wrong on purpose.`;
       writeFixture('tmp-no-matrix.md', noMatrix);
       resetValidation();
       validateRoleRouteConsistency('docs/product/route-map.md', tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('missing Content Reviewer row')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('missing Content Reviewer row')));
     });
 
     it('Missing Content Reviewer matrix row fails', () => {
-      const noReviewer = '| Role | View | Create | Edit | Publish | Retire |\n|------|------|--------|------|---------|--------|\n| Administrator | All | Yes | Yes | Yes | Yes |\n';
+      const noReviewer =
+        '| Role | View | Create | Edit | Publish | Retire |\n|------|------|--------|------|---------|--------|\n| Administrator | All | Yes | Yes | Yes | Yes |\n';
       const tmpPath = join(fixturesDir, 'tmp-no-reviewer.md');
       writeFixture('tmp-no-reviewer.md', noReviewer);
       resetValidation();
       validateRoleRouteConsistency('docs/product/route-map.md', tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('missing Content Reviewer row')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('missing Content Reviewer row')));
     });
 
     it('Content Reviewer Publish = Yes fails', () => {
-      const badPub = '| Role | View | Create | Edit | Review | Publish | Retire |\n|------|------|--------|------|--------|---------|--------|\n| Content Reviewer | All drafts | No | No | Assigned | Yes | No |\n';
+      const badPub =
+        '| Role | View | Create | Edit | Review | Publish | Retire |\n|------|------|--------|------|--------|---------|--------|\n| Content Reviewer | All drafts | No | No | Assigned | Yes | No |\n';
       const tmpPath = join(fixturesDir, 'tmp-bad-pub-role.md');
       writeFixture('tmp-bad-pub-role.md', badPub);
       resetValidation();
       validateRoleRouteConsistency('docs/product/route-map.md', tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('Publish') && e.includes('No')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('Publish') && e.includes('No')));
     });
 
     it('Content Reviewer Retire = Yes fails', () => {
-      const badRet = '| Role | View | Create | Edit | Review | Publish | Retire |\n|------|------|--------|------|--------|---------|--------|\n| Content Reviewer | All drafts | No | No | Assigned | No | Yes |\n';
+      const badRet =
+        '| Role | View | Create | Edit | Review | Publish | Retire |\n|------|------|--------|------|--------|---------|--------|\n| Content Reviewer | All drafts | No | No | Assigned | No | Yes |\n';
       const tmpPath = join(fixturesDir, 'tmp-bad-ret-role.md');
       writeFixture('tmp-bad-ret-role.md', badRet);
       resetValidation();
       validateRoleRouteConsistency('docs/product/route-map.md', tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('Retire') && e.includes('No')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('Retire') && e.includes('No')));
     });
 
     it('Missing exact /app/diagnostic while child routes remain fails', () => {
       const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
       const lines = content.split('\n');
-      const modified = lines.filter(l => !l.includes('`/app/diagnostic` ')).join('\n');
+      const modified = lines.filter((l) => !l.includes('`/app/diagnostic` ')).join('\n');
       const tmpPath = join(fixturesDir, 'tmp-no-exact-diag.md');
       writeFixture('tmp-no-exact-diag.md', modified);
       resetValidation();
       validateStudentAssessmentRoutes(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('missing exact diagnostic route /app/diagnostic')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('missing exact diagnostic route /app/diagnostic')));
     });
 
     it('Missing exact /app/section-tests while child routes remain fails', () => {
       const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
       const lines = content.split('\n');
-      const modified = lines.filter(l => !l.includes('`/app/section-tests` ')).join('\n');
+      const modified = lines.filter((l) => !l.includes('`/app/section-tests` ')).join('\n');
       const tmpPath = join(fixturesDir, 'tmp-no-exact-sectest.md');
       writeFixture('tmp-no-exact-sectest.md', modified);
       resetValidation();
       validateStudentAssessmentRoutes(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('missing exact section-test route /app/section-tests')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('missing exact section-test route /app/section-tests')));
     });
 
     it('Missing exact /content/reviews/[reviewId] while /content/reviews remains fails', () => {
       const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
       const lines = content.split('\n');
-      const modified = lines.filter(l => !l.includes('`/content/reviews/[reviewId]` ')).join('\n');
+      const modified = lines.filter((l) => !l.includes('`/content/reviews/[reviewId]` ')).join('\n');
       const tmpPath = join(fixturesDir, 'tmp-no-exact-rev.md');
       writeFixture('tmp-no-exact-rev.md', modified);
       resetValidation();
       validateRoleRouteConsistency(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('/content/reviews/[reviewId]')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('/content/reviews/[reviewId]')));
     });
 
     it('Similar prefix does not satisfy exact route', () => {
       // Verify that /app/diagnostic-old does not satisfy /app/diagnostic
       const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
       const lines = content.split('\n');
-      const modified = lines.filter(l => {
-        if (l.includes('`/app/diagnostic` ') && !l.includes('/attempts/') && !l.includes('/results/')) return false;
-        return true;
-      }).join('\n');
+      const modified = lines
+        .filter((l) => {
+          if (l.includes('`/app/diagnostic` ') && !l.includes('/attempts/') && !l.includes('/results/')) return false;
+          return true;
+        })
+        .join('\n');
       const tmpPath = join(fixturesDir, 'tmp-prefix-diag.md');
       writeFixture('tmp-prefix-diag.md', modified);
       resetValidation();
       validateStudentAssessmentRoutes(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('missing exact diagnostic route /app/diagnostic')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('missing exact diagnostic route /app/diagnostic')));
     });
 
     it('Content Reviewer directly retiring content fails', () => {
@@ -1490,7 +1663,9 @@ Totals are wrong on purpose.`;
       writeFixture('tmp-direct-retire.md', badWorkflow);
       resetValidation();
       validateContentPublicationAuthority(tmpPath, null, null, null);
-      try { rmSync(tmpPath); } catch {}
+      try {
+        rmSync(tmpPath);
+      } catch {}
       assert.ok(getAllErrors().length > 0);
     });
 
@@ -1500,10 +1675,13 @@ Totals are wrong on purpose.`;
         'docs/content/content-workflow.md',
         'docs/product/route-map.md',
         'docs/product/acceptance-criteria.md',
-        'docs/product/user-roles.md'
+        'docs/product/user-roles.md',
       );
-      assert.equal(getAllErrors().filter(e => e.includes('Administrator Retirement Authorisation')).length, 0,
-        'Administrator Retirement Authorisation should exist');
+      assert.equal(
+        getAllErrors().filter((e) => e.includes('Administrator Retirement Authorisation')).length,
+        0,
+        'Administrator Retirement Authorisation should exist',
+      );
     });
 
     it('Automatic publication using synonym fails', () => {
@@ -1512,7 +1690,9 @@ Totals are wrong on purpose.`;
       writeFixture('tmp-synonym-pub.md', badPub);
       resetValidation();
       validateContentPublicationAuthority(tmpPath, null, null, null);
-      try { rmSync(tmpPath); } catch {}
+      try {
+        rmSync(tmpPath);
+      } catch {}
       assert.ok(getAllErrors().length > 0);
     });
 
@@ -1522,8 +1702,10 @@ Totals are wrong on purpose.`;
       writeFixture('tmp-asq-contra.md', contradictory);
       resetValidation();
       validateScoringNarrativeConsistency(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('Answer Short Question')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('Answer Short Question')));
     });
 
     it('ASQ scoring claim without bold Markdown fails', () => {
@@ -1532,15 +1714,20 @@ Totals are wrong on purpose.`;
       writeFixture('tmp-asq-nobold.md', noBold);
       resetValidation();
       validateScoringNarrativeConsistency(tmpPath);
-      try { rmSync(tmpPath); } catch {}
-      assert.ok(getAllErrors().some(e => e.includes('oral fluency') || e.includes('pronunciation')));
+      try {
+        rmSync(tmpPath);
+      } catch {}
+      assert.ok(getAllErrors().some((e) => e.includes('oral fluency') || e.includes('pronunciation')));
     });
 
     it('Correct ASQ non-scored coaching narrative passes', () => {
       resetValidation();
       validateScoringNarrativeConsistency('docs/scoring/scoring-principles.md');
-      assert.equal(getAllErrors().filter(e => e.includes('Answer Short Question')).length, 0,
-        'ASQ narrative should be correct in production file');
+      assert.equal(
+        getAllErrors().filter((e) => e.includes('Answer Short Question')).length,
+        0,
+        'ASQ narrative should be correct in production file',
+      );
     });
 
     it('Correct full repository passes', () => {
@@ -1552,14 +1739,20 @@ Totals are wrong on purpose.`;
     it('Route map has all required exact routes', () => {
       resetValidation();
       const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
-      const routes = content.split('\n').filter(l => l.startsWith('|') && l.includes('`/'));
-      const routePaths = routes.map(l => {
-        const m = l.match(/`([^`]+)`/);
-        return m ? m[1] : '';
-      }).filter(Boolean);
+      const routes = content.split('\n').filter((l) => l.startsWith('|') && l.includes('`/'));
+      const routePaths = routes
+        .map((l) => {
+          const m = l.match(/`([^`]+)`/);
+          return m ? m[1] : '';
+        })
+        .filter(Boolean);
       const required = [
-        '/app/diagnostic', '/app/diagnostic/attempts/[attemptId]', '/app/diagnostic/results/[reportId]',
-        '/app/section-tests', '/app/section-tests/[testId]', '/app/section-attempts/[attemptId]',
+        '/app/diagnostic',
+        '/app/diagnostic/attempts/[attemptId]',
+        '/app/diagnostic/results/[reportId]',
+        '/app/section-tests',
+        '/app/section-tests/[testId]',
+        '/app/section-attempts/[attemptId]',
         '/content/reviews/[reviewId]',
       ];
       for (const r of required) {
