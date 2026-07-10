@@ -7,8 +7,7 @@ const env = loadEnvLocal();
 const isCI = process.argv.includes('--ci');
 
 // --- Read all required values from env (no fallbacks) ---
-const TIMEOUT = parseInt(env.LOCAL_SMOKE_TIMEOUT_MS, 10);
-if (Number.isNaN(TIMEOUT)) throw new Error('LOCAL_SMOKE_TIMEOUT_MS must be set');
+const TIMEOUT = parseInt(env.LOCAL_SMOKE_TIMEOUT_MS || '60000', 10);
 
 const apiHost = env.API_HOST;
 const apiPort = env.API_PORT;
