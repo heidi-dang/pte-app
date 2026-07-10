@@ -11,7 +11,7 @@
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
     "test:unit": "tsx --test src/**/*.test.ts",
-    "test:integration": "echo \"worker: no integration tests yet\""
+    "test:integration": "tsx --test src/**/*.test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -10,7 +10,7 @@
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
     "test:unit": "tsx --test src/**/*.test.ts",
-    "test:integration": "echo \"api: no integration tests yet\""
+    "test:integration": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.0.0",
