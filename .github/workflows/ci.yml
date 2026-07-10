@@ -16,6 +16,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - run: cp .env.example .env.local
       - run: npm run generate:pte-blueprints
       - run: node scripts/generate-pte-blueprints.mjs --validate
       - run: npm run ci
