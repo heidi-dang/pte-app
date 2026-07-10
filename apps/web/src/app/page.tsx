@@ -2,12 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-interface HealthResponse {
-  service: string;
-  status: string;
-  version: string;
-}
-
 type ServiceStatus = 'loading' | 'ok' | 'fail';
 
 export default function Home() {

@@ -6,10 +6,10 @@
     "dev": "next dev --port ${WEB_PORT:-3000}",
     "build": "next build",
     "start": "next start --port ${WEB_PORT:-3000}",
-    "lint": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "test:unit": "echo 'unit: ok'",
-    "test:integration": "echo 'integration: ok'"
+    "test:unit": "echo \"web: no unit tests yet\"",
+    "test:integration": "echo \"web: no integration tests yet\""
   },
   "dependencies": {
     "next": "^15.3.0",

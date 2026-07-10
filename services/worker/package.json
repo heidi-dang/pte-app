@@ -8,10 +8,10 @@
     "build": "tsc",
     "start": "node dist/main.js",
     "healthcheck": "node dist/check.js",
-    "lint": "tsc --noEmit",
+    "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
     "test:unit": "tsx --test src/**/*.test.ts",
-    "test:integration": "echo 'integration: ok'"
+    "test:integration": "echo \"worker: no integration tests yet\""
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -1,23 +1,25 @@
 #!/usr/bin/env node
 import { execSync, spawn } from 'child_process';
-import { existsSync } from 'fs';
+import { loadEnvLocal, getRequired } from './lib/local-env.mjs';
 
-if (!existsSync('.env.local')) {
-  console.error('FATAL: .env.local not found. Run: npm run setup:local');
-  process.exit(1);
-}
+const env = loadEnvLocal();
+
+const apiHost = getRequired(env, 'API_HOST');
+const apiPort = getRequired(env, 'API_PORT');
+const scoringHost = getRequired(env, 'SCORING_HOST');
+const scoringPort = getRequired(env, 'SCORING_PORT');
+const webPort = getRequired(env, 'WEB_PORT');
+const webOrigin = env.WEB_ORIGIN || `http://localhost:${webPort}`;
+const postgresUser = getRequired(env, 'POSTGRES_USER');
+const postgresDb = getRequired(env, 'POSTGRES_DATABASE');
+const logLevel = env.LOG_LEVEL || 'info';
 
 console.log('[1/5] Checking environment...');
-try {
-  execSync('node scripts/doctor.mjs', { stdio: 'pipe' });
-} catch {
-  console.error('Environment checks failed. Run: npm run doctor');
-}
 console.log('OK');
 
 console.log('[2/5] Starting infrastructure...');
 try {
-  execSync('docker compose up -d', { stdio: 'inherit' });
+  execSync('docker compose --env-file .env.local up -d', { stdio: 'inherit' });
 } catch (e) {
   console.error('FAILED: Docker Compose could not start. Check Docker is running.');
   process.exit(1);
@@ -26,20 +28,19 @@ console.log('OK');
 
 console.log('[3/5] Waiting for containers...');
 try {
-  execSync('docker compose exec postgres pg_isready -U pte_app -d pte_app', { stdio: 'pipe', timeout: 30000 });
+  execSync(`docker compose exec postgres pg_isready -U ${postgresUser} -d ${postgresDb}`, {
+    stdio: 'pipe',
+    timeout: 30000,
+  });
 } catch {
   console.error('FAILED: PostgreSQL did not become healthy.');
   process.exit(1);
 }
 console.log('OK');
 
-const apiPort = process.env.API_PORT || '4000';
-const scoringPort = process.env.SCORING_PORT || '5000';
-const webPort = process.env.WEB_PORT || '3000';
-
 console.log(`[4/5] Starting services...`);
-console.log(`  API:      http://localhost:${apiPort}`);
-console.log(`  Scoring:  http://localhost:${scoringPort}`);
+console.log(`  API:      http://${apiHost}:${apiPort}`);
+console.log(`  Scoring:  http://${scoringHost}:${scoringPort}`);
 console.log(`  Worker:   npm run dev (in services/worker)`);
 console.log(`  Web:      http://localhost:${webPort}`);
 
@@ -55,7 +56,16 @@ for (const svc of services) {
   const child = spawn(svc.cmd, svc.args, {
     cwd: svc.cwd,
     stdio: 'pipe',
-    env: { ...process.env, WEB_PORT: webPort, API_PORT: apiPort, SCORING_PORT: scoringPort },
+    env: {
+      ...process.env,
+      ...env,
+      API_HOST: apiHost,
+      API_PORT: apiPort,
+      SCORING_HOST: scoringHost,
+      SCORING_PORT: scoringPort,
+      WEB_PORT: webPort,
+      WEB_ORIGIN: webOrigin,
+    },
   });
   child.stdout.on('data', (d) => process.stdout.write(`[${svc.name}] ${d}`));
   child.stderr.on('data', (d) => process.stderr.write(`[${svc.name}] ${d}`));
@@ -69,8 +79,8 @@ for (const svc of services) {
 
 console.log('[5/5] All services started. Press Ctrl+C to stop.');
 console.log(`\n  Web:      http://localhost:${webPort}`);
-console.log(`  API:      http://localhost:${apiPort}/health/live`);
-console.log(`  Scoring:  http://localhost:${scoringPort}/health/live`);
+console.log(`  API:      http://${apiHost}:${apiPort}/health/live`);
+console.log(`  Scoring:  http://${scoringHost}:${scoringPort}/health/live`);
 
 process.on('SIGINT', () => {
   console.log('\nShutting down...');
