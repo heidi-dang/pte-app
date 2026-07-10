@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, mkdirSync, existsSync, rmSync, readFileSync } from 'fs';
+import { execSync } from 'child_process';
 import { join, resolve } from 'path';
 
 const fixturesDir = resolve(import.meta.dirname, 'fixtures');
@@ -569,62 +570,27 @@ describe('Documentation Validator', () => {
     });
   });
 
-  describe('validateBlueprintAgainstManifest — exact field equality', () => {
-    it('K10: Manifest/blueprint skills mismatch fails', () => {
+  describe('validateBlueprintAgainstManifest — generator synchronization', () => {
+    it('K10: Generated blueprint equals checked-in blueprint', () => {
       resetValidation();
+      validateBlueprintAgainstManifest(
+        join(root, 'docs/content/pte-task-blueprints.md'),
+        join(root, 'docs/content/pte-task-manifest.json')
+      );
+      assert.equal(getAllErrors().length, 0, `Errors: ${getAllErrors().join(', ')}`);
+    });
+
+    it('K11: Edited blueprint fails synchronization', () => {
       const bpPath = join(root, 'docs/content/pte-task-blueprints.md');
-      const manifestPath = join(root, 'docs/content/pte-task-manifest.json');
-      validateBlueprintAgainstManifest(bpPath, manifestPath);
-      // Should pass normally
-      const baselineErrors = getAllErrors().length;
-      // No way to inject a temporary manifest change in this read-only function,
-      // but the test verifies the field-parsing doesn't crash
-      assert.equal(typeof baselineErrors, 'number');
-    });
-
-    it('K11: Manifest/blueprint contribution mismatch fails', () => {
-      // Same baseline check - the function parses blueprint fields
-      resetValidation();
-      const bpPath = join(root, 'docs/content/pte-task-blueprints.md');
-      const manifestPath = join(root, 'docs/content/pte-task-manifest.json');
-      validateBlueprintAgainstManifest(bpPath, manifestPath);
-      assert.equal(typeof getAllErrors().length, 'number');
-    });
-
-    it('K12: Manifest/blueprint prompt-length mismatch fails', () => {
+      const original = readFileSync(bpPath, 'utf-8');
+      writeFileSync(bpPath, original.replace('Read Aloud', 'Read Aloud (modified)'), 'utf-8');
       resetValidation();
       validateBlueprintAgainstManifest(
-        join(root, 'docs/content/pte-task-blueprints.md'),
+        bpPath,
         join(root, 'docs/content/pte-task-manifest.json')
       );
-      assert.equal(typeof getAllErrors().length, 'number');
-    });
-
-    it('K13: Manifest/blueprint timing mismatch fails', () => {
-      resetValidation();
-      validateBlueprintAgainstManifest(
-        join(root, 'docs/content/pte-task-blueprints.md'),
-        join(root, 'docs/content/pte-task-manifest.json')
-      );
-      assert.equal(typeof getAllErrors().length, 'number');
-    });
-
-    it('K14: Manifest/blueprint scoring-trait mismatch fails', () => {
-      resetValidation();
-      validateBlueprintAgainstManifest(
-        join(root, 'docs/content/pte-task-blueprints.md'),
-        join(root, 'docs/content/pte-task-manifest.json')
-      );
-      assert.equal(typeof getAllErrors().length, 'number');
-    });
-
-    it('K15: Manifest/blueprint reference mismatch fails', () => {
-      resetValidation();
-      validateBlueprintAgainstManifest(
-        join(root, 'docs/content/pte-task-blueprints.md'),
-        join(root, 'docs/content/pte-task-manifest.json')
-      );
-      assert.equal(typeof getAllErrors().length, 'number');
+      writeFileSync(bpPath, original, 'utf-8');
+      assert.ok(getAllErrors().length > 0);
     });
   });
 
@@ -717,6 +683,191 @@ Totals are wrong on purpose.`;
       resetValidation();
       const result = validateAll();
       assert.equal(result.errors.length, 0);
+    });
+  });
+
+  // ---- I: Expanded tests ----
+
+  describe('Scoring model — officialRubricTraits validation', () => {
+    it('Objective task with skill names in officialRubricTraits fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'reading_writing_fill_blanks');
+      t.officialRubricTraits = ['Reading', 'Writing'];
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('officialRubricTraits') && e.includes('reading_writing_fill_blanks')));
+      });
+    });
+
+    it('Reading Dropdown with Writing trait fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'reading_writing_fill_blanks');
+      t.officialRubricTraits = ['Writing'];
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('officialRubricTraits')));
+      });
+    });
+
+    it('Listening Fill in the Blanks with Listening/Writing traits fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'listening_fill_blanks');
+      t.officialRubricTraits = ['Listening', 'Writing'];
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('officialRubricTraits')));
+      });
+    });
+
+    it('Required rubric-scored task with empty traits fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      t.officialRubricTraits = [];
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('read_aloud') && e.includes('empty')));
+      });
+    });
+
+    it('Negative-marking rule without minimum zero fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'reading_multiple_answers');
+      t.scoringRule.minimumItemScore = -1;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('minimumItemScore')));
+      });
+    });
+  });
+
+  describe('Preparation timing assertions', () => {
+    it('Listening Multiple Answers preparation not seven seconds fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'listening_multiple_answers');
+      t.preparationTiming = { mode: 'fixed', minimum: 5, maximum: 5, unit: 'seconds' };
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('preparationTiming')));
+      });
+    });
+
+    it('Listening Fill in the Blanks preparation not seven seconds fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'listening_fill_blanks');
+      t.preparationTiming = { mode: 'fixed', minimum: 0, maximum: 0, unit: 'seconds' };
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('preparationTiming')));
+      });
+    });
+
+    it('Listening Single Answer preparation not five seconds fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'listening_single_answer');
+      t.preparationTiming = { mode: 'fixed', minimum: 7, maximum: 7, unit: 'seconds' };
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('preparationTiming')));
+      });
+    });
+
+    it('Highlight Incorrect Words preparation not ten seconds fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'highlight_incorrect_words');
+      t.preparationTiming = { mode: 'fixed', minimum: 5, maximum: 5, unit: 'seconds' };
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('preparationTiming')));
+      });
+    });
+  });
+
+  describe('Transcript and mock mode assertions', () => {
+    it('Listening Fill in the Blanks mock mode hiding the transcript fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'listening_fill_blanks');
+      t.promptTranscriptRequired = false;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('promptTranscriptRequired')));
+      });
+    });
+  });
+
+  describe('Blueprint synchronization', () => {
+    it('Missing generated blueprint field fails', () => {
+      // Verify the generator produces all required fields
+      const result = execSync('node scripts/generate-pte-blueprints.mjs --validate', {
+        cwd: root, encoding: 'utf-8', stdio: 'pipe'
+      });
+      assert.equal(result.trim(), '');
+    });
+  });
+
+  describe('Calendar-date validation', () => {
+    it('Invalid date 2026-02-31 fails', () => {
+      resetValidation();
+      const path = join(fixturesDir, 'bad-date.json');
+      const refs = JSON.parse(readFileSync(join(root, 'docs/content/official-pte-reference-register.json'), 'utf-8'));
+      refs[0].lastVerifiedAt = '2026-02-31';
+      writeFixture('bad-date.json', JSON.stringify(refs));
+      validateReferenceRegisterJson(path);
+      try { rmSync(path); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('lastVerifiedAt')));
+    });
+
+    it('Invalid non-leap date 2026-02-29 fails', () => {
+      resetValidation();
+      const path = join(fixturesDir, 'bad-leap.json');
+      const refs = JSON.parse(readFileSync(join(root, 'docs/content/official-pte-reference-register.json'), 'utf-8'));
+      refs[0].lastVerifiedAt = '2026-02-29';
+      writeFixture('bad-leap.json', JSON.stringify(refs));
+      validateReferenceRegisterJson(path);
+      try { rmSync(path); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('lastVerifiedAt')));
+    });
+
+    it('Valid leap date 2028-02-29 passes', () => {
+      resetValidation();
+      const path = join(fixturesDir, 'good-leap.json');
+      const refs = JSON.parse(readFileSync(join(root, 'docs/content/official-pte-reference-register.json'), 'utf-8'));
+      refs[0].lastVerifiedAt = '2028-02-29';
+      writeFixture('good-leap.json', JSON.stringify(refs));
+      validateReferenceRegisterJson(path);
+      try { rmSync(path); } catch {}
+      assert.equal(getAllErrors().filter(e => e.includes('lastVerifiedAt')).length, 0);
+    });
+  });
+
+  describe('Deprecated field detection', () => {
+    it('Deprecated officialScoringTraits fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      t.officialScoringTraits = t.officialRubricTraits;
+      delete t.officialRubricTraits;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('deprecated') && e.includes('officialScoringTraits')));
+      });
+    });
+  });
+
+  describe('Full repository', () => {
+    it('Full repository contract passes', () => {
+      resetValidation();
+      const result = validateAll();
+      assert.equal(result.errors.length, 0, `Errors: ${result.errors.join(', ')}`);
     });
   });
 });

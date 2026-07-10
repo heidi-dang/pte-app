@@ -4,6 +4,7 @@
   "private": true,
   "description": "Production PTE Academic learning platform",
   "scripts": {
+    "generate:pte-blueprints": "node scripts/generate-pte-blueprints.mjs",
     "validate:docs": "node scripts/validate-docs.mjs",
     "test:docs": "node --test tests/docs/*.test.mjs",
     "test": "npm run test:docs && npm run validate:docs"

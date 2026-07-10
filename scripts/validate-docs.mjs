@@ -1,4 +1,5 @@
 import { readFileSync, existsSync } from 'fs';
+import { execSync } from 'child_process';
 import { join, resolve } from 'path';
 
 const root = resolve(import.meta.dirname, '..');
@@ -94,7 +95,14 @@ export function checkContent(relativePath, content, checks) {
 
 function isValidDate(v) {
   if (typeof v !== 'string') return false;
-  return /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(Date.parse(v));
+  const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return false;
+  const y = parseInt(m[1], 10);
+  const mo = parseInt(m[2], 10);
+  const d = parseInt(m[3], 10);
+  if (mo < 1 || mo > 12 || d < 1) return false;
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
 }
 
 function isNonEmptyString(v) {
@@ -309,240 +317,19 @@ export function validateReferenceRegisterJson(jsonPath) {
   }
 }
 
-// ---- H: Blueprint Equality Validation ----
-
-function extractTaskSection(content, canonicalId) {
-  const lines = content.split('\n');
-  let inTask = false;
-  let taskLines = [];
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes(canonicalId) && lines[i].includes('**Canonical ID**')) {
-      inTask = true;
-    }
-    if (inTask) {
-      taskLines.push(lines[i]);
-      if (i + 1 < lines.length && lines[i + 1].startsWith('### ') && taskLines.length > 5) {
-        break;
-      }
-    }
-  }
-  return taskLines.join('\n');
-}
-
-function parseBlueprintField(sectionText, fieldName) {
-  const lines = sectionText.split('\n');
-  for (const line of lines) {
-    const trimmed = line.trim();
-    const prefix = `- **${fieldName}**: `;
-    if (trimmed.startsWith(prefix)) {
-      return trimmed.slice(prefix.length).trim();
-    }
-  }
-  return null;
-}
-
-function parseBlueprintTiming(blueprintStr) {
-  if (!blueprintStr) return null;
-  const lower = blueprintStr.toLowerCase();
-
-  if (lower.includes('not applicable') || lower.includes('no audio')) {
-    return { enabled: false };
-  }
-
-  if (lower.includes('item-dependent') || lower.includes('varies') || lower.includes('section-level') || lower.includes('section-timed')) {
-    return { enabled: true, mode: 'item-dependent' };
-  }
-
-  if (lower.includes('preparation timer') || lower.includes('preparation countdown')) {
-    return { enabled: true, mode: 'item-dependent' };
-  }
-
-  // Try to parse a number
-  const numMatch = blueprintStr.match(/(\d+)\s*(?:second|minute|sec)/i);
-  if (numMatch) {
-    return { enabled: true, duration: parseInt(numMatch[1], 10), unit: 'seconds' };
-  }
-
-  return { enabled: true };
-}
+// ---- H: Blueprint Synchronization Validation (via generator) ----
 
 export function validateBlueprintAgainstManifest(blueprintPath, manifestPath) {
-  const blueprint = requiredFile(blueprintPath);
-  const manifestContent = requiredFile(manifestPath);
-  if (!blueprint || !manifestContent) return;
-
-  let manifest;
-  try { manifest = JSON.parse(manifestContent); } catch { return; }
-
-  for (const task of manifest) {
-    const cid = task.canonicalId;
-    const sectionText = extractTaskSection(blueprint, cid);
-    if (!sectionText) {
-      errors.push(`Blueprint: no section found for task "${cid}"`);
-      continue;
-    }
-
-    // Helper to report mismatches
-    function checkField(fieldLabel, expected, actual) {
-      if (expected === null || expected === undefined) return;
-      const expectedStr = String(expected).trim();
-      const actualStr = String(actual).trim();
-      if (expectedStr !== actualStr) {
-        errors.push(`Task: ${cid}\nField: ${fieldLabel}\nExpected: ${expectedStr}\nActual: ${actualStr}`);
-      }
-    }
-
-    // 1. Display name from section heading
-    const headingMatch = sectionText.match(/^### (.+)$/m);
-    if (headingMatch) {
-      const bpName = headingMatch[1].trim();
-      // Only check if the blueprint name differs from manifest name AND they aren't close variants
-      const manifestName = task.displayName || '';
-      if (manifestName && bpName !== manifestName) {
-        // Some tasks have different display names in manifest vs blueprint - don't flag these
-        // since they're intentional (e.g. "Reading and Writing: Fill in the Blanks" might differ)
-        // We only flag if there's a real contradiction
-      }
-    }
-
-    // 2. Section - already checked by subsection placement
-
-    // 3. Current official status
-    const bpStatus = parseBlueprintField(sectionText, 'Current official status');
-    if (bpStatus !== null) {
-      const expectedStatus = task.currentOfficialTask ? 'Current official task' : 'Not current official task';
-      checkField('currentOfficialTask', expectedStatus, bpStatus);
-    }
-
-    // 4. Official skills assessed
-    const bpSkills = parseBlueprintField(sectionText, 'Official skills assessed');
-    if (bpSkills !== null) {
-      checkField('officialSkillsAssessed', (task.officialSkillsAssessed || []).join(', '), bpSkills);
-    }
-
-    // 5. Score contributions
-    const bpContributions = parseBlueprintField(sectionText, 'Score contributions');
-    if (bpContributions !== null) {
-      checkField('scoreContributions', (task.scoreContributions || []).join(', '), bpContributions);
-    }
-
-    // 6. Prompt type
-    const bpPromptType = parseBlueprintField(sectionText, 'Prompt type');
-    if (bpPromptType !== null) {
-      const manifestType = task.promptType || '';
-      const bpType = bpPromptType;
-      // Normalize: Audio vs Audio (may include...) should match
-      const bpNorm = bpType.split('(')[0].trim().toLowerCase().replace(/[-\s]+/g, ' ');
-      const mNorm = manifestType.toLowerCase().replace(/[-\s]+/g, ' ');
-      if (!bpNorm.includes(mNorm) && !mNorm.includes(bpNorm)) {
-        checkField('promptType', manifestType, bpType);
-      }
-    }
-
-    // 7. Prompt length
-    const bpPromptLen = parseBlueprintField(sectionText, 'Prompt length');
-    if (bpPromptLen !== null && task.promptLength) {
-      const pl = task.promptLength;
-      let expectedStr = '';
-      if (pl.mode === 'fixed' && pl.minimum === 1 && pl.unit === 'image') {
-        expectedStr = '1 image';
-      } else if (pl.mode === 'range') {
-        if (pl.unit === 'words') {
-          expectedStr = `Text up to ${pl.maximum} words`;
-          if (pl.minimum > 0) {
-            expectedStr = `Text ${pl.minimum} to ${pl.maximum} words`;
-          }
-        } else if (pl.unit === 'seconds') {
-          expectedStr = `Audio ${pl.minimum} to ${pl.maximum} seconds`;
-          if (pl.minimum === 0) {
-            expectedStr = `Audio up to ${pl.maximum} seconds`;
-          }
-        } else if (pl.unit === 'sentences') {
-          expectedStr = `Text ${pl.minimum} to ${pl.maximum} sentences`;
-        }
-      }
-      if (expectedStr && bpPromptLen !== expectedStr) {
-        // Also accept slightly different formatting
-        const bpNorm = bpPromptLen.toLowerCase().replace(/\s+/g, ' ').replace(/[–-]/g, ' ').replace(/  +/g, ' ');
-        const exNorm = expectedStr.toLowerCase().replace(/\s+/g, ' ').replace(/[–-]/g, ' ').replace(/  +/g, ' ');
-        if (bpNorm !== exNorm && !bpNorm.includes(exNorm) && !exNorm.includes(bpNorm)) {
-          checkField('promptLength', expectedStr, bpPromptLen);
-        }
-      }
-    }
-
-    // 8. Preparation timing
-    const bpPrep = parseBlueprintField(sectionText, 'Preparation behaviour');
-    if (bpPrep !== null && task.preparationTiming) {
-      const pt = task.preparationTiming;
-      if (pt.enabled !== undefined && !pt.enabled) {
-        checkField('preparationTiming', 'Not applicable', bpPrep);
-      } else if (pt.mode === 'fixed' && pt.minimum != null && pt.maximum != null) {
-        if (pt.minimum === 0 && pt.maximum === 0) {
-          // Preparation is "immediate" or "read passage" etc
-        } else if (pt.minimum === pt.maximum) {
-          const expected = `${pt.minimum} ${pt.unit || 'seconds'} preparation`;
-          if (!bpPrep.toLowerCase().includes(expected.toLowerCase()) && !bpPrep.toLowerCase().includes(`${pt.minimum}-second`)) {
-            if (!bpPrep.toLowerCase().includes(`${pt.minimum} second`)) {
-              // Only flag if there's a clear number mismatch
-            }
-          }
-        }
-      }
-    }
-
-    // 9. Response timing
-    const bpResp = parseBlueprintField(sectionText, 'Response behaviour');
-    // Checked in detail below for specific tasks
-
-    // 10. Playback limit
-    const bpPlayback = parseBlueprintField(sectionText, 'Playback limit');
-    if (bpPlayback !== null && task.playbackLimit !== undefined) {
-      const expectedPlayback = task.playbackLimit === 0 ? 'No audio' : String(task.playbackLimit);
-      checkField('playbackLimit', expectedPlayback, bpPlayback);
-    }
-
-    // 11. Recording limit
-    const bpRecording = parseBlueprintField(sectionText, 'Recording limit');
-    if (bpRecording !== null && task.recordingLimit !== undefined) {
-      const expectedRecording = task.recordingLimit === 0 ? 'No audio' : String(task.recordingLimit);
-      checkField('recordingLimit', expectedRecording, bpRecording);
-    }
-
-    // 12. Official scoring type
-    const bpScoreType = parseBlueprintField(sectionText, 'Official scoring type');
-    if (bpScoreType !== null && task.officialScoringType) {
-      const mNorm = task.officialScoringType.replace(/-/g, ' ');
-      const bpNorm = bpScoreType.toLowerCase().replace(/[()-\/]/g, ' ').replace(/\s+/g, ' ').trim();
-      if (!bpNorm.startsWith(mNorm) && !mNorm.startsWith(bpNorm)) {
-        checkField('officialScoringType', task.officialScoringType, bpScoreType);
-      }
-    }
-
-    // 13. Official scoring traits
-    const bpTraits = parseBlueprintField(sectionText, 'Official scoring traits');
-    if (bpTraits !== null && task.officialScoringTraits) {
-      checkField('officialScoringTraits', task.officialScoringTraits.join(', '), bpTraits);
-    }
-
-    // 14. Prompt transcript requirement
-    const bpTranscript = parseBlueprintField(sectionText, 'Prompt transcript requirement');
-    if (bpTranscript !== null && task.promptTranscriptRequired !== undefined) {
-      // Blueprint may say "Required" or "Not required"
-      let bpTranscriptNorm = bpTranscript.toLowerCase().trim();
-      let expectedTranscript = task.promptTranscriptRequired ? 'Required' : 'Not required';
-      checkField('promptTranscriptRequired', expectedTranscript, bpTranscript);
-    }
-
-    // 15. Reference IDs
-    const bpRefs = parseBlueprintField(sectionText, 'Official reference IDs');
-    if (bpRefs !== null && task.referenceIds) {
-      const expectedRefs = task.referenceIds.join(', ');
-      const bpRefNorm = bpRefs.split(',').map(r => r.trim()).sort().join(', ');
-      const exRefNorm = task.referenceIds.sort().join(', ');
-      if (bpRefNorm !== exRefNorm) {
-        checkField('referenceIds', expectedRefs, bpRefs);
-      }
+  // Use the generator's --validate mode for byte-for-byte comparison
+  const generatorPath = join(root, 'scripts/generate-pte-blueprints.mjs');
+  try {
+    execSync(`node "${generatorPath}" --validate`, { encoding: 'utf-8', cwd: root, stdio: 'pipe' });
+    // Success - exited 0
+  } catch (e) {
+    if (e.status === 1) {
+      errors.push(e.stdout ? e.stdout.trim() : 'docs/content/pte-task-blueprints.md is not synchronized with the manifest. Run npm run generate:pte-blueprints.');
+    } else {
+      errors.push(`Blueprint validation error: ${e.message}`);
     }
   }
 }
@@ -679,7 +466,7 @@ export function validateTaskManifest(manifestPath) {
     'promptType', 'responseType', 'promptLength',
     'preparationTiming', 'responseTiming',
     'playbackLimit', 'recordingLimit', 'officialScoringType',
-    'officialScoringTraits', 'promptTranscriptRequired', 'postAttemptTranscriptAvailable',
+    'scoringRule', 'officialRubricTraits', 'promptTranscriptRequired', 'postAttemptTranscriptAvailable',
     'practiceMode', 'mockMode', 'referenceIds', 'lastVerifiedAt'
   ];
 
@@ -694,6 +481,9 @@ export function validateTaskManifest(manifestPath) {
 
     if (task.skillsAssessed !== undefined) {
       errors.push(`${manifestPath}: task "${cid}" uses deprecated field "skillsAssessed"; use "officialSkillsAssessed" and "scoreContributions"`);
+    }
+    if (task.officialScoringTraits !== undefined) {
+      errors.push(`${manifestPath}: task "${cid}" uses deprecated field "officialScoringTraits"; use "officialRubricTraits"`);
     }
 
     if (task.section && !VALID_SECTIONS.includes(task.section)) {
@@ -716,8 +506,21 @@ export function validateTaskManifest(manifestPath) {
     if (task.scoreContributions !== undefined && !isNonEmptyArray(task.scoreContributions)) {
       errors.push(`${manifestPath}: task "${cid}" scoreContributions must be a non-empty array`);
     }
-    if (task.officialScoringTraits !== undefined && !isNonEmptyArray(task.officialScoringTraits)) {
-      errors.push(`${manifestPath}: task "${cid}" officialScoringTraits must be a non-empty array`);
+    if (task.officialRubricTraits === undefined || !Array.isArray(task.officialRubricTraits)) {
+      errors.push(`${manifestPath}: task "${cid}" officialRubricTraits must be an array`);
+    } else if (task.scoringRule && task.scoringRule.type === 'rubric') {
+      // Rubric-scored tasks must have named traits
+      if (task.officialRubricTraits.length === 0) {
+        errors.push(`${manifestPath}: task "${cid}" rubric-scored but officialRubricTraits is empty`);
+      }
+    }
+    // Specific objective tasks with Score Guide "Not applicable" must have empty traits
+    const objectiveEmptyTraitsTasks = ['reading_writing_fill_blanks', 'reading_multiple_answers',
+      'reorder_paragraph', 'reading_fill_blanks', 'reading_single_answer',
+      'listening_multiple_answers', 'listening_fill_blanks', 'highlight_correct_summary',
+      'listening_single_answer', 'select_missing_word', 'highlight_incorrect_words', 'write_from_dictation'];
+    if (objectiveEmptyTraitsTasks.includes(cid) && task.officialRubricTraits && task.officialRubricTraits.length > 0) {
+      errors.push(`${manifestPath}: task "${cid}" must have empty officialRubricTraits (Score Guide says Not applicable)`);
     }
 
     if (task.promptType && !VALID_PROMPT_TYPES.includes(task.promptType)) {
@@ -728,6 +531,23 @@ export function validateTaskManifest(manifestPath) {
     }
     if (task.officialScoringType && !VALID_SCORING_TYPES.includes(task.officialScoringType)) {
       errors.push(`${manifestPath}: task "${cid}" invalid officialScoringType "${task.officialScoringType}"`);
+    }
+
+    if (task.scoringRule) {
+      const validRuleTypes = ['rubric', 'correct-incorrect', 'per-correct-blank', 'per-correct-word', 'selection-with-negative-marking', 'adjacent-pair-order'];
+      if (!validRuleTypes.includes(task.scoringRule.type)) {
+        errors.push(`${manifestPath}: task "${cid}" scoringRule has invalid type "${task.scoringRule.type}"`);
+      }
+      if (task.scoringRule.type === 'rubric' && (!Array.isArray(task.scoringRule.traits) || task.scoringRule.traits.length === 0)) {
+        errors.push(`${manifestPath}: task "${cid}" rubric scoringRule requires non-empty traits`);
+      }
+      if (task.scoringRule.minimumItemScore !== undefined && task.scoringRule.minimumItemScore < 0) {
+        errors.push(`${manifestPath}: task "${cid}" scoringRule minimumItemScore must be >= 0`);
+      }
+      // Negative-marking tasks must use minimum item score zero
+      if ((task.scoringRule.type === 'selection-with-negative-marking') && task.scoringRule.minimumItemScore !== 0) {
+        errors.push(`${manifestPath}: task "${cid}" negative-marking scoringRule must have minimumItemScore 0`);
+      }
     }
 
     if (task.promptLength) {
@@ -801,7 +621,7 @@ export function validateTaskManifest(manifestPath) {
       'promptTranscriptRequired'
     ];
     const arrayFieldsToCompare = [
-      'officialSkillsAssessed', 'scoreContributions', 'officialScoringTraits'
+      'officialSkillsAssessed', 'scoreContributions', 'officialRubricTraits'
     ];
     const timingFields = ['promptLength', 'preparationTiming', 'responseTiming'];
 
@@ -840,7 +660,16 @@ export function validateTaskManifest(manifestPath) {
     }
   }
 
-  // ---- I: Immutable factual assertions ----
+  // ---- H/I: Immutable factual assertions ----
+  const RUBRIC_TASKS = new Set(['read_aloud', 'repeat_sentence', 'describe_image', 'retell_lecture',
+    'answer_short_question', 'summarize_group_discussion', 'respond_to_situation',
+    'summarize_written_text', 'write_essay', 'summarize_spoken_text']);
+
+  const OBJECTIVE_NO_RUBRIC_TASKS = new Set(['reading_writing_fill_blanks', 'reading_multiple_answers',
+    'reorder_paragraph', 'reading_fill_blanks', 'reading_single_answer',
+    'listening_multiple_answers', 'listening_fill_blanks', 'highlight_correct_summary',
+    'listening_single_answer', 'select_missing_word', 'highlight_incorrect_words', 'write_from_dictation']);
+
   for (const task of manifest) {
     const cid = task.canonicalId;
 
@@ -865,6 +694,21 @@ export function validateTaskManifest(manifestPath) {
       }
     }
 
+    // Write From Dictation: assessed Listening+Writing, contributes Listening+Writing, no rubric traits
+    if (cid === 'write_from_dictation') {
+      const expSkills = ['Listening', 'Writing'];
+      const expContrib = ['Listening', 'Writing'];
+      if (JSON.stringify(task.officialSkillsAssessed) !== JSON.stringify(expSkills)) {
+        errors.push(`${manifestPath}: task "${cid}" officialSkillsAssessed must be ${JSON.stringify(expSkills)}`);
+      }
+      if (JSON.stringify(task.scoreContributions) !== JSON.stringify(expContrib)) {
+        errors.push(`${manifestPath}: task "${cid}" scoreContributions must be ${JSON.stringify(expContrib)}`);
+      }
+      if (task.officialRubricTraits.length !== 0) {
+        errors.push(`${manifestPath}: task "${cid}" must have empty officialRubricTraits (objective scoring)`);
+      }
+    }
+
     // Summarize Spoken Text: 60-90 seconds, includes Spelling
     if (cid === 'summarize_spoken_text') {
       if (task.promptLength) {
@@ -872,8 +716,8 @@ export function validateTaskManifest(manifestPath) {
           errors.push(`${manifestPath}: task "${cid}" promptLength must be 60-90 seconds`);
         }
       }
-      if (task.officialScoringTraits && !task.officialScoringTraits.includes('Spelling')) {
-        errors.push(`${manifestPath}: task "${cid}" must include Spelling in officialScoringTraits`);
+      if (task.officialRubricTraits && !task.officialRubricTraits.includes('Spelling')) {
+        errors.push(`${manifestPath}: task "${cid}" must include Spelling in officialRubricTraits`);
       }
     }
 
@@ -884,8 +728,8 @@ export function validateTaskManifest(manifestPath) {
           errors.push(`${manifestPath}: task "${cid}" promptLength must be 2-3 sentences`);
         }
       }
-      if (task.officialScoringTraits) {
-        if (task.officialScoringTraits.includes('Structure') || task.officialScoringTraits.includes('Coherence')) {
+      if (task.officialRubricTraits) {
+        if (task.officialRubricTraits.includes('Structure') || task.officialRubricTraits.includes('Coherence')) {
           errors.push(`${manifestPath}: task "${cid}" must not split "Development, Structure and Coherence" into separate traits`);
         }
       }
@@ -904,6 +748,80 @@ export function validateTaskManifest(manifestPath) {
     // Highlight Incorrect Words: transcript required
     if (cid === 'highlight_incorrect_words' && task.promptTranscriptRequired !== true) {
       errors.push(`${manifestPath}: task "${cid}" promptTranscriptRequired must be true`);
+    }
+
+    // Listening Fill in the Blanks: assessed Listening, contributes Listening+Writing, no rubric traits
+    if (cid === 'listening_fill_blanks') {
+      if (JSON.stringify(task.officialSkillsAssessed) !== JSON.stringify(['Listening'])) {
+        errors.push(`${manifestPath}: task "${cid}" officialSkillsAssessed must be ["Listening"]`);
+      }
+      if (JSON.stringify(task.scoreContributions) !== JSON.stringify(['Listening', 'Writing'])) {
+        errors.push(`${manifestPath}: task "${cid}" scoreContributions must be ["Listening","Writing"]`);
+      }
+      if (task.officialRubricTraits.length !== 0) {
+        errors.push(`${manifestPath}: task "${cid}" must have empty officialRubricTraits`);
+      }
+    }
+
+    // Highlight Correct Summary: assessed Listening+Reading, no rubric traits
+    if (cid === 'highlight_correct_summary') {
+      if (JSON.stringify(task.officialSkillsAssessed) !== JSON.stringify(['Listening', 'Reading'])) {
+        errors.push(`${manifestPath}: task "${cid}" officialSkillsAssessed must be ["Listening","Reading"]`);
+      }
+      if (task.officialRubricTraits.length !== 0) {
+        errors.push(`${manifestPath}: task "${cid}" must have empty officialRubricTraits`);
+      }
+    }
+
+    // Reading Dropdown: assessed Reading, contributes Reading, no rubric traits
+    if (cid === 'reading_writing_fill_blanks') {
+      if (JSON.stringify(task.officialSkillsAssessed) !== JSON.stringify(['Reading'])) {
+        errors.push(`${manifestPath}: task "${cid}" officialSkillsAssessed must be ["Reading"]`);
+      }
+      if (JSON.stringify(task.scoreContributions) !== JSON.stringify(['Reading'])) {
+        errors.push(`${manifestPath}: task "${cid}" scoreContributions must be ["Reading"]`);
+      }
+      if (task.officialRubricTraits.length !== 0) {
+        errors.push(`${manifestPath}: task "${cid}" must have empty officialRubricTraits`);
+      }
+    }
+
+    // Listening Multiple Answers: 7-second preparation
+    if (cid === 'listening_multiple_answers' && task.preparationTiming) {
+      if (task.preparationTiming.minimum !== 7 || task.preparationTiming.maximum !== 7) {
+        errors.push(`${manifestPath}: task "${cid}" preparationTiming must be 7 seconds fixed`);
+      }
+    }
+
+    // Listening Fill in the Blanks: 7-second preparation
+    if (cid === 'listening_fill_blanks' && task.preparationTiming) {
+      if (task.preparationTiming.minimum !== 7 || task.preparationTiming.maximum !== 7) {
+        errors.push(`${manifestPath}: task "${cid}" preparationTiming must be 7 seconds fixed`);
+      }
+    }
+
+    // Listening Single Answer: 5-second preparation
+    if (cid === 'listening_single_answer' && task.preparationTiming) {
+      if (task.preparationTiming.minimum !== 5 || task.preparationTiming.maximum !== 5) {
+        errors.push(`${manifestPath}: task "${cid}" preparationTiming must be 5 seconds fixed`);
+      }
+    }
+
+    // Highlight Incorrect Words: 10-second preparation
+    if (cid === 'highlight_incorrect_words' && task.preparationTiming) {
+      if (task.preparationTiming.minimum !== 10 || task.preparationTiming.maximum !== 10) {
+        errors.push(`${manifestPath}: task "${cid}" preparationTiming must be 10 seconds fixed`);
+      }
+    }
+
+    // Rubric-scored tasks must have named rubric traits
+    if (RUBRIC_TASKS.has(cid) && task.officialRubricTraits && task.officialRubricTraits.length === 0) {
+      errors.push(`${manifestPath}: task "${cid}" is rubric-scored but officialRubricTraits is empty`);
+    }
+
+    // Objective tasks must not have named rubric traits
+    if (OBJECTIVE_NO_RUBRIC_TASKS.has(cid) && task.officialRubricTraits && task.officialRubricTraits.length > 0) {
+      errors.push(`${manifestPath}: task "${cid}" is objective but officialRubricTraits has named traits`);
     }
 
     // No transcript tasks

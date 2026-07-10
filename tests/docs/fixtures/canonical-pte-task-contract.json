@@ -30,14 +30,18 @@
       "maximum": null,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "rubric",
+      "traits": [
+        "Content",
+        "Pronunciation",
+        "Oral fluency"
+      ],
+      "scoringEngine": "ai-evaluation"
+    },
     "playbackLimit": 0,
     "recordingLimit": 1,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Content",
-      "Pronunciation",
-      "Oral fluency"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay of own recording, transcript after attempt, hints, model answer, extended preparation option",
@@ -48,7 +52,12 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Pronunciation",
+      "Oral fluency"
+    ]
   },
   {
     "canonicalId": "repeat_sentence",
@@ -82,14 +91,18 @@
       "maximum": 15,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "rubric",
+      "traits": [
+        "Content",
+        "Pronunciation",
+        "Oral fluency"
+      ],
+      "scoringEngine": "ai-evaluation"
+    },
     "playbackLimit": 1,
     "recordingLimit": 1,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Content",
-      "Pronunciation",
-      "Oral fluency"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay, transcript after attempt, slow playback, repeat attempt",
@@ -100,7 +113,12 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Pronunciation",
+      "Oral fluency"
+    ]
   },
   {
     "canonicalId": "describe_image",
@@ -132,14 +150,18 @@
       "maximum": 40,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "rubric",
+      "traits": [
+        "Content",
+        "Pronunciation",
+        "Oral fluency"
+      ],
+      "scoringEngine": "ai-evaluation"
+    },
     "playbackLimit": 0,
     "recordingLimit": 1,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Content",
-      "Pronunciation",
-      "Oral fluency"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "extended preparation, configurable replay, transcript, model response, hints on key features",
@@ -150,7 +172,12 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Pronunciation",
+      "Oral fluency"
+    ]
   },
   {
     "canonicalId": "retell_lecture",
@@ -184,14 +211,18 @@
       "maximum": 40,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "rubric",
+      "traits": [
+        "Content",
+        "Pronunciation",
+        "Oral fluency"
+      ],
+      "scoringEngine": "ai-evaluation"
+    },
     "playbackLimit": 1,
     "recordingLimit": 1,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Content",
-      "Pronunciation",
-      "Oral fluency"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay, transcript after attempt, hints on key points, model response",
@@ -202,7 +233,12 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Pronunciation",
+      "Oral fluency"
+    ]
   },
   {
     "canonicalId": "answer_short_question",
@@ -234,12 +270,15 @@
       "maximum": 10,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "correct-incorrect",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    },
     "playbackLimit": 1,
     "recordingLimit": 1,
     "officialScoringType": "correct-incorrect",
-    "officialScoringTraits": [
-      "Vocabulary"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay, correct answer after submission, hints",
@@ -250,7 +289,10 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Vocabulary"
+    ]
   },
   {
     "canonicalId": "summarize_group_discussion",
@@ -284,14 +326,18 @@
       "maximum": 120,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "rubric",
+      "traits": [
+        "Content",
+        "Pronunciation",
+        "Oral fluency"
+      ],
+      "scoringEngine": "ai-evaluation"
+    },
     "playbackLimit": 1,
     "recordingLimit": 1,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Content",
-      "Pronunciation",
-      "Oral fluency"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay, transcript after attempt, hints on summarisation strategy, model response",
@@ -303,7 +349,12 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Pronunciation",
+      "Oral fluency"
+    ]
   },
   {
     "canonicalId": "respond_to_situation",
@@ -335,14 +386,18 @@
       "maximum": 40,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "rubric",
+      "traits": [
+        "Content",
+        "Pronunciation",
+        "Oral fluency"
+      ],
+      "scoringEngine": "ai-evaluation"
+    },
     "playbackLimit": 1,
     "recordingLimit": 1,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Content",
-      "Pronunciation",
-      "Oral fluency"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay, transcript after attempt, model response, hints on situational goal",
@@ -354,7 +409,12 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Pronunciation",
+      "Oral fluency"
+    ]
   },
   {
     "canonicalId": "summarize_written_text",
@@ -388,15 +448,19 @@
       "maximum": 600,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "rubric",
+      "traits": [
+        "Content",
+        "Form",
+        "Grammar",
+        "Vocabulary"
+      ],
+      "scoringEngine": "ai-evaluation"
+    },
     "playbackLimit": 0,
     "recordingLimit": 0,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Content",
-      "Form",
-      "Grammar",
-      "Vocabulary"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "extended time, outline tool, model response, multiple attempts",
@@ -407,7 +471,13 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Form",
+      "Grammar",
+      "Vocabulary"
+    ]
   },
   {
     "canonicalId": "write_essay",
@@ -439,18 +509,22 @@
       "maximum": 1200,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "rubric",
+      "traits": [
+        "Content",
+        "Form",
+        "Development, Structure and Coherence",
+        "Grammar",
+        "General Linguistic Range",
+        "Vocabulary Range",
+        "Spelling"
+      ],
+      "scoringEngine": "ai-evaluation"
+    },
     "playbackLimit": 0,
     "recordingLimit": 0,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Content",
-      "Form",
-      "Development, Structure and Coherence",
-      "Grammar",
-      "General Linguistic Range",
-      "Vocabulary Range",
-      "Spelling"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "extended time option, outline tool, spell check, model response, multiple attempts",
@@ -461,7 +535,16 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Form",
+      "Development, Structure and Coherence",
+      "Grammar",
+      "General Linguistic Range",
+      "Vocabulary Range",
+      "Spelling"
+    ]
   },
   {
     "canonicalId": "reading_writing_fill_blanks",
@@ -493,13 +576,15 @@
       "maximum": null,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "per-correct-blank",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    },
     "playbackLimit": 0,
     "recordingLimit": 0,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Reading",
-      "Writing"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "show correct answers after submission, hints for each blank, explanation of vocabulary",
@@ -510,7 +595,8 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": []
   },
   {
     "canonicalId": "reading_multiple_answers",
@@ -542,12 +628,15 @@
       "maximum": null,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "selection-with-negative-marking",
+      "correctPoints": 1,
+      "incorrectPoints": -1,
+      "minimumItemScore": 0
+    },
     "playbackLimit": 0,
     "recordingLimit": 0,
     "officialScoringType": "partial-credit-negative",
-    "officialScoringTraits": [
-      "Reading"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "show correct answers after submission, explanation, partial credit explanation",
@@ -558,7 +647,8 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": []
   },
   {
     "canonicalId": "reorder_paragraph",
@@ -590,12 +680,15 @@
       "maximum": null,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "adjacent-pair-order",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    },
     "playbackLimit": 0,
     "recordingLimit": 0,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Reading"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "correct order shown after submission, logical flow explanation, hints on connectors",
@@ -606,7 +699,8 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": []
   },
   {
     "canonicalId": "reading_fill_blanks",
@@ -638,12 +732,15 @@
       "maximum": null,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "per-correct-word",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    },
     "playbackLimit": 0,
     "recordingLimit": 0,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Reading"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "show correct words after submission, hints available per blank",
@@ -654,7 +751,8 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": []
   },
   {
     "canonicalId": "reading_single_answer",
@@ -686,12 +784,15 @@
       "maximum": null,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "correct-incorrect",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    },
     "playbackLimit": 0,
     "recordingLimit": 0,
     "officialScoringType": "correct-incorrect",
-    "officialScoringTraits": [
-      "Reading"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "correct answer and explanation after submission",
@@ -702,7 +803,8 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": []
   },
   {
     "canonicalId": "summarize_spoken_text",
@@ -736,17 +838,21 @@
       "maximum": 600,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "rubric",
+      "traits": [
+        "Content",
+        "Form",
+        "Grammar",
+        "Vocabulary",
+        "Spelling"
+      ],
+      "scoringEngine": "ai-evaluation"
+    },
     "responseTimingDescription": "Ten minutes total includes listening and writing",
     "playbackLimit": 1,
     "recordingLimit": 0,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Content",
-      "Form",
-      "Grammar",
-      "Vocabulary",
-      "Spelling"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay, transcript after attempt, extended time option",
@@ -757,7 +863,14 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Form",
+      "Grammar",
+      "Vocabulary",
+      "Spelling"
+    ]
   },
   {
     "canonicalId": "listening_multiple_answers",
@@ -779,8 +892,8 @@
     },
     "preparationTiming": {
       "mode": "fixed",
-      "minimum": 0,
-      "maximum": 0,
+      "minimum": 7,
+      "maximum": 7,
       "unit": "seconds"
     },
     "responseTiming": {
@@ -789,12 +902,15 @@
       "maximum": null,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "selection-with-negative-marking",
+      "correctPoints": 1,
+      "incorrectPoints": -1,
+      "minimumItemScore": 0
+    },
     "playbackLimit": 1,
     "recordingLimit": 0,
     "officialScoringType": "partial-credit-negative",
-    "officialScoringTraits": [
-      "Listening"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay, transcript after submission, correct answers highlighted, explanation",
@@ -805,7 +921,8 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": []
   },
   {
     "canonicalId": "listening_fill_blanks",
@@ -828,8 +945,8 @@
     },
     "preparationTiming": {
       "mode": "fixed",
-      "minimum": 0,
-      "maximum": 0,
+      "minimum": 7,
+      "maximum": 7,
       "unit": "seconds"
     },
     "responseTiming": {
@@ -838,24 +955,28 @@
       "maximum": null,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "per-correct-word",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "requiresCorrectSpelling": true,
+      "minimumItemScore": 0
+    },
     "playbackLimit": 1,
     "recordingLimit": 0,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Listening",
-      "Writing"
-    ],
     "promptTranscriptRequired": true,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay, transcript after submission, correct words shown",
-    "mockMode": "single playback, section-level timer, no transcript before submission, no answer reveal before submission",
+    "mockMode": "single playback, section-level timer, the incomplete transcript with blanks is displayed before and during playback because it is part of the official prompt, no answer reveal before submission",
     "referenceIds": [
       "source-1",
       "source-4",
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": []
   },
   {
     "canonicalId": "highlight_correct_summary",
@@ -889,13 +1010,15 @@
       "maximum": null,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "correct-incorrect",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    },
     "playbackLimit": 1,
     "recordingLimit": 0,
     "officialScoringType": "correct-incorrect",
-    "officialScoringTraits": [
-      "Listening",
-      "Reading"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay, transcript after submission, correct summary highlighted with explanation",
@@ -906,7 +1029,8 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": []
   },
   {
     "canonicalId": "listening_single_answer",
@@ -928,8 +1052,8 @@
     },
     "preparationTiming": {
       "mode": "fixed",
-      "minimum": 0,
-      "maximum": 0,
+      "minimum": 5,
+      "maximum": 5,
       "unit": "seconds"
     },
     "responseTiming": {
@@ -938,12 +1062,15 @@
       "maximum": null,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "correct-incorrect",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    },
     "playbackLimit": 1,
     "recordingLimit": 0,
     "officialScoringType": "correct-incorrect",
-    "officialScoringTraits": [
-      "Listening"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay, transcript after submission, correct answer shown with explanation",
@@ -954,7 +1081,8 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": []
   },
   {
     "canonicalId": "select_missing_word",
@@ -986,12 +1114,15 @@
       "maximum": null,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "correct-incorrect",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    },
     "playbackLimit": 1,
     "recordingLimit": 0,
     "officialScoringType": "correct-incorrect",
-    "officialScoringTraits": [
-      "Listening"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay, transcript after submission, correct word shown with context explanation",
@@ -1002,7 +1133,8 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": []
   },
   {
     "canonicalId": "highlight_incorrect_words",
@@ -1026,8 +1158,8 @@
     },
     "preparationTiming": {
       "mode": "fixed",
-      "minimum": 0,
-      "maximum": 0,
+      "minimum": 10,
+      "maximum": 10,
       "unit": "seconds"
     },
     "responseTiming": {
@@ -1036,13 +1168,15 @@
       "maximum": null,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "selection-with-negative-marking",
+      "correctPoints": 1,
+      "incorrectPoints": -1,
+      "minimumItemScore": 0
+    },
     "playbackLimit": 1,
     "recordingLimit": 0,
     "officialScoringType": "partial-credit-negative",
-    "officialScoringTraits": [
-      "Listening",
-      "Reading"
-    ],
     "promptTranscriptRequired": true,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay, transcript after submission, correct selections highlighted, score explanation",
@@ -1053,7 +1187,8 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": []
   },
   {
     "canonicalId": "write_from_dictation",
@@ -1087,13 +1222,16 @@
       "maximum": null,
       "unit": "seconds"
     },
+    "scoringRule": {
+      "type": "per-correct-word",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "requiresCorrectSpelling": true,
+      "minimumItemScore": 0
+    },
     "playbackLimit": 1,
     "recordingLimit": 0,
     "officialScoringType": "partial-credit",
-    "officialScoringTraits": [
-      "Listening",
-      "Writing"
-    ],
     "promptTranscriptRequired": false,
     "postAttemptTranscriptAvailable": true,
     "practiceMode": "configurable replay, correct sentence after submission, word-level accuracy shown",
@@ -1104,6 +1242,7 @@
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
-    "currentOfficialTask": true
+    "currentOfficialTask": true,
+    "officialRubricTraits": []
   }
 ]
