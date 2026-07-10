@@ -113,8 +113,14 @@ function validateTimingObject(obj, path, context) {
   if (obj.mode === 'fixed' && (obj.minimum === null || obj.maximum === null)) {
     errors.push(`${path}: ${context} fixed mode requires non-null min/max`);
   }
+  if (obj.mode === 'fixed' && typeof obj.minimum === 'number' && typeof obj.maximum === 'number' && obj.minimum !== obj.maximum) {
+    errors.push(`${path}: ${context} fixed mode requires min (${obj.minimum}) === max (${obj.maximum})`);
+  }
   if (typeof obj.minimum === 'number' && obj.minimum < 0) {
     errors.push(`${path}: ${context} negative minimum value`);
+  }
+  if (typeof obj.maximum === 'number' && obj.maximum < 0) {
+    errors.push(`${path}: ${context} negative maximum value`);
   }
 }
 
@@ -300,6 +306,62 @@ export function validateTaskManifest(manifestPath) {
   for (const [section, expected] of Object.entries(SECTION_COUNTS)) {
     if (sectionCounts[section] !== expected) {
       errors.push(`${manifestPath}: expected ${expected} ${section} tasks, found ${sectionCounts[section]}`);
+    }
+  }
+
+  // Load canonical fixture
+  const fixturePath = join(root, 'tests/docs/fixtures/canonical-pte-task-contract.json');
+  let canonical = [];
+  try {
+    if (existsSync(fixturePath)) {
+      canonical = JSON.parse(readFileSync(fixturePath, 'utf-8'));
+    }
+  } catch {}
+
+  if (canonical.length === 22) {
+    const fieldsToCompare = [
+      'section', 'promptType', 'responseType',
+      'playbackLimit', 'recordingLimit', 'officialScoringType',
+      'promptTranscriptRequired'
+    ];
+    const arrayFieldsToCompare = [
+      'officialSkillsAssessed', 'scoreContributions', 'officialScoringTraits'
+    ];
+    const timingFields = ['promptLength', 'preparationTiming', 'responseTiming'];
+
+    for (const task of manifest) {
+      const cid = task.canonicalId;
+      const fixture = canonical.find(f => f.canonicalId === cid);
+      if (!fixture) continue;
+
+      for (const field of fieldsToCompare) {
+        if (JSON.stringify(task[field]) !== JSON.stringify(fixture[field])) {
+          errors.push(`Task "${cid}": ${field} mismatch. Expected: ${JSON.stringify(fixture[field])}. Actual: ${JSON.stringify(task[field])}`);
+        }
+      }
+
+      for (const field of arrayFieldsToCompare) {
+        if (JSON.stringify(task[field]) !== JSON.stringify(fixture[field])) {
+          errors.push(`Task "${cid}": ${field} mismatch. Expected: ${JSON.stringify(fixture[field])}. Actual: ${JSON.stringify(task[field])}`);
+        }
+      }
+
+      for (const field of timingFields) {
+        if (task[field] && fixture[field]) {
+          for (const sub of ['mode', 'minimum', 'maximum', 'unit']) {
+            if (JSON.stringify(task[field][sub]) !== JSON.stringify(fixture[field][sub])) {
+              errors.push(`Task "${cid}": ${field}.${sub} mismatch. Expected: ${JSON.stringify(fixture[field][sub])}. Actual: ${JSON.stringify(task[field][sub])}`);
+            }
+          }
+        }
+      }
+
+      // referenceIds: same set
+      const taskRefs = new Set(task.referenceIds || []);
+      const fixRefs = new Set(fixture.referenceIds || []);
+      if (taskRefs.size !== fixRefs.size || [...taskRefs].sort().join(',') !== [...fixRefs].sort().join(',')) {
+        errors.push(`Task "${cid}": referenceIds mismatch. Expected: ${JSON.stringify(fixture.referenceIds)}. Actual: ${JSON.stringify(task.referenceIds)}`);
+      }
     }
   }
 

@@ -9,6 +9,6 @@
     "test": "npm run test:docs && npm run validate:docs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   }
 }

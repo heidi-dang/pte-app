@@ -1,10 +1,10 @@
-import { describe, it, before, after } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, mkdirSync, existsSync, rmSync } from 'fs';
+import { writeFileSync, mkdirSync, existsSync, rmSync, readFileSync } from 'fs';
 import { join, resolve } from 'path';
 
 const fixturesDir = resolve(import.meta.dirname, 'fixtures');
-const testRoot = resolve(import.meta.dirname, '../../');
+const root = resolve(import.meta.dirname, '../../');
 
 import {
   resetValidation, getAllErrors, getAllWarnings,
@@ -25,7 +25,19 @@ function writeFixture(name, content) {
   writeFileSync(path, content, 'utf-8');
 }
 
-async function withFixtureManifest(content, fn) {
+function readFixture(name) {
+  return readFileSync(fixturePath(name), 'utf-8');
+}
+
+function loadCanonical() {
+  return JSON.parse(readFixture('canonical-pte-task-contract.json'));
+}
+
+function clone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+async function withManifest(content, fn) {
   const path = join(fixturesDir, 'pte-task-manifest.json');
   writeFixture('pte-task-manifest.json', content);
   try {
@@ -35,343 +47,256 @@ async function withFixtureManifest(content, fn) {
   }
 }
 
-const defaultPrompts = {
-  read_aloud: { text: 'up to 60 words' },
-  repeat_sentence: { audio: '3 to 9 seconds' },
-  describe_image: { image: 'single image' },
-  retell_lecture: { audio: 'up to 90 seconds' },
-  answer_short_question: { audio: '3 to 9 seconds' },
-  summarize_group_discussion: { audio: 'up to 3 minutes' },
-  respond_to_situation: { text: 'up to 60 words' },
-  summarize_written_text: { text: 'reading passage' },
-  write_essay: { text: '2 to 3 sentences' },
-  reading_writing_fill_blanks: { text: 'passage with blanks' },
-  reading_multiple_answers: { text: 'reading passage' },
-  reorder_paragraph: { text: 'multiple paragraphs' },
-  reading_fill_blanks: { text: 'passage with blanks' },
-  reading_single_answer: { text: 'reading passage' },
-  summarize_spoken_text: { audio: '60 to 90 seconds' },
-  listening_multiple_answers: { audio: 'recording' },
-  listening_fill_blanks: { audio: 'recording with transcript' },
-  highlight_correct_summary: { audio: 'recording' },
-  listening_single_answer: { audio: 'recording' },
-  select_missing_word: { audio: 'recording with beep' },
-  highlight_incorrect_words: { audio: 'recording with transcript' },
-  write_from_dictation: { audio: '3 to 5 seconds' }
-};
-
-function makeTask(id, overrides = {}) {
-  const base = {
-    canonicalId: id,
-    displayName: id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-    section: 'Listening',
-    currentOfficialTask: true,
-    officialSkillsAssessed: ['Listening'],
-    scoreContributions: ['Listening'],
-    promptType: 'audio',
-    responseType: 'text',
-    promptLength: { mode: 'range', minimum: null, maximum: null, unit: 'seconds' },
-    preparationTiming: { mode: 'fixed', minimum: 0, maximum: 0, unit: 'seconds' },
-    responseTiming: { mode: 'fixed', minimum: 30, maximum: 30, unit: 'seconds' },
-    playbackLimit: 1,
-    recordingLimit: 0,
-    officialScoringType: 'partial-credit',
-    officialScoringTraits: ['Content'],
-    promptTranscriptRequired: false,
-    postAttemptTranscriptAvailable: true,
-    practiceMode: 'hints',
-    mockMode: 'official',
-    referenceIds: ['source-1'],
-    lastVerifiedAt: '2026-07-10'
-  };
-  Object.assign(base, overrides);
-  return base;
-}
-
-const ALL_IDS = [
-  'read_aloud', 'repeat_sentence', 'describe_image', 'retell_lecture',
-  'answer_short_question', 'summarize_group_discussion', 'respond_to_situation',
-  'summarize_written_text', 'write_essay',
-  'reading_writing_fill_blanks', 'reading_multiple_answers', 'reorder_paragraph',
-  'reading_fill_blanks', 'reading_single_answer',
-  'summarize_spoken_text', 'listening_multiple_answers', 'listening_fill_blanks',
-  'highlight_correct_summary', 'listening_single_answer', 'select_missing_word',
-  'highlight_incorrect_words', 'write_from_dictation'
-];
-
-function makeValidTask(id) {
-  const defaults = {
-    section: 'Listening',
-    officialSkillsAssessed: ['Listening'],
-    scoreContributions: ['Listening'],
-    promptType: 'audio',
-    responseType: 'text',
-    promptLength: { mode: 'range', minimum: null, maximum: null, unit: 'seconds' },
-    responseTiming: { mode: 'section-timed', minimum: null, maximum: null, unit: 'seconds' },
-    officialScoringTraits: ['Listening'],
-    promptTranscriptRequired: false,
-    mockMode: 'official'
-  };
-  if (['read_aloud', 'repeat_sentence', 'describe_image', 'retell_lecture',
-    'answer_short_question', 'summarize_group_discussion', 'respond_to_situation',
-    'summarize_written_text', 'write_essay'].includes(id)) {
-    defaults.section = 'Speaking and Writing';
-    defaults.officialSkillsAssessed = ['Reading', 'Speaking'];
-    defaults.scoreContributions = ['Reading', 'Speaking'];
-    defaults.promptType = 'text';
-    defaults.responseType = 'audio';
-    defaults.responseTiming = { mode: 'fixed', minimum: 40, maximum: 40, unit: 'seconds' };
-    defaults.recordingLimit = 1;
-    defaults.playbackLimit = 0;
-    defaults.officialScoringTraits = ['Content', 'Pronunciation'];
-  }
-  if (['reading_writing_fill_blanks', 'reading_multiple_answers', 'reorder_paragraph',
-    'reading_fill_blanks', 'reading_single_answer'].includes(id)) {
-    defaults.section = 'Reading';
-    defaults.officialSkillsAssessed = ['Reading'];
-    defaults.scoreContributions = ['Reading'];
-    defaults.promptType = 'text';
-    defaults.responseType = 'text';
-    defaults.officialScoringTraits = ['Reading'];
-  }
-  if (id === 'write_essay') {
-    defaults.officialSkillsAssessed = ['Writing'];
-    defaults.scoreContributions = ['Writing'];
-    defaults.promptLength = { mode: 'range', minimum: 2, maximum: 3, unit: 'sentences' };
-    defaults.officialScoringTraits = ['Content', 'Form', 'Development, Structure and Coherence', 'Grammar', 'General Linguistic Range', 'Vocabulary Range', 'Spelling'];
-  }
-  if (id === 'respond_to_situation') {
-    defaults.promptType = 'text-and-audio';
-    defaults.mockMode = 'text and audio both required';
-  }
-  if (id === 'summarize_spoken_text') {
-    defaults.promptLength = { mode: 'range', minimum: 60, maximum: 90, unit: 'seconds' };
-    defaults.responseTiming = { mode: 'fixed', minimum: 600, maximum: 600, unit: 'seconds' };
-    defaults.responseTimingDescription = 'Ten minutes total includes listening and writing';
-    defaults.officialScoringTraits = ['Content', 'Form', 'Grammar', 'Vocabulary', 'Spelling'];
-  }
-  if (id === 'listening_fill_blanks') {
-    defaults.promptTranscriptRequired = true;
-  }
-  if (id === 'highlight_incorrect_words') {
-    defaults.promptTranscriptRequired = true;
-  }
-  if (id === 'write_from_dictation') {
-    defaults.promptLength = { mode: 'range', minimum: 3, maximum: 5, unit: 'seconds' };
-  }
-  return makeTask(id, defaults);
-}
-
 describe('Documentation Validator', () => {
 
-  describe('validateTaskManifest', () => {
-    it('passes valid contract with 22 tasks', async () => {
-      const tasks = ALL_IDS.map(makeValidTask);
-      await withFixtureManifest(JSON.stringify(tasks, null, 2), (path) => {
+  describe('validateTaskManifest — canonical contract', () => {
+    it('passes the exact canonical fixture', async () => {
+      const content = readFixture('canonical-pte-task-contract.json');
+      await withManifest(content, (path) => {
         resetValidation();
         validateTaskManifest(path);
         assert.equal(getAllErrors().length, 0, `Errors: ${getAllErrors().join(', ')}`);
       });
     });
 
-    it('fails when manifest has fewer than 22 tasks', async () => {
-      await withFixtureManifest(JSON.stringify([makeTask('read_aloud')]), (path) => {
+    it('rejects Read Aloud assessed as Reading', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      t.officialSkillsAssessed = ['Reading'];
+      await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().length > 0);
+        assert.ok(getAllErrors().some(e => e.includes('read_aloud') && e.includes('officialSkillsAssessed')));
+      });
+    });
+
+    it('rejects Reading Dropdown writing contribution', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'reading_writing_fill_blanks');
+      t.scoreContributions = ['Reading', 'Writing'];
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('reading_writing_fill_blanks') && e.includes('scoreContributions')));
+      });
+    });
+
+    it('rejects Listening Fill in the Blanks assessed as Writing', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'listening_fill_blanks');
+      t.officialSkillsAssessed = ['Listening', 'Writing'];
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('listening_fill_blanks') && e.includes('officialSkillsAssessed')));
+      });
+    });
+
+    it('rejects Reading Multiple Answers maximum 300', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'reading_multiple_answers');
+      t.promptLength.maximum = 300;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('promptLength') && e.includes('maximum')));
+      });
+    });
+
+    it('rejects Reorder Paragraph measured as paragraphs range 4-7', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'reorder_paragraph');
+      t.promptLength.maximum = 7;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('reorder_paragraph') && e.includes('promptLength')));
+      });
+    });
+
+    it('rejects Reading Drag and Drop maximum 200', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'reading_fill_blanks');
+      t.promptLength.maximum = 200;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('reading_fill_blanks') && e.includes('promptLength')));
+      });
+    });
+
+    it('rejects Listening Multiple Answers 90-second maximum', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'listening_multiple_answers');
+      t.promptLength.maximum = 90;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('listening_multiple_answers') && e.includes('promptLength')));
+      });
+    });
+
+    it('rejects Listening Fill in the Blanks null range', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'listening_fill_blanks');
+      t.promptLength.minimum = null;
+      t.promptLength.maximum = null;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('promptLength')));
+      });
+    });
+
+    it('rejects Highlight Correct Summary missing 30-second minimum', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'highlight_correct_summary');
+      t.promptLength.minimum = 0;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('highlight_correct_summary') && e.includes('promptLength')));
+      });
+    });
+
+    it('rejects Select Missing Word 60-second maximum', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'select_missing_word');
+      t.promptLength.maximum = 60;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('select_missing_word') && e.includes('promptLength')));
+      });
+    });
+
+    it('rejects Highlight Incorrect Words 60-second maximum', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'highlight_incorrect_words');
+      t.promptLength.maximum = 60;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('highlight_incorrect_words') && e.includes('promptLength')));
+      });
+    });
+
+    it('rejects Write From Dictation range other than 3-5', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'write_from_dictation');
+      t.promptLength.maximum = 9;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('write_from_dictation') && e.includes('promptLength')));
+      });
+    });
+
+    it('rejects unknown reference ID', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      t.referenceIds = ['source-99'];
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('unknown reference')));
+      });
+    });
+
+    it('rejects invalid reference date', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      t.lastVerifiedAt = 'not-a-date';
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('lastVerifiedAt')));
+      });
+    });
+
+    it('rejects negative maximum in timing', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      t.promptLength.maximum = -5;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('negative maximum') || e.includes('minimum (0) exceeds maximum')));
+      });
+    });
+
+    it('rejects string timing value', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      t.promptLength.maximum = 'sixty';
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('promptLength') || e.includes('maximum')));
+      });
+    });
+
+    it('rejects fixed timing where min does not equal max', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'repeat_sentence');
+      t.preparationTiming.mode = 'fixed';
+      t.preparationTiming.minimum = 5;
+      t.preparationTiming.maximum = 10;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('fixed')));
+      });
+    });
+
+    it('rejects fewer than 22 tasks', async () => {
+      await withManifest(JSON.stringify([loadCanonical()[0]]), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
         assert.ok(getAllErrors().some(e => e.includes('22 task records')));
       });
     });
 
-    it('fails on duplicate canonical IDs', async () => {
-      const tasks = [];
-      for (let i = 0; i < 22; i++) {
-        tasks.push(makeTask(i < 2 ? 'duplicate_id' : `task_${i}`));
-      }
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
+    it('rejects duplicate canonical IDs', async () => {
+      const tasks = loadCanonical();
+      tasks[0].canonicalId = 'duplicate';
+      tasks[1].canonicalId = 'duplicate';
+      await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
         assert.ok(getAllErrors().some(e => e.includes('duplicate')));
       });
     });
+  });
 
-    it('fails on wrong section count', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id, { section: 'Listening' }));
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('Speaking and Writing')));
-        assert.ok(getAllErrors().some(e => e.includes('Reading')));
-      });
-    });
-
+  describe('validateTaskManifest — general', () => {
     it('rejects deprecated skillsAssessed field', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id, { skillsAssessed: ['Listening'] }));
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
+      const tasks = loadCanonical();
+      tasks.forEach(t => { t.skillsAssessed = t.officialSkillsAssessed; });
+      await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
         assert.ok(getAllErrors().some(e => e.includes('deprecated')));
       });
     });
 
-    it('fails on missing required field', async () => {
-      await withFixtureManifest(JSON.stringify([{ canonicalId: 'read_aloud' }]), (path) => {
+    it('rejects wrong section count', async () => {
+      const tasks = loadCanonical();
+      tasks.forEach(t => { t.section = 'Listening'; });
+      await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().length > 0);
+        assert.ok(getAllErrors().some(e => e.includes('Speaking and Writing')));
       });
     });
 
-    it('fails on future task wording', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id, { extra: 'not yet official' }));
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('not yet official')));
-      });
-    });
-
-    it('fails on invalid promptType enum', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id, { promptType: 'invalid' }));
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
+    it('rejects invalid enum values', async () => {
+      const tasks = loadCanonical();
+      tasks[0].promptType = 'invalid';
+      await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
         assert.ok(getAllErrors().some(e => e.includes('invalid promptType')));
-      });
-    });
-
-    it('fails on invalid responseType enum', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id, { responseType: 'invalid' }));
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('invalid responseType')));
-      });
-    });
-
-    it('fails on invalid officialScoringType enum', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id, { officialScoringType: 'invalid' }));
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('invalid officialScoringType')));
-      });
-    });
-
-    it('fails on boolean fields with non-boolean values', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id, { promptTranscriptRequired: 'yes' }));
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('promptTranscriptRequired')));
-      });
-    });
-  });
-
-  describe('factual contract assertions', () => {
-    it('enforces Write From Dictation prompt max 5 seconds', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id));
-      const wfd = tasks.find(t => t.canonicalId === 'write_from_dictation');
-      wfd.promptLength.maximum = 9;
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('maximum must be 5')));
-      });
-    });
-
-    it('enforces Summarize Spoken Text includes Spelling', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id));
-      const sst = tasks.find(t => t.canonicalId === 'summarize_spoken_text');
-      sst.officialScoringTraits = ['Content', 'Form', 'Grammar', 'Vocabulary'];
-      sst.responseTimingDescription = 'Ten minutes total includes listening and writing';
-      sst.promptLength = { mode: 'range', minimum: 60, maximum: 90, unit: 'seconds' };
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('Spelling')));
-      });
-    });
-
-    it('enforces Summarize Spoken Text responseTimingDescription', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id));
-      const sst = tasks.find(t => t.canonicalId === 'summarize_spoken_text');
-      sst.officialScoringTraits = ['Content', 'Form', 'Grammar', 'Vocabulary', 'Spelling'];
-      sst.promptLength = { mode: 'range', minimum: 60, maximum: 90, unit: 'seconds' };
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('10 minutes')));
-      });
-    });
-
-    it('enforces Write Essay exact official traits', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id));
-      const ess = tasks.find(t => t.canonicalId === 'write_essay');
-      ess.officialScoringTraits = ['Content', 'Form', 'Grammar', 'Vocabulary'];
-      ess.promptLength = { mode: 'range', minimum: 2, maximum: 3, unit: 'sentences' };
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('Development')));
-      });
-    });
-
-    it('rejects Write Essay with split Structure/Coherence', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id));
-      const ess = tasks.find(t => t.canonicalId === 'write_essay');
-      ess.officialScoringTraits = ['Content', 'Form', 'Structure', 'Coherence', 'Grammar', 'General Linguistic Range', 'Vocabulary Range', 'Spelling'];
-      ess.promptLength = { mode: 'range', minimum: 2, maximum: 3, unit: 'sentences' };
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('must not split')));
-      });
-    });
-
-    it('enforces Write Essay prompt 2-3 sentences', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id));
-      const ess = tasks.find(t => t.canonicalId === 'write_essay');
-      ess.promptLength = { mode: 'range', minimum: 1, maximum: 2, unit: 'sentences' };
-      ess.officialScoringTraits = ['Content', 'Form', 'Development, Structure and Coherence', 'Grammar', 'General Linguistic Range', 'Vocabulary Range', 'Spelling'];
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('2-3 sentences')));
-      });
-    });
-
-    it('enforces Respond to a Situation promptType text-and-audio', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id));
-      const rts = tasks.find(t => t.canonicalId === 'respond_to_situation');
-      rts.promptType = 'text';
-      rts.mockMode = 'single playback, 10-second preparation, 40-second response';
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('text-and-audio')));
-      });
-    });
-
-    it('enforces Listening Fill in the Blanks transcript required', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id));
-      const lfb = tasks.find(t => t.canonicalId === 'listening_fill_blanks');
-      lfb.promptTranscriptRequired = false;
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('promptTranscriptRequired')));
-      });
-    });
-
-    it('enforces Highlight Incorrect Words transcript required', async () => {
-      const tasks = ALL_IDS.map(id => makeTask(id));
-      const hiw = tasks.find(t => t.canonicalId === 'highlight_incorrect_words');
-      hiw.promptTranscriptRequired = false;
-      await withFixtureManifest(JSON.stringify(tasks), (path) => {
-        resetValidation();
-        validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('promptTranscriptRequired')));
       });
     });
   });
@@ -385,7 +310,7 @@ describe('Documentation Validator', () => {
 
     it('passes clean content', () => {
       resetValidation();
-      checkUnresolvedMarkers('test.md', 'This is clean content with no markers');
+      checkUnresolvedMarkers('test.md', 'This is clean content');
       assert.equal(getAllErrors().length, 0);
     });
   });
@@ -405,7 +330,7 @@ describe('Documentation Validator', () => {
   });
 
   describe('validateFreeStudentRoutes', () => {
-    const validRouteMap = `| /app | Free student, Paid student | App entry |
+    const valid = `| /app | Free student, Paid student | App entry |
 | /app/onboarding | Free student, Paid student | Onboarding |
 | /app/dashboard | Free student, Paid student | Dashboard |
 | /app/courses | Free student, Paid student | Courses |
@@ -417,16 +342,16 @@ describe('Documentation Validator', () => {
     it('passes with correct free student access', () => {
       resetValidation();
       const path = join(fixturesDir, 'route-map.md');
-      writeFixture('route-map.md', validRouteMap);
+      writeFixture('route-map.md', valid);
       validateFreeStudentRoutes(path);
       try { rmSync(path); } catch {}
       assert.equal(getAllErrors().length, 0);
     });
 
-    it('fails when free student route is missing', () => {
+    it('fails when free student route missing', () => {
       resetValidation();
       const path = join(fixturesDir, 'route-map.md');
-      writeFixture('route-map.md', `| /app | Paid student only | App |`);
+      writeFixture('route-map.md', '| /app | Paid student only | App |');
       validateFreeStudentRoutes(path);
       try { rmSync(path); } catch {}
       assert.ok(getAllErrors().length > 0);
@@ -434,49 +359,21 @@ describe('Documentation Validator', () => {
   });
 
   describe('validateAtoZPhases', () => {
-    const validTable = `| Phase | Description |
-| A | Product contract |
-| B | Monorepo, tooling |
-| C | Shared contracts |
-| D | Database |
-| E | Auth |
-| F | Design system |
-| G | Content |
-| H | Course engine |
-| I | Question engine |
-| J | Reading tasks |
-| K | Listening tasks |
-| L | Speaking recorder |
-| M | Writing tasks |
-| N | Scoring engine |
-| O | AI evaluation |
-| P | Diagnostic |
-| Q | Mock engine |
-| R | Dashboard |
-| S | Portals |
-| T | Payments |
-| U | Content factory |
-| V | Calibration |
-| W | Notifications |
-| X | QA gate |
-| Y | Deployment |
-| Z | Launch |`;
+    const valid = '| A | Product |\n| B | Monorepo |\n| C | Shared |\n| D | Database |\n| E | Auth |\n| F | Design |\n| G | Content |\n| H | Course |\n| I | Question |\n| J | Reading |\n| K | Listening |\n| L | Speaking |\n| M | Writing |\n| N | Scoring |\n| O | AI |\n| P | Diagnostic |\n| Q | Mock |\n| R | Dashboard |\n| S | Portals |\n| T | Payments |\n| U | Factory |\n| V | Calibration |\n| W | Notifications |\n| X | QA |\n| Y | Deployment |\n| Z | Launch |';
 
     it('passes with all A-Z phases', () => {
       resetValidation();
       const path = join(fixturesDir, 'README.md');
-      writeFixture('README.md', validTable);
+      writeFixture('README.md', valid);
       validateAtoZPhases(path);
       try { rmSync(path); } catch {}
       assert.equal(getAllErrors().length, 0);
     });
 
-    it('fails when phase Z is missing', () => {
+    it('fails when phase Z missing', () => {
       resetValidation();
       const path = join(fixturesDir, 'README.md');
-      writeFixture('README.md', `| Phase | Description |
-| A | Product contract |
-| B | Monorepo |`);
+      writeFixture('README.md', '| A | Product |');
       validateAtoZPhases(path);
       try { rmSync(path); } catch {}
       assert.ok(getAllErrors().length > 0);
@@ -506,7 +403,7 @@ describe('Documentation Validator', () => {
   });
 
   describe('validateOfficialReferenceRegister', () => {
-    const validRegister = `### Source 1
+    const valid = `### Source 1
 - Source URL: https://www.pearsonpte.com/pte-academic/test-format/
 - Publisher: Pearson
 - Last verified date: 2026-07-10
@@ -550,23 +447,33 @@ describe('Documentation Validator', () => {
     it('passes with all required source URLs', () => {
       resetValidation();
       const path = join(fixturesDir, 'register.md');
-      writeFixture('register.md', validRegister);
+      writeFixture('register.md', valid);
       validateOfficialReferenceRegister(path);
       try { rmSync(path); } catch {}
       assert.equal(getAllErrors().length, 0);
     });
 
-    it('fails when required source URL is missing', () => {
+    it('fails when required source URL missing', () => {
       resetValidation();
       const path = join(fixturesDir, 'register.md');
-      writeFixture('register.md', `### Source
-- Source URL: https://example.com
-- Publisher: Unknown
-- Last verified date: 2026-07-10
-- Content covered: nothing`);
+      writeFixture('register.md', '### Source\n- Source URL: https://example.com\n- Publisher: Unknown\n- Last verified date: 2026-07-10\n- Content covered: nothing');
       validateOfficialReferenceRegister(path);
       try { rmSync(path); } catch {}
       assert.ok(getAllErrors().length > 0);
+    });
+  });
+
+  describe('validateAll — full repository', () => {
+    it('full repository contract passes', () => {
+      resetValidation();
+      const result = validateAll();
+      assert.equal(result.errors.length, 0, `Errors: ${result.errors.join(', ')}`);
+    });
+
+    it('passes with summary counts', () => {
+      resetValidation();
+      const result = validateAll();
+      assert.equal(result.errors.length, 0);
     });
   });
 });

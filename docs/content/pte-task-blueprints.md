@@ -7,7 +7,7 @@
 - **Canonical ID**: read_aloud
 - **Current official status**: Current official task
 - **Section**: Speaking and Writing
-- **Official skills assessed**: Reading, Speaking
+- **Official skills assessed**: Speaking
 - **Score contributions**: Reading, Speaking
 - **Task purpose**: Assess pronunciation and oral fluency
 - **Prompt type**: Text
@@ -17,7 +17,7 @@
 - **Answer format**: Audio recording
 - **Preparation behaviour**: Preparation timer (30-40 seconds per item, varies by text length), recording indicator after preparation completes, recording begins when student clicks start or after a short tone
 - **Response behaviour**: Recording active for item-dependent duration, automatic stop after time expires, one recording allowed
-- **Playback limit**: No audio playback (text-based prompt)
+- **Playback limit**: No audio
 - **Recording limit**: 1
 - **Practice-mode behaviour**: Configurable replay of own recording, transcript of own response after attempt, hints, model answer, extended preparation option
 - **Mock-mode behaviour**: Microphone opens automatically after countdown/tone, item-dependent response duration, one recording, no hints, no transcript before submission, no answer correction after submission; unanswered mock responses permitted
@@ -40,7 +40,7 @@
 - **Score contributions**: Listening, Speaking
 - **Task purpose**: Assess listening and speaking accuracy
 - **Prompt type**: Audio
-- **Prompt length**: Audio approximately 3 to 9 seconds
+- **Prompt length**: Audio 3 to 9 seconds
 - **Student interface**: Audio playback occurs automatically, recording activates automatically after playback ends, countdown timer for 15-second answer
 - **Input media**: Audio sentence playback
 - **Answer format**: Audio recording
@@ -69,13 +69,13 @@
 - **Score contributions**: Speaking
 - **Task purpose**: Assess ability to describe visual information
 - **Prompt type**: Image
-- **Prompt length**: Single image (graph, chart, map, process, picture)
+- **Prompt length**: 1 image
 - **Student interface**: Image display, preparation countdown, recording countdown, recording button after preparation
 - **Input media**: Static image
 - **Answer format**: Audio recording
 - **Preparation behaviour**: 25-second preparation with visible image; recording indicator after preparation completes
 - **Response behaviour**: 40-second spoken response, one recording, automatic stop after time expires
-- **Playback limit**: No audio playback (image-based prompt)
+- **Playback limit**: No audio
 - **Recording limit**: 1
 - **Practice-mode behaviour**: Configurable preparation, replay own recording, sample answer, transcript after attempt
 - **Mock-mode behaviour**: 25-second preparation, 40-second response, one recording, no replay, no hints; unanswered mock responses permitted
@@ -98,7 +98,7 @@
 - **Score contributions**: Listening, Speaking
 - **Task purpose**: Assess listening comprehension and summarisation
 - **Prompt type**: Audio (may include accompanying image)
-- **Prompt length**: Audio or audiovisual prompt up to 90 seconds
+- **Prompt length**: Audio up to 90 seconds
 - **Student interface**: Audio playback with optional image, preparation timer after playback, recording timer
 - **Input media**: Audio lecture with optional accompanying image
 - **Answer format**: Audio recording
@@ -156,7 +156,7 @@
 - **Score contributions**: Listening, Speaking
 - **Task purpose**: Assess ability to summarise a discussion between multiple speakers
 - **Prompt type**: Audio
-- **Prompt length**: Discussion between three people up to 3 minutes
+- **Prompt length**: Audio up to 180 seconds
 - **Student interface**: Audio playback, preparation timer after playback, recording timer
 - **Input media**: Multi-speaker audio (three speakers)
 - **Answer format**: Audio recording
@@ -173,7 +173,7 @@
 - **Content metadata**: Discussion audio, transcript, key discussion points, difficulty, source, canonical ID
 - **Validation requirements**: Multi-speaker audio clarity, file integrity, recording quality check
 - **Failure and recovery behaviour**: Audio load failure aborts task; recording failure retry; browser keeps recording locally until server storage confirmed
-- **Official reference IDs**: source-1, source-2, source-5
+- **Official reference IDs**: source-1, source-4
 - **Last verified date**: 2026-07-10
 
 ### Respond to a Situation
@@ -185,7 +185,7 @@
 - **Score contributions**: Speaking
 - **Task purpose**: Assess ability to respond appropriately in a given scenario
 - **Prompt type**: Text and audio
-- **Prompt length**: Text prompt up to 60 words
+- **Prompt length**: Text up to 60 words
 - **Student interface**: Written situation displayed, audio plays the same situation, preparation timer after audio, recording timer
 - **Input media**: Text scenario with audio narration
 - **Answer format**: Audio recording
@@ -214,7 +214,7 @@
 - **Score contributions**: Reading, Writing
 - **Task purpose**: Assess reading comprehension and summarisation
 - **Prompt type**: Text
-- **Prompt length**: Reading passage
+- **Prompt length**: Text passage
 - **Student interface**: Reading passage displayed, single-line text input area, word count display
 - **Input media**: Text passage
 - **Answer format**: Written text (single sentence, one or more clauses, 5 to 75 words)
@@ -231,7 +231,7 @@
 - **Content metadata**: Passage text, sample summary, difficulty, source, canonical ID
 - **Validation requirements**: Word count within 5-75 range, single sentence validation, autosave verification
 - **Failure and recovery behaviour**: Autosave every 5 seconds; restore on reload; submitted response remains after refresh, API restart and browser restart
-- **Official reference IDs**: source-1, source-2, source-6
+- **Official reference IDs**: source-1, source-2
 - **Last verified date**: 2026-07-10
 
 ### Write Essay
@@ -243,7 +243,7 @@
 - **Score contributions**: Writing
 - **Task purpose**: Assess writing ability
 - **Prompt type**: Text
-- **Prompt length**: 2 to 3 sentences
+- **Prompt length**: Text 2 to 3 sentences
 - **Student interface**: Essay prompt displayed, text editor with word count, formatting toolbar for practice mode
 - **Input media**: Text prompt
 - **Answer format**: Written essay (200 to 300 words)
@@ -270,11 +270,11 @@
 - **Canonical ID**: reading_writing_fill_blanks
 - **Current official status**: Current official task
 - **Section**: Reading
-- **Official skills assessed**: Reading, Writing
-- **Score contributions**: Reading, Writing
+- **Official skills assessed**: Reading
+- **Score contributions**: Reading
 - **Task purpose**: Assess reading comprehension and vocabulary
 - **Prompt type**: Text
-- **Prompt length**: Reading passage with blanks
+- **Prompt length**: Text up to 300 words
 - **Student interface**: Reading passage with dropdown menus at blank positions
 - **Input media**: Text passage
 - **Answer format**: Selected words per blank from dropdown list
@@ -291,7 +291,7 @@
 - **Content metadata**: Passage, blank positions, answer options, correct answers, difficulty, source, canonical ID
 - **Validation requirements**: All blanks must have a selection before submission
 - **Failure and recovery behaviour**: Autosave selections; restore on reload
-- **Official reference IDs**: source-1, source-3
+- **Official reference IDs**: source-1, source-2, source-6
 - **Last verified date**: 2026-07-10
 
 ### Multiple Choice, Multiple Answers (Reading)
@@ -303,7 +303,7 @@
 - **Score contributions**: Reading
 - **Task purpose**: Assess reading comprehension with multiple correct options
 - **Prompt type**: Text
-- **Prompt length**: Reading passage
+- **Prompt length**: Text up to 350 words
 - **Student interface**: Reading passage, checkbox list of options
 - **Input media**: Text passage
 - **Answer format**: Selected checkboxes
@@ -332,7 +332,7 @@
 - **Score contributions**: Reading
 - **Task purpose**: Assess ability to understand logical text flow
 - **Prompt type**: Text
-- **Prompt length**: Multiple paragraphs
+- **Prompt length**: 4 to 6 paragraphs
 - **Student interface**: Scrambled text boxes, drag-and-drop ordering area, touch support for reordering
 - **Input media**: Text paragraphs
 - **Answer format**: Ordered sequence of paragraph identifiers
@@ -342,7 +342,7 @@
 - **Recording limit**: No audio
 - **Practice-mode behaviour**: Correct order shown after submission, logical flow explanation, hints on connectors
 - **Mock-mode behaviour**: Section-level timer, no hints, no answer reveal until section ends; unanswered mock responses permitted
-- **Official scoring type**: Partial credit (correct adjacent pairs)
+- **Official scoring type**: Partial credit
 - **Official scoring traits**: Reading
 - **Platform estimated-scoring evidence**: Correct adjacent pairs scoring, sequence alignment
 - **Feedback format**: Score per correct adjacent pair, correct order comparison
@@ -361,7 +361,7 @@
 - **Score contributions**: Reading
 - **Task purpose**: Assess reading and vocabulary
 - **Prompt type**: Text
-- **Prompt length**: Reading passage with blanks and word bank
+- **Prompt length**: Text up to 80 words
 - **Student interface**: Reading passage with blank spaces, draggable words from a provided list
 - **Input media**: Text passage
 - **Answer format**: Words assigned to blanks via drag-and-drop
@@ -390,7 +390,7 @@
 - **Score contributions**: Reading
 - **Task purpose**: Assess reading comprehension
 - **Prompt type**: Text
-- **Prompt length**: Reading passage
+- **Prompt length**: Text up to 300 words
 - **Student interface**: Reading passage, radio button list of options
 - **Input media**: Text passage
 - **Answer format**: Single selected option
@@ -421,7 +421,7 @@
 - **Score contributions**: Listening, Writing
 - **Task purpose**: Assess listening comprehension and writing
 - **Prompt type**: Audio
-- **Prompt length**: Audio lecture (60 to 90 seconds)
+- **Prompt length**: Audio 60 to 90 seconds
 - **Student interface**: Audio playback controls, text input area, word count display
 - **Input media**: Audio lecture
 - **Answer format**: Written text (50 to 70 words)
@@ -450,7 +450,7 @@
 - **Score contributions**: Listening
 - **Task purpose**: Assess listening comprehension
 - **Prompt type**: Audio
-- **Prompt length**: Audio recording
+- **Prompt length**: Audio 80 to 120 seconds
 - **Student interface**: Audio playback, checkbox list of options, section timer
 - **Input media**: Audio recording
 - **Answer format**: Selected checkboxes
@@ -475,11 +475,11 @@
 - **Canonical ID**: listening_fill_blanks
 - **Current official status**: Current official task
 - **Section**: Listening
-- **Official skills assessed**: Listening, Writing
+- **Official skills assessed**: Listening
 - **Score contributions**: Listening, Writing
 - **Task purpose**: Assess listening and spelling
 - **Prompt type**: Audio
-- **Prompt length**: Audio recording with transcript containing blanks
+- **Prompt length**: Audio 30 to 60 seconds
 - **Student interface**: Audio playback, transcript with blank text inputs, section timer
 - **Input media**: Audio recording
 - **Answer format**: Typed words in blank text inputs
@@ -508,7 +508,7 @@
 - **Score contributions**: Listening, Reading
 - **Task purpose**: Assess listening comprehension and summary recognition
 - **Prompt type**: Audio
-- **Prompt length**: Audio recording
+- **Prompt length**: Audio 30 to 90 seconds
 - **Student interface**: Audio playback, multiple text summaries as radio options, section timer
 - **Input media**: Audio recording
 - **Answer format**: Single selected summary
@@ -537,7 +537,7 @@
 - **Score contributions**: Listening
 - **Task purpose**: Assess listening comprehension
 - **Prompt type**: Audio
-- **Prompt length**: Audio recording
+- **Prompt length**: Audio 30 to 90 seconds
 - **Student interface**: Audio playback, radio button options, section timer
 - **Input media**: Audio recording
 - **Answer format**: Single selected option
@@ -566,7 +566,7 @@
 - **Score contributions**: Listening
 - **Task purpose**: Assess ability to predict missing word from context
 - **Prompt type**: Audio
-- **Prompt length**: Audio recording with terminal beep replacing last word
+- **Prompt length**: Audio 20 to 70 seconds
 - **Student interface**: Audio playback, radio button list of options for missing word, section timer
 - **Input media**: Audio recording with terminal beep
 - **Answer format**: Single selected option for missing word
@@ -595,7 +595,7 @@
 - **Score contributions**: Listening, Reading
 - **Task purpose**: Assess listening and reading accuracy
 - **Prompt type**: Audio
-- **Prompt length**: Audio recording with displayed transcript
+- **Prompt length**: Audio 15 to 50 seconds
 - **Student interface**: Audio playback, displayed transcript with clickable words, section timer
 - **Input media**: Audio recording with transcript
 - **Answer format**: Selected words in transcript that differ from audio
@@ -624,7 +624,7 @@
 - **Score contributions**: Listening, Writing
 - **Task purpose**: Assess listening and writing accuracy
 - **Prompt type**: Audio
-- **Prompt length**: Sentence audio approximately 3 to 5 seconds
+- **Prompt length**: Audio 3 to 5 seconds
 - **Student interface**: Audio playback, text input area, section timer
 - **Input media**: Audio sentence
 - **Answer format**: Typed sentence
