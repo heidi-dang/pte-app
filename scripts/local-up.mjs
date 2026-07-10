@@ -7,7 +7,7 @@ const env = loadEnvLocal();
 const errors = validateConfig(env);
 if (errors.length > 0) {
   console.error('Environment validation failed:');
-  errors.forEach(e => console.error(`  - ${e}`));
+  errors.forEach((e) => console.error(`  - ${e}`));
   process.exit(1);
 }
 
@@ -28,16 +28,21 @@ async function waitForUrl(url, label, timeoutMs) {
   while (Date.now() - start < timeoutMs) {
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
-      if (res.ok) { console.log(`  ✓ ${label}`); return true; }
+      if (res.ok) {
+        console.log(`  ✓ ${label}`);
+        return true;
+      }
     } catch {}
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 500));
   }
   console.error(`  ✗ ${label} timed out after ${timeoutMs}ms`);
   return false;
 }
 
 console.log('[1/5] Validating environment...');
-try { execSync('npm run doctor', { stdio: 'pipe' }); } catch {
+try {
+  execSync('npm run doctor', { stdio: 'pipe' });
+} catch {
   console.error('Doctor failed. Run npm run doctor for details.');
   process.exit(1);
 }
@@ -46,7 +51,10 @@ console.log('OK');
 console.log('[2/5] Starting infrastructure...');
 try {
   execSync('docker compose --env-file .env.local up -d', { stdio: 'inherit' });
-} catch { console.error('Docker Compose failed'); process.exit(1); }
+} catch {
+  console.error('Docker Compose failed');
+  process.exit(1);
+}
 console.log('OK');
 
 console.log('[3/5] Waiting for containers...');
@@ -60,9 +68,14 @@ while (Date.now() - pgStart < timeout && !pgHealthy) {
     execSync(`docker compose exec postgres pg_isready -U ${pgUser} -d ${pgDb}`, { stdio: 'pipe' });
     pgHealthy = true;
     console.log('  ✓ PostgreSQL healthy');
-  } catch { await new Promise(r => setTimeout(r, 1000)); }
+  } catch {
+    await new Promise((r) => setTimeout(r, 1000));
+  }
 }
-if (!pgHealthy) { console.error('  ✗ PostgreSQL not healthy'); process.exit(1); }
+if (!pgHealthy) {
+  console.error('  ✗ PostgreSQL not healthy');
+  process.exit(1);
+}
 
 const redisStart = Date.now();
 let redisHealthy = false;
@@ -71,9 +84,14 @@ while (Date.now() - redisStart < timeout && !redisHealthy) {
     execSync('docker compose exec redis redis-cli ping', { stdio: 'pipe' });
     redisHealthy = true;
     console.log('  ✓ Redis healthy');
-  } catch { await new Promise(r => setTimeout(r, 1000)); }
+  } catch {
+    await new Promise((r) => setTimeout(r, 1000));
+  }
 }
-if (!redisHealthy) { console.error('  ✗ Redis not healthy'); process.exit(1); }
+if (!redisHealthy) {
+  console.error('  ✗ Redis not healthy');
+  process.exit(1);
+}
 console.log('OK');
 
 console.log('[4/5] Starting services...');
@@ -86,15 +104,16 @@ const workspaces = [
 
 for (const ws of workspaces) {
   const child = spawn(npmCmd, ['--workspace', ws.ws, 'run', 'dev'], {
-    stdio: 'pipe', env: { ...process.env, ...env },
+    stdio: 'pipe',
+    env: { ...process.env, ...env },
   });
   children.push(child);
   pids[ws.name] = child.pid;
-  child.stdout.on('data', d => process.stdout.write(`[${ws.name}] ${d}`));
-  child.stderr.on('data', d => process.stderr.write(`[${ws.name}] ${d}`));
-  child.on('exit', code => {
+  child.stdout.on('data', (d) => process.stdout.write(`[${ws.name}] ${d}`));
+  child.stderr.on('data', (d) => process.stderr.write(`[${ws.name}] ${d}`));
+  child.on('exit', (code) => {
     console.error(`[${ws.name}] exited with code ${code}`);
-    children.forEach(c => !c.killed && c.kill());
+    children.forEach((c) => !c.killed && c.kill());
     process.exit(1);
   });
 }
@@ -124,10 +143,10 @@ if (allOk) {
 
 process.on('SIGINT', () => {
   console.log('\nShutting down...');
-  children.forEach(c => !c.killed && c.kill('SIGTERM'));
-  setTimeout(() => children.forEach(c => !c.killed && c.kill('SIGKILL')), 5000);
+  children.forEach((c) => !c.killed && c.kill('SIGTERM'));
+  setTimeout(() => children.forEach((c) => !c.killed && c.kill('SIGKILL')), 5000);
 });
 process.on('SIGTERM', () => {
-  children.forEach(c => !c.killed && c.kill('SIGTERM'));
-  setTimeout(() => children.forEach(c => !c.killed && c.kill('SIGKILL')), 5000);
+  children.forEach((c) => !c.killed && c.kill('SIGTERM'));
+  setTimeout(() => children.forEach((c) => !c.killed && c.kill('SIGKILL')), 5000);
 });
