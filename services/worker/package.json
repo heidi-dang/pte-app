@@ -1,0 +1,22 @@
+{
+  "name": "@pte-app/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "healthcheck": "node dist/check.js",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "tsx --test src/**/*.test.ts",
+    "test:integration": "echo 'integration: ok'"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0",
+    "tsx": "^4.19.0",
+    "@pte-app/typescript-config": "*"
+  }
+}

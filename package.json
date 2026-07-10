@@ -2,14 +2,44 @@
   "name": "pte-app",
   "version": "0.0.0",
   "private": true,
-  "description": "Production PTE Academic learning platform",
-  "scripts": {
-    "generate:pte-blueprints": "node scripts/generate-pte-blueprints.mjs",
-    "validate:docs": "node scripts/validate-docs.mjs",
-    "test:docs": "node --test tests/docs/*.test.mjs",
-    "test": "npm run test:docs && npm run validate:docs"
-  },
+  "description": "PTE Academic learning platform",
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
+  "packageManager": "npm@11.6.0",
   "engines": {
     "node": ">=24"
+  },
+  "scripts": {
+    "setup:local": "node scripts/setup-local.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "dev": "turbo run dev --parallel",
+    "local:up": "node scripts/local-up.mjs",
+    "local:down": "node scripts/local-down.mjs",
+    "local:smoke": "node scripts/local-smoke.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test:docs": "node --test tests/docs/*.test.mjs",
+    "validate:docs": "node scripts/validate-docs.mjs",
+    "validate:workspace": "node scripts/validate-workspace.mjs",
+    "test:tooling": "node --test tests/tooling/*.test.mjs",
+    "test:unit": "turbo run test:unit --concurrency=1",
+    "test:integration": "turbo run test:integration",
+    "test:e2e": "node scripts/local-smoke.mjs --ci",
+    "test": "npm run test:docs && npm run validate:docs && npm run validate:workspace && npm run test:tooling && npm run test:unit && npm run test:integration",
+    "generate:pte-blueprints": "node scripts/generate-pte-blueprints.mjs",
+    "validate": "node scripts/validate-docs.mjs",
+    "build": "turbo run build",
+    "ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run validate:workspace"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "prettier": "^3.5.0",
+    "turbo": "^2.5.0",
+    "typescript": "^5.8.0"
   }
 }

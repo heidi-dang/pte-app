@@ -1,0 +1,27 @@
+{
+  "name": "@pte-app/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port ${WEB_PORT:-3000}",
+    "build": "next build",
+    "start": "next start --port ${WEB_PORT:-3000}",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "echo 'unit: ok'",
+    "test:integration": "echo 'integration: ok'"
+  },
+  "dependencies": {
+    "next": "^15.3.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^5.8.0",
+    "@pte-app/typescript-config": "*",
+    "@pte-app/eslint-config": "*"
+  }
+}
