@@ -1,0 +1,68 @@
+[
+  {
+    "id": "source-1",
+    "title": "PTE Academic Test Format Overview",
+    "publisher": "Pearson PTE",
+    "url": "https://www.pearsonpte.com/pte-academic/test-format/",
+    "contentCovered": "Overall test structure, section order, timing overview, task-type listing",
+    "lastVerifiedAt": "2026-07-10",
+    "collectedBy": "Dev 1 — factual source collection only",
+    "reviewedBy": "Pending Heidi audit",
+    "approvalStatus": "Pending"
+  },
+  {
+    "id": "source-2",
+    "title": "PTE Academic Speaking and Writing Format",
+    "publisher": "Pearson PTE",
+    "url": "https://www.pearsonpte.com/pte-academic/test-format/speaking-writing/",
+    "contentCovered": "Speaking and Writing task types, preparation times, response times, task descriptions",
+    "lastVerifiedAt": "2026-07-10",
+    "collectedBy": "Dev 1 — factual source collection only",
+    "reviewedBy": "Pending Heidi audit",
+    "approvalStatus": "Pending"
+  },
+  {
+    "id": "source-3",
+    "title": "PTE Academic Reading Format",
+    "publisher": "Pearson PTE",
+    "url": "https://www.pearsonpte.com/pte-academic/test-format/reading/",
+    "contentCovered": "Reading task types, section timing, task descriptions",
+    "lastVerifiedAt": "2026-07-10",
+    "collectedBy": "Dev 1 — factual source collection only",
+    "reviewedBy": "Pending Heidi audit",
+    "approvalStatus": "Pending"
+  },
+  {
+    "id": "source-4",
+    "title": "PTE Academic Listening Format",
+    "publisher": "Pearson PTE",
+    "url": "https://www.pearsonpte.com/pte-academic/test-format/listening/",
+    "contentCovered": "Listening task types, section timing, playback limits, task descriptions",
+    "lastVerifiedAt": "2026-07-10",
+    "collectedBy": "Dev 1 — factual source collection only",
+    "reviewedBy": "Pending Heidi audit",
+    "approvalStatus": "Pending"
+  },
+  {
+    "id": "source-5",
+    "title": "PTE Updates 2025",
+    "publisher": "Pearson PTE",
+    "url": "https://www.pearsonpte.com/pte-updates-2025/",
+    "contentCovered": "Summary of changes to PTE Academic format, new task types, modifications to existing tasks",
+    "lastVerifiedAt": "2026-07-10",
+    "collectedBy": "Dev 1 — factual source collection only",
+    "reviewedBy": "Pending Heidi audit",
+    "approvalStatus": "Pending"
+  },
+  {
+    "id": "source-6",
+    "title": "PTE Academic Test Taker Score Guide",
+    "publisher": "Pearson PTE",
+    "url": "https://www.pearsonpte.com/content/dam/ELL/pte/pearsonpte/pdfs/pte-academic-pdfs/PTE-Academic-Test-Taker-Score-Guide.pdf",
+    "contentCovered": "Scoring methodology, score reporting, skill profiles, score descriptors",
+    "lastVerifiedAt": "2026-07-10",
+    "collectedBy": "Dev 1 — factual source collection only",
+    "reviewedBy": "Pending Heidi audit",
+    "approvalStatus": "Pending"
+  }
+]

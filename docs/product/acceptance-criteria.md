@@ -103,6 +103,7 @@
 8. The same answer cannot be submitted twice (idempotency enforcement).
 9. Submitted mock responses are scored and results are available within `SCORING_TARGET_SECONDS` (default: 5 minutes).
 10. A partially completed mock saves all completed section responses.
+11. In mock mode, unanswered responses are permitted without penalty; the platform does not fabricate answers.
 
 ## Scoring
 

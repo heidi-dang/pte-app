@@ -50,7 +50,7 @@
 | Component evidence | 3 | Each result stores component-level evidence |
 | Versioning | 3 | Scoring profiles and content are versioned and immutable |
 | Confidence | 3 | Every result includes confidence range |
-| Calibration | 3 | Calibration process defined with metrics; constrained vs open speaking tasks correctly separated |
+| Calibration | 2 | Calibration process defined with metrics; constrained vs open speaking tasks correctly separated |
 | Integrated-skill contributions | 1 | Per-task skill contribution documented |
 
 ### UX and Recovery — 10 points

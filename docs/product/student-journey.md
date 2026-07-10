@@ -147,7 +147,7 @@ Landing page → Registration → Email verification → Profile setup → Targe
 - **Interface requirements**: Full-length PTE Academic simulation, all sections, real timing, breaks, auto-submit
 - **Data saved**: Complete response set, timer data, scores, question versions
 - **Failure states**: Internet interruption, browser crash, accidental close, scoring provider timeout, scoring provider unavailable
-- **Recovery path**: Autosave every response immediately, persist session state server-side, resume from last completed task. Server stores an absolute deadline that continues during browser closure or network interruption. On reconnection, obtain current server time and recalculate remaining time. Completed responses remain submitted. Consumed audio playback rights remain consumed. A recording already captured remains available for resumable upload. The same answer cannot be submitted twice. Reprocess scoring when provider available.
+- **Recovery path**: Autosave every response immediately, persist session state server-side, resume from last completed task. Server stores an absolute deadline that continues during browser closure or network interruption. On reconnection, obtain current server time and recalculate remaining time. Completed responses remain submitted. Consumed audio playback rights remain consumed. A recording already captured remains available for resumable upload. The same answer cannot be submitted twice. Unanswered mock responses are permitted; the platform does not fabricate answers. Reprocess scoring when provider available.
 - **Next action**: View readiness report
 
 ### Readiness Report

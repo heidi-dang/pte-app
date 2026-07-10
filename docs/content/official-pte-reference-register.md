@@ -16,7 +16,9 @@ This register documents the official Pearson sources used to derive task format,
 | Content covered | Overall test structure, section order, timing overview, task-type listing |
 | Last verified date | 2026-07-10 |
 | Current-format effective date | 2025 |
-| Internal reviewer | Heidi Dang |
+| Collected by | Dev 1 — factual source collection only |
+| Reviewed by | Pending Heidi audit |
+| Approval status | Pending |
 | Notes | Describes task format and section timing. Does not describe per-task scoring weights. |
 
 ### Source 2: Speaking and Writing Format
@@ -29,7 +31,9 @@ This register documents the official Pearson sources used to derive task format,
 | Content covered | Speaking and Writing task types, preparation times, response times, task descriptions |
 | Last verified date | 2026-07-10 |
 | Current-format effective date | 2025 |
-| Internal reviewer | Heidi Dang |
+| Collected by | Dev 1 — factual source collection only |
+| Reviewed by | Pending Heidi audit |
+| Approval status | Pending |
 | Notes | Describes task format, timing and interface behaviour for Read Aloud, Repeat Sentence, Describe Image, Retell Lecture, Answer Short Question, Summarize Group Discussion, Respond to a Situation, Summarize Written Text and Write Essay. |
 
 ### Source 3: Reading Format
@@ -42,7 +46,9 @@ This register documents the official Pearson sources used to derive task format,
 | Content covered | Reading task types, section timing, task descriptions |
 | Last verified date | 2026-07-10 |
 | Current-format effective date | 2025 |
-| Internal reviewer | Heidi Dang |
+| Collected by | Dev 1 — factual source collection only |
+| Reviewed by | Pending Heidi audit |
+| Approval status | Pending |
 | Notes | Describes task format and timing for Reading and Writing: Fill in the Blanks, Multiple Choice Multiple Answers, Reorder Paragraph, Reading: Fill in the Blanks and Multiple Choice Single Answer. |
 
 ### Source 4: Listening Format
@@ -55,7 +61,9 @@ This register documents the official Pearson sources used to derive task format,
 | Content covered | Listening task types, section timing, playback limits, task descriptions |
 | Last verified date | 2026-07-10 |
 | Current-format effective date | 2025 |
-| Internal reviewer | Heidi Dang |
+| Collected by | Dev 1 — factual source collection only |
+| Reviewed by | Pending Heidi audit |
+| Approval status | Pending |
 | Notes | Describes task format, playback limits and timing for Summarize Spoken Text, Multiple Choice Multiple Answers, Fill in the Blanks, Highlight Correct Summary, Multiple Choice Single Answer, Select Missing Word, Highlight Incorrect Words and Write From Dictation. |
 
 ### Source 5: 2025 PTE Update Page
@@ -68,7 +76,9 @@ This register documents the official Pearson sources used to derive task format,
 | Content covered | Summary of changes to PTE Academic format, new task types, modifications to existing tasks |
 | Last verified date | 2026-07-10 |
 | Current-format effective date | 2025 |
-| Internal reviewer | Heidi Dang |
+| Collected by | Dev 1 — factual source collection only |
+| Reviewed by | Pending Heidi audit |
+| Approval status | Pending |
 | Notes | Confirms Summarize Group Discussion and Respond to a Situation as current official tasks. Includes effective dates for format changes. |
 
 ### Source 6: PTE Academic Test Taker Score Guide
@@ -81,5 +91,7 @@ This register documents the official Pearson sources used to derive task format,
 | Content covered | Scoring methodology, score reporting, skill profiles, score descriptors |
 | Last verified date | 2026-07-10 |
 | Current-format effective date | 2025 |
-| Internal reviewer | Heidi Dang |
+| Collected by | Dev 1 — factual source collection only |
+| Reviewed by | Pending Heidi audit |
+| Approval status | Pending |
 | Notes | Describes scoring components and scoring traits for each task type. Documents enabling skills and integrated skill contributions. |
