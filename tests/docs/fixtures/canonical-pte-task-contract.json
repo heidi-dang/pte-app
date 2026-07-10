@@ -44,7 +44,8 @@
     "mockMode": "microphone opens automatically after countdown/tone, item-dependent response duration, one recording, no hints, no transcript before submission, no answer correction after submission",
     "referenceIds": [
       "source-1",
-      "source-2"
+      "source-2",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -95,7 +96,8 @@
     "mockMode": "single playback, 15-second answer period, one recording, no transcript before submission",
     "referenceIds": [
       "source-1",
-      "source-2"
+      "source-2",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -144,7 +146,8 @@
     "mockMode": "25-second preparation, 40-second response, one recording, no replay, no hints",
     "referenceIds": [
       "source-1",
-      "source-2"
+      "source-2",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -195,7 +198,8 @@
     "mockMode": "single playback only, 10-second preparation, 40-second response, one recording, no transcript before submission",
     "referenceIds": [
       "source-1",
-      "source-2"
+      "source-2",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -242,7 +246,8 @@
     "mockMode": "single playback, 10-second answer period, one microphone recording, no text-response fallback, no answer reveal before submission",
     "referenceIds": [
       "source-1",
-      "source-2"
+      "source-2",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -293,7 +298,9 @@
     "mockMode": "single playback, 10-second preparation, 2-minute response, one recording, no transcript before submission",
     "referenceIds": [
       "source-1",
-      "source-4"
+      "source-2",
+      "source-5",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -343,7 +350,8 @@
     "referenceIds": [
       "source-1",
       "source-2",
-      "source-5"
+      "source-5",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -365,8 +373,8 @@
     "promptLength": {
       "mode": "range",
       "minimum": 0,
-      "maximum": null,
-      "unit": "paragraphs"
+      "maximum": 300,
+      "unit": "words"
     },
     "preparationTiming": {
       "mode": "fixed",
@@ -395,7 +403,8 @@
     "mockMode": "10-minute timer, single sentence, 5-75 word limit, autosave, no hints, no spell check",
     "referenceIds": [
       "source-1",
-      "source-2"
+      "source-2",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -497,7 +506,7 @@
     "mockMode": "section-level timer, no hints, no answer reveal until section ends, no partial feedback",
     "referenceIds": [
       "source-1",
-      "source-2",
+      "source-3",
       "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
@@ -545,7 +554,8 @@
     "mockMode": "section-level timer, no hints, no answer reveal until section ends",
     "referenceIds": [
       "source-1",
-      "source-3"
+      "source-3",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -564,9 +574,9 @@
     "responseType": "drag-and-drop-order",
     "promptLength": {
       "mode": "range",
-      "minimum": 4,
-      "maximum": 6,
-      "unit": "paragraphs"
+      "minimum": 0,
+      "maximum": 150,
+      "unit": "words"
     },
     "preparationTiming": {
       "mode": "fixed",
@@ -592,7 +602,8 @@
     "mockMode": "section-level timer, no hints, no answer reveal until section ends",
     "referenceIds": [
       "source-1",
-      "source-3"
+      "source-3",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -639,7 +650,8 @@
     "mockMode": "section-level timer, no hints, no answer reveal until section ends",
     "referenceIds": [
       "source-1",
-      "source-3"
+      "source-3",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -686,7 +698,8 @@
     "mockMode": "section-level timer, no hints, no answer reveal until section ends",
     "referenceIds": [
       "source-1",
-      "source-3"
+      "source-3",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -740,7 +753,8 @@
     "mockMode": "single playback, 10 minutes total to listen and write, 50-70 word response, no transcript before submission",
     "referenceIds": [
       "source-1",
-      "source-4"
+      "source-4",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -787,7 +801,8 @@
     "mockMode": "single playback, section-level timer, no transcript before submission, no answer reveal before submission",
     "referenceIds": [
       "source-1",
-      "source-4"
+      "source-4",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -836,7 +851,8 @@
     "mockMode": "single playback, section-level timer, no transcript before submission, no answer reveal before submission",
     "referenceIds": [
       "source-1",
-      "source-4"
+      "source-4",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -886,7 +902,8 @@
     "mockMode": "single playback, section-level timer, no transcript before submission, no answer reveal before submission",
     "referenceIds": [
       "source-1",
-      "source-4"
+      "source-4",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -933,7 +950,8 @@
     "mockMode": "single playback, section-level timer, no transcript before submission, no answer reveal before submission",
     "referenceIds": [
       "source-1",
-      "source-4"
+      "source-4",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -980,7 +998,8 @@
     "mockMode": "single playback, section-level timer, no transcript before submission, no answer reveal before submission",
     "referenceIds": [
       "source-1",
-      "source-4"
+      "source-4",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -1030,7 +1049,8 @@
     "mockMode": "single playback, section-level timer, no transcript highlighting before submission, no answer reveal before submission",
     "referenceIds": [
       "source-1",
-      "source-4"
+      "source-4",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true
@@ -1080,7 +1100,8 @@
     "mockMode": "single playback, 3 to 5 second prompt, no replay, no transcript before submission, word-level partial credit",
     "referenceIds": [
       "source-1",
-      "source-4"
+      "source-4",
+      "source-6"
     ],
     "lastVerifiedAt": "2026-07-10",
     "currentOfficialTask": true

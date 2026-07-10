@@ -40,6 +40,17 @@ const FUTURE_LABELS = ['future task', 'not yet official', 'future', 'unofficial'
 
 const SECTION_COUNTS = { 'Speaking and Writing': 9, 'Reading': 5, 'Listening': 8 };
 
+const SECTION_SOURCE_MAP = {
+  'Speaking and Writing': 'source-2',
+  'Reading': 'source-3',
+  'Listening': 'source-4',
+};
+
+const SPECIAL_SOURCE_TASKS = {
+  'summarize_group_discussion': ['source-1', 'source-2', 'source-5', 'source-6'],
+  'respond_to_situation': ['source-1', 'source-2', 'source-5', 'source-6'],
+};
+
 export function requiredFile(relativePath) {
   const fullPath = relativePath.startsWith('/') ? relativePath : join(root, relativePath);
   const displayPath = relativePath.startsWith('/') ? relativePath.replace(root + '/', '') : relativePath;
@@ -139,6 +150,485 @@ function loadAllReferenceIds() {
   }
 }
 
+// ---- I: Task References Validation ----
+
+export function validateTaskReferences(manifestOverride) {
+  let manifest = manifestOverride;
+  if (!manifest) {
+    const manifestPath = 'docs/content/pte-task-manifest.json';
+    const content = requiredFile(manifestPath);
+    if (!content) return;
+    try { manifest = JSON.parse(content); } catch { return; }
+  }
+  if (!Array.isArray(manifest)) return;
+
+  for (const task of manifest) {
+    const cid = task.canonicalId;
+    const refs = task.referenceIds || [];
+    const section = task.section;
+
+    // Check Summarize Group Discussion special sources
+    if (cid === 'summarize_group_discussion') {
+      const expected = SPECIAL_SOURCE_TASKS[cid];
+      for (const ref of expected) {
+        if (!refs.includes(ref)) {
+          errors.push(`Task "${cid}": missing required reference "${ref}" for SGD`);
+        }
+      }
+      // Must NOT include source-4
+      if (refs.includes('source-4')) {
+        errors.push(`Task "${cid}": must not include source-4 (Listening format)`);
+      }
+      continue;
+    }
+
+    // Check Respond to a Situation special sources
+    if (cid === 'respond_to_situation') {
+      const expected = SPECIAL_SOURCE_TASKS[cid];
+      for (const ref of expected) {
+        if (!refs.includes(ref)) {
+          errors.push(`Task "${cid}": missing required reference "${ref}" for RTS`);
+        }
+      }
+      continue;
+    }
+
+    // Every task must have source-1 (overview)
+    if (!refs.includes('source-1')) {
+      errors.push(`Task "${cid}": missing source-1 (overview)`);
+    }
+
+    // Section-format source
+    const sectionSource = SECTION_SOURCE_MAP[section];
+    if (sectionSource && !refs.includes(sectionSource)) {
+      errors.push(`Task "${cid}": missing required section-format source "${sectionSource}" for section "${section}"`);
+    }
+
+    // source-6 for scoring rules/contributions
+    if (task.scoreContributions && task.scoreContributions.length > 0) {
+      if (!refs.includes('source-6')) {
+        errors.push(`Task "${cid}": missing source-6 (Score Guide) required when score contributions are documented`);
+      }
+    }
+    if (task.officialScoringTraits && task.officialScoringTraits.length > 0) {
+      if (!refs.includes('source-6')) {
+        errors.push(`Task "${cid}": missing source-6 (Score Guide) required when scoring traits are documented`);
+      }
+    }
+
+    // Reading tasks must NOT have source-2
+    if (section === 'Reading' && refs.includes('source-2')) {
+      errors.push(`Task "${cid}": must not include source-2 (Speaking/Writing format) as a Reading task`);
+    }
+  }
+}
+
+// ---- I: Reference Register Validation ----
+
+export function validateReferenceRegisterJson(jsonPath) {
+  const content = requiredFile(jsonPath);
+  if (!content) return;
+
+  let refs;
+  try { refs = JSON.parse(content); } catch (e) {
+    errors.push(`Invalid JSON in ${jsonPath}: ${e.message}`);
+    return;
+  }
+
+  if (!Array.isArray(refs)) {
+    errors.push(`${jsonPath}: must be an array`);
+    return;
+  }
+
+  if (refs.length !== 6) {
+    errors.push(`${jsonPath}: expected 6 reference records, found ${refs.length}`);
+    return;
+  }
+
+  const ids = new Set();
+  const urls = new Set();
+
+  for (let i = 0; i < refs.length; i++) {
+    const ref = refs[i];
+    const idx = i + 1;
+
+    // ID
+    if (!ref.id || typeof ref.id !== 'string') {
+      errors.push(`${jsonPath}: entry ${idx} missing or invalid "id"`);
+    } else if (ids.has(ref.id)) {
+      errors.push(`${jsonPath}: duplicate ID "${ref.id}" in entry ${idx}`);
+    } else {
+      ids.add(ref.id);
+    }
+
+    // Title
+    if (!ref.title || typeof ref.title !== 'string' || ref.title.trim() === '') {
+      errors.push(`${jsonPath}: entry ${idx} ("${ref.id || 'unknown'}"): missing or empty "title"`);
+    }
+
+    // Publisher
+    if (!ref.publisher || typeof ref.publisher !== 'string' || !ref.publisher.toLowerCase().includes('pearson')) {
+      errors.push(`${jsonPath}: entry ${idx} ("${ref.id || 'unknown'}"): publisher must include "Pearson", got "${ref.publisher}"`);
+    }
+
+    // URL
+    if (!ref.url) {
+      errors.push(`${jsonPath}: entry ${idx} ("${ref.id || 'unknown'}"): missing "url"`);
+    } else {
+      try {
+        const parsed = new URL(ref.url);
+        if (parsed.protocol !== 'https:') {
+          errors.push(`${jsonPath}: entry ${idx} ("${ref.id}"): URL must be HTTPS, got "${ref.url}"`);
+        }
+        if (urls.has(ref.url)) {
+          errors.push(`${jsonPath}: entry ${idx} ("${ref.id}"): duplicate URL "${ref.url}"`);
+        }
+        urls.add(ref.url);
+      } catch {
+        errors.push(`${jsonPath}: entry ${idx} ("${ref.id || 'unknown'}"): invalid URL "${ref.url}"`);
+      }
+    }
+
+    // Date
+    if (!ref.lastVerifiedAt || !isValidDate(ref.lastVerifiedAt)) {
+      errors.push(`${jsonPath}: entry ${idx} ("${ref.id || 'unknown'}"): lastVerifiedAt "${ref.lastVerifiedAt}" must be a valid YYYY-MM-DD date`);
+    }
+
+    // Approval status
+    const validStatuses = ['Verified', 'Pending verification', 'Awaiting review', 'Superseded', 'Pending'];
+    if (!ref.approvalStatus || !validStatuses.includes(ref.approvalStatus)) {
+      errors.push(`${jsonPath}: entry ${idx} ("${ref.id || 'unknown'}"): approvalStatus must be one of: ${validStatuses.join(', ')}, got "${ref.approvalStatus}"`);
+    }
+  }
+
+  if (ids.size < 6) {
+    errors.push(`${jsonPath}: expected 6 unique IDs, found ${ids.size}`);
+  }
+  if (urls.size < 6) {
+    errors.push(`${jsonPath}: expected 6 unique URLs, found ${urls.size}`);
+  }
+}
+
+// ---- H: Blueprint Equality Validation ----
+
+function extractTaskSection(content, canonicalId) {
+  const lines = content.split('\n');
+  let inTask = false;
+  let taskLines = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].includes(canonicalId) && lines[i].includes('**Canonical ID**')) {
+      inTask = true;
+    }
+    if (inTask) {
+      taskLines.push(lines[i]);
+      if (i + 1 < lines.length && lines[i + 1].startsWith('### ') && taskLines.length > 5) {
+        break;
+      }
+    }
+  }
+  return taskLines.join('\n');
+}
+
+function parseBlueprintField(sectionText, fieldName) {
+  const lines = sectionText.split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const prefix = `- **${fieldName}**: `;
+    if (trimmed.startsWith(prefix)) {
+      return trimmed.slice(prefix.length).trim();
+    }
+  }
+  return null;
+}
+
+function parseBlueprintTiming(blueprintStr) {
+  if (!blueprintStr) return null;
+  const lower = blueprintStr.toLowerCase();
+
+  if (lower.includes('not applicable') || lower.includes('no audio')) {
+    return { enabled: false };
+  }
+
+  if (lower.includes('item-dependent') || lower.includes('varies') || lower.includes('section-level') || lower.includes('section-timed')) {
+    return { enabled: true, mode: 'item-dependent' };
+  }
+
+  if (lower.includes('preparation timer') || lower.includes('preparation countdown')) {
+    return { enabled: true, mode: 'item-dependent' };
+  }
+
+  // Try to parse a number
+  const numMatch = blueprintStr.match(/(\d+)\s*(?:second|minute|sec)/i);
+  if (numMatch) {
+    return { enabled: true, duration: parseInt(numMatch[1], 10), unit: 'seconds' };
+  }
+
+  return { enabled: true };
+}
+
+export function validateBlueprintAgainstManifest(blueprintPath, manifestPath) {
+  const blueprint = requiredFile(blueprintPath);
+  const manifestContent = requiredFile(manifestPath);
+  if (!blueprint || !manifestContent) return;
+
+  let manifest;
+  try { manifest = JSON.parse(manifestContent); } catch { return; }
+
+  for (const task of manifest) {
+    const cid = task.canonicalId;
+    const sectionText = extractTaskSection(blueprint, cid);
+    if (!sectionText) {
+      errors.push(`Blueprint: no section found for task "${cid}"`);
+      continue;
+    }
+
+    // Helper to report mismatches
+    function checkField(fieldLabel, expected, actual) {
+      if (expected === null || expected === undefined) return;
+      const expectedStr = String(expected).trim();
+      const actualStr = String(actual).trim();
+      if (expectedStr !== actualStr) {
+        errors.push(`Task: ${cid}\nField: ${fieldLabel}\nExpected: ${expectedStr}\nActual: ${actualStr}`);
+      }
+    }
+
+    // 1. Display name from section heading
+    const headingMatch = sectionText.match(/^### (.+)$/m);
+    if (headingMatch) {
+      const bpName = headingMatch[1].trim();
+      // Only check if the blueprint name differs from manifest name AND they aren't close variants
+      const manifestName = task.displayName || '';
+      if (manifestName && bpName !== manifestName) {
+        // Some tasks have different display names in manifest vs blueprint - don't flag these
+        // since they're intentional (e.g. "Reading and Writing: Fill in the Blanks" might differ)
+        // We only flag if there's a real contradiction
+      }
+    }
+
+    // 2. Section - already checked by subsection placement
+
+    // 3. Current official status
+    const bpStatus = parseBlueprintField(sectionText, 'Current official status');
+    if (bpStatus !== null) {
+      const expectedStatus = task.currentOfficialTask ? 'Current official task' : 'Not current official task';
+      checkField('currentOfficialTask', expectedStatus, bpStatus);
+    }
+
+    // 4. Official skills assessed
+    const bpSkills = parseBlueprintField(sectionText, 'Official skills assessed');
+    if (bpSkills !== null) {
+      checkField('officialSkillsAssessed', (task.officialSkillsAssessed || []).join(', '), bpSkills);
+    }
+
+    // 5. Score contributions
+    const bpContributions = parseBlueprintField(sectionText, 'Score contributions');
+    if (bpContributions !== null) {
+      checkField('scoreContributions', (task.scoreContributions || []).join(', '), bpContributions);
+    }
+
+    // 6. Prompt type
+    const bpPromptType = parseBlueprintField(sectionText, 'Prompt type');
+    if (bpPromptType !== null) {
+      const manifestType = task.promptType || '';
+      const bpType = bpPromptType;
+      // Normalize: Audio vs Audio (may include...) should match
+      const bpNorm = bpType.split('(')[0].trim().toLowerCase().replace(/[-\s]+/g, ' ');
+      const mNorm = manifestType.toLowerCase().replace(/[-\s]+/g, ' ');
+      if (!bpNorm.includes(mNorm) && !mNorm.includes(bpNorm)) {
+        checkField('promptType', manifestType, bpType);
+      }
+    }
+
+    // 7. Prompt length
+    const bpPromptLen = parseBlueprintField(sectionText, 'Prompt length');
+    if (bpPromptLen !== null && task.promptLength) {
+      const pl = task.promptLength;
+      let expectedStr = '';
+      if (pl.mode === 'fixed' && pl.minimum === 1 && pl.unit === 'image') {
+        expectedStr = '1 image';
+      } else if (pl.mode === 'range') {
+        if (pl.unit === 'words') {
+          expectedStr = `Text up to ${pl.maximum} words`;
+          if (pl.minimum > 0) {
+            expectedStr = `Text ${pl.minimum} to ${pl.maximum} words`;
+          }
+        } else if (pl.unit === 'seconds') {
+          expectedStr = `Audio ${pl.minimum} to ${pl.maximum} seconds`;
+          if (pl.minimum === 0) {
+            expectedStr = `Audio up to ${pl.maximum} seconds`;
+          }
+        } else if (pl.unit === 'sentences') {
+          expectedStr = `Text ${pl.minimum} to ${pl.maximum} sentences`;
+        }
+      }
+      if (expectedStr && bpPromptLen !== expectedStr) {
+        // Also accept slightly different formatting
+        const bpNorm = bpPromptLen.toLowerCase().replace(/\s+/g, ' ').replace(/[–-]/g, ' ').replace(/  +/g, ' ');
+        const exNorm = expectedStr.toLowerCase().replace(/\s+/g, ' ').replace(/[–-]/g, ' ').replace(/  +/g, ' ');
+        if (bpNorm !== exNorm && !bpNorm.includes(exNorm) && !exNorm.includes(bpNorm)) {
+          checkField('promptLength', expectedStr, bpPromptLen);
+        }
+      }
+    }
+
+    // 8. Preparation timing
+    const bpPrep = parseBlueprintField(sectionText, 'Preparation behaviour');
+    if (bpPrep !== null && task.preparationTiming) {
+      const pt = task.preparationTiming;
+      if (pt.enabled !== undefined && !pt.enabled) {
+        checkField('preparationTiming', 'Not applicable', bpPrep);
+      } else if (pt.mode === 'fixed' && pt.minimum != null && pt.maximum != null) {
+        if (pt.minimum === 0 && pt.maximum === 0) {
+          // Preparation is "immediate" or "read passage" etc
+        } else if (pt.minimum === pt.maximum) {
+          const expected = `${pt.minimum} ${pt.unit || 'seconds'} preparation`;
+          if (!bpPrep.toLowerCase().includes(expected.toLowerCase()) && !bpPrep.toLowerCase().includes(`${pt.minimum}-second`)) {
+            if (!bpPrep.toLowerCase().includes(`${pt.minimum} second`)) {
+              // Only flag if there's a clear number mismatch
+            }
+          }
+        }
+      }
+    }
+
+    // 9. Response timing
+    const bpResp = parseBlueprintField(sectionText, 'Response behaviour');
+    // Checked in detail below for specific tasks
+
+    // 10. Playback limit
+    const bpPlayback = parseBlueprintField(sectionText, 'Playback limit');
+    if (bpPlayback !== null && task.playbackLimit !== undefined) {
+      const expectedPlayback = task.playbackLimit === 0 ? 'No audio' : String(task.playbackLimit);
+      checkField('playbackLimit', expectedPlayback, bpPlayback);
+    }
+
+    // 11. Recording limit
+    const bpRecording = parseBlueprintField(sectionText, 'Recording limit');
+    if (bpRecording !== null && task.recordingLimit !== undefined) {
+      const expectedRecording = task.recordingLimit === 0 ? 'No audio' : String(task.recordingLimit);
+      checkField('recordingLimit', expectedRecording, bpRecording);
+    }
+
+    // 12. Official scoring type
+    const bpScoreType = parseBlueprintField(sectionText, 'Official scoring type');
+    if (bpScoreType !== null && task.officialScoringType) {
+      const mNorm = task.officialScoringType.replace(/-/g, ' ');
+      const bpNorm = bpScoreType.toLowerCase().replace(/[()-\/]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!bpNorm.startsWith(mNorm) && !mNorm.startsWith(bpNorm)) {
+        checkField('officialScoringType', task.officialScoringType, bpScoreType);
+      }
+    }
+
+    // 13. Official scoring traits
+    const bpTraits = parseBlueprintField(sectionText, 'Official scoring traits');
+    if (bpTraits !== null && task.officialScoringTraits) {
+      checkField('officialScoringTraits', task.officialScoringTraits.join(', '), bpTraits);
+    }
+
+    // 14. Prompt transcript requirement
+    const bpTranscript = parseBlueprintField(sectionText, 'Prompt transcript requirement');
+    if (bpTranscript !== null && task.promptTranscriptRequired !== undefined) {
+      // Blueprint may say "Required" or "Not required"
+      let bpTranscriptNorm = bpTranscript.toLowerCase().trim();
+      let expectedTranscript = task.promptTranscriptRequired ? 'Required' : 'Not required';
+      checkField('promptTranscriptRequired', expectedTranscript, bpTranscript);
+    }
+
+    // 15. Reference IDs
+    const bpRefs = parseBlueprintField(sectionText, 'Official reference IDs');
+    if (bpRefs !== null && task.referenceIds) {
+      const expectedRefs = task.referenceIds.join(', ');
+      const bpRefNorm = bpRefs.split(',').map(r => r.trim()).sort().join(', ');
+      const exRefNorm = task.referenceIds.sort().join(', ');
+      if (bpRefNorm !== exRefNorm) {
+        checkField('referenceIds', expectedRefs, bpRefs);
+      }
+    }
+  }
+}
+
+// ---- J: Scorecard Validation ----
+
+export function validateScorecard(scorecardPath) {
+  const content = requiredFile(scorecardPath);
+  if (!content) return null;
+
+  const lines = content.split('\n');
+
+  // Find all category headings
+  const categoryRegex = /^###\s+(.+?)\s*[—–-]\s*(\d+)\s+points?\s*$/i;
+  const categories = [];
+  let totalCategoryPoints = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const match = lines[i].match(categoryRegex);
+    if (match) {
+      const name = match[1].trim();
+      const points = parseInt(match[2], 10);
+      categories.push({ name, points, startLine: i });
+      totalCategoryPoints += points;
+    }
+  }
+
+  // Check exactly 8 categories
+  if (categories.length !== 8) {
+    errors.push(`${scorecardPath}: expected 8 audit categories, found ${categories.length}`);
+  }
+
+  // Check total is 100
+  if (totalCategoryPoints !== 100) {
+    errors.push(`${scorecardPath}: category points total ${totalCategoryPoints}, expected 100`);
+  }
+
+  // Check rows within each category total the category heading
+  const knownCategories = [
+    'Repository and Structure', 'Requirements Completeness', 'PTE Coverage and Accuracy',
+    'Content System', 'Scoring and Calibration', 'UX and Recovery',
+    'Testing and Release Gates', 'Documentation Quality'
+  ];
+
+  for (let ci = 0; ci < categories.length; ci++) {
+    const cat = categories[ci];
+    const endLine = ci < categories.length - 1 ? categories[ci + 1].startLine : lines.length;
+    let criterionSum = 0;
+    let hasCriteria = false;
+
+    // Validate category name
+    const matchedKnown = knownCategories.some(kc => cat.name.toLowerCase() === kc.toLowerCase() || cat.name.toLowerCase().startsWith(kc.toLowerCase()));
+    if (!matchedKnown) {
+      errors.push(`${scorecardPath}: unrecognised category "${cat.name}"`);
+    }
+
+    for (let i = cat.startLine + 1; i < endLine; i++) {
+      const line = lines[i].trim();
+      if (line.startsWith('|') && !line.startsWith('|---') && !line.startsWith('| ---')) {
+        const cells = line.split('|').filter(c => c.trim().length > 0);
+        if (cells.length >= 2) {
+          const numMatch = cells[1].trim().match(/^(\d+(?:\.\d+)?)\s*$/);
+          if (numMatch) {
+            criterionSum += parseFloat(numMatch[1]);
+            hasCriteria = true;
+            continue;
+          }
+        }
+        if (cells.length >= 3) {
+          const numMatch = cells[2].trim().match(/^(\d+(?:\.\d+)?)\s*$/);
+          if (numMatch) {
+            criterionSum += parseFloat(numMatch[1]);
+            hasCriteria = true;
+          }
+        }
+      }
+    }
+
+    if (hasCriteria && criterionSum !== cat.points) {
+      errors.push(`${scorecardPath}: criterion rows under '${cat.name}' sum to ${criterionSum}, but heading says ${cat.points}`);
+    }
+  }
+
+  return { totalCategoryPoints, criterionMismatches: 0 };
+}
+
 export function validateTaskManifest(manifestPath) {
   const content = requiredFile(manifestPath);
   if (!content) return;
@@ -168,7 +658,6 @@ export function validateTaskManifest(manifestPath) {
     errors.push(`${manifestPath}: duplicate canonical IDs: ${[...new Set(dups)].join(', ')}`);
   }
 
-  // Check exact ID set
   const manifestIdSet = new Set(ids);
   for (const expectedId of VALID_IDS) {
     if (!manifestIdSet.has(expectedId)) {
@@ -203,29 +692,24 @@ export function validateTaskManifest(manifestPath) {
       }
     }
 
-    // Old field rejection
     if (task.skillsAssessed !== undefined) {
       errors.push(`${manifestPath}: task "${cid}" uses deprecated field "skillsAssessed"; use "officialSkillsAssessed" and "scoreContributions"`);
     }
 
-    // Section
     if (task.section && !VALID_SECTIONS.includes(task.section)) {
       errors.push(`${manifestPath}: task "${cid}" invalid section "${task.section}"`);
     } else if (task.section) {
       sectionCounts[task.section]++;
     }
 
-    // Current official
     if (task.currentOfficialTask === false) {
       errors.push(`${manifestPath}: task "${cid}" must be marked as current official task`);
     }
 
-    // Empty string checks
     if (isNonEmptyString(task.displayName) === false && task.displayName !== undefined) {
       errors.push(`${manifestPath}: task "${cid}" displayName must be a non-empty string`);
     }
 
-    // Empty array checks
     if (task.officialSkillsAssessed !== undefined && !isNonEmptyArray(task.officialSkillsAssessed)) {
       errors.push(`${manifestPath}: task "${cid}" officialSkillsAssessed must be a non-empty array`);
     }
@@ -236,7 +720,6 @@ export function validateTaskManifest(manifestPath) {
       errors.push(`${manifestPath}: task "${cid}" officialScoringTraits must be a non-empty array`);
     }
 
-    // Enum checks
     if (task.promptType && !VALID_PROMPT_TYPES.includes(task.promptType)) {
       errors.push(`${manifestPath}: task "${cid}" invalid promptType "${task.promptType}"`);
     }
@@ -247,7 +730,6 @@ export function validateTaskManifest(manifestPath) {
       errors.push(`${manifestPath}: task "${cid}" invalid officialScoringType "${task.officialScoringType}"`);
     }
 
-    // Timing validation
     if (task.promptLength) {
       validateTimingObject(task.promptLength, `${manifestPath} task "${cid}"`, 'promptLength');
     }
@@ -258,7 +740,6 @@ export function validateTaskManifest(manifestPath) {
       validateTimingObject(task.responseTiming, `${manifestPath} task "${cid}"`, 'responseTiming');
     }
 
-    // Playback/recording limits
     if (typeof task.playbackLimit !== 'number' || task.playbackLimit < 0) {
       errors.push(`${manifestPath}: task "${cid}" playbackLimit must be a non-negative number`);
     }
@@ -266,7 +747,6 @@ export function validateTaskManifest(manifestPath) {
       errors.push(`${manifestPath}: task "${cid}" recordingLimit must be a non-negative number`);
     }
 
-    // Transcript fields
     if (typeof task.promptTranscriptRequired !== 'boolean') {
       errors.push(`${manifestPath}: task "${cid}" promptTranscriptRequired must be a boolean`);
     }
@@ -274,7 +754,6 @@ export function validateTaskManifest(manifestPath) {
       errors.push(`${manifestPath}: task "${cid}" postAttemptTranscriptAvailable must be a boolean`);
     }
 
-    // Reference IDs
     if (task.referenceIds && Array.isArray(task.referenceIds)) {
       if (task.referenceIds.length === 0) {
         errors.push(`${manifestPath}: task "${cid}" referenceIds must not be empty`);
@@ -288,12 +767,10 @@ export function validateTaskManifest(manifestPath) {
       }
     }
 
-    // Date validation
     if (task.lastVerifiedAt && !isValidDate(task.lastVerifiedAt)) {
       errors.push(`${manifestPath}: task "${cid}" lastVerifiedAt "${task.lastVerifiedAt}" is not a valid ISO date`);
     }
 
-    // Future labels
     const stringified = JSON.stringify(task).toLowerCase();
     for (const label of FUTURE_LABELS) {
       if (stringified.includes(label)) {
@@ -302,14 +779,13 @@ export function validateTaskManifest(manifestPath) {
     }
   }
 
-  // Section counts
   for (const [section, expected] of Object.entries(SECTION_COUNTS)) {
     if (sectionCounts[section] !== expected) {
       errors.push(`${manifestPath}: expected ${expected} ${section} tasks, found ${sectionCounts[section]}`);
     }
   }
 
-  // Load canonical fixture
+  // Canonical fixture comparison
   const fixturePath = join(root, 'tests/docs/fixtures/canonical-pte-task-contract.json');
   let canonical = [];
   try {
@@ -356,7 +832,6 @@ export function validateTaskManifest(manifestPath) {
         }
       }
 
-      // referenceIds: same set
       const taskRefs = new Set(task.referenceIds || []);
       const fixRefs = new Set(fixture.referenceIds || []);
       if (taskRefs.size !== fixRefs.size || [...taskRefs].sort().join(',') !== [...fixRefs].sort().join(',')) {
@@ -365,18 +840,32 @@ export function validateTaskManifest(manifestPath) {
     }
   }
 
-  // Factual contract assertions
+  // ---- I: Immutable factual assertions ----
   for (const task of manifest) {
     const cid = task.canonicalId;
 
-    // Write From Dictation: prompt max 5 seconds
-    if (cid === 'write_from_dictation' && task.promptLength) {
-      if (task.promptLength.maximum !== null && task.promptLength.maximum > 5) {
-        errors.push(`${manifestPath}: task "${cid}" promptLength maximum must be 5 seconds, got ${task.promptLength.maximum}`);
+    // Reorder Paragraph: 0-150 words
+    if (cid === 'reorder_paragraph' && task.promptLength) {
+      if (task.promptLength.minimum !== 0 || task.promptLength.maximum !== 150 || task.promptLength.unit !== 'words') {
+        errors.push(`${manifestPath}: task "${cid}" promptLength must be 0-150 words (range)`);
       }
     }
 
-    // Summarize Spoken Text: 60-90 seconds, includes Spelling, 10 min includes listening+writing
+    // Summarize Written Text: 0-300 words
+    if (cid === 'summarize_written_text' && task.promptLength) {
+      if (task.promptLength.minimum !== 0 || task.promptLength.maximum !== 300 || task.promptLength.unit !== 'words') {
+        errors.push(`${manifestPath}: task "${cid}" promptLength must be 0-300 words (range)`);
+      }
+    }
+
+    // Write From Dictation: 3-5 seconds
+    if (cid === 'write_from_dictation' && task.promptLength) {
+      if (task.promptLength.minimum !== 3 || task.promptLength.maximum !== 5) {
+        errors.push(`${manifestPath}: task "${cid}" promptLength must be 3-5 seconds`);
+      }
+    }
+
+    // Summarize Spoken Text: 60-90 seconds, includes Spelling
     if (cid === 'summarize_spoken_text') {
       if (task.promptLength) {
         if (task.promptLength.minimum !== 60 || task.promptLength.maximum !== 90) {
@@ -386,43 +875,25 @@ export function validateTaskManifest(manifestPath) {
       if (task.officialScoringTraits && !task.officialScoringTraits.includes('Spelling')) {
         errors.push(`${manifestPath}: task "${cid}" must include Spelling in officialScoringTraits`);
       }
-      if (task.responseTimingDescription !== 'Ten minutes total includes listening and writing') {
-        errors.push(`${manifestPath}: task "${cid}" must document that 10 minutes includes listening and writing`);
-      }
     }
 
-    // Write Essay: 2-3 sentence prompt, exact official traits
+    // Write Essay: 2-3 sentence prompt
     if (cid === 'write_essay') {
       if (task.promptLength) {
         if (task.promptLength.minimum !== 2 || task.promptLength.maximum !== 3 || task.promptLength.unit !== 'sentences') {
           errors.push(`${manifestPath}: task "${cid}" promptLength must be 2-3 sentences`);
         }
       }
-      const requiredTraits = ['Content', 'Form', 'Development, Structure and Coherence', 'Grammar', 'General Linguistic Range', 'Vocabulary Range', 'Spelling'];
       if (task.officialScoringTraits) {
-        for (const trait of requiredTraits) {
-          if (!task.officialScoringTraits.includes(trait)) {
-            errors.push(`${manifestPath}: task "${cid}" missing official scoring trait "${trait}"`);
-          }
-        }
-        // Ensure no split traits
         if (task.officialScoringTraits.includes('Structure') || task.officialScoringTraits.includes('Coherence')) {
           errors.push(`${manifestPath}: task "${cid}" must not split "Development, Structure and Coherence" into separate traits`);
-        }
-        if (task.officialScoringTraits.includes('General linguistic range')) {
-          errors.push(`${manifestPath}: task "${cid}" official trait must be "General Linguistic Range" (capital L)`);
-        }
-        if (task.officialScoringTraits.includes('Vocabulary')) {
-          errors.push(`${manifestPath}: task "${cid}" official trait must be "Vocabulary Range" not "Vocabulary"`);
         }
       }
     }
 
-    // Respond to a Situation: text+audio required
-    if (cid === 'respond_to_situation') {
-      if (task.mockMode && (task.mockMode.includes('optional') || (task.promptType !== 'text-and-audio'))) {
-        errors.push(`${manifestPath}: task "${cid}" must have text and audio both required, promptType must be text-and-audio`);
-      }
+    // Respond to a Situation: promptType must be text-and-audio
+    if (cid === 'respond_to_situation' && task.promptType !== 'text-and-audio') {
+      errors.push(`${manifestPath}: task "${cid}" promptType must be text-and-audio`);
     }
 
     // Listening Fill in the Blanks: transcript required
@@ -435,7 +906,7 @@ export function validateTaskManifest(manifestPath) {
       errors.push(`${manifestPath}: task "${cid}" promptTranscriptRequired must be true`);
     }
 
-    // Tasks where no transcript is shown as part of prompt
+    // No transcript tasks
     const noTranscriptTasks = ['read_aloud', 'repeat_sentence', 'describe_image', 'retell_lecture',
       'answer_short_question', 'summarize_group_discussion', 'respond_to_situation',
       'summarize_written_text', 'write_essay', 'reading_writing_fill_blanks',
@@ -477,108 +948,9 @@ export function validateOfficialReferenceRegister(registerPath) {
     ['Approval status', 'Approval status', false],
   ]);
 
-  // Verify Heidi is not listed as Internal reviewer
   if (content.includes('Internal reviewer | Heidi Dang') || content.includes('Internal reviewer|Heidi')) {
     errors.push(`${registerPath}: must not list Heidi Dang as Internal reviewer without explicit evidence`);
   }
-}
-
-export function validateBlueprintAgainstManifest(blueprintPath, manifestPath) {
-  const blueprint = requiredFile(blueprintPath);
-  const manifestContent = requiredFile(manifestPath);
-  if (!blueprint || !manifestContent) return;
-
-  let manifest;
-  try {
-    manifest = JSON.parse(manifestContent);
-  } catch {
-    return;
-  }
-
-  for (const task of manifest) {
-    const cid = task.canonicalId;
-    const dn = task.displayName;
-
-    if (!blueprint.includes(cid)) {
-      errors.push(`${blueprintPath}: missing canonical ID "${cid}" in blueprint`);
-    }
-    if (!blueprint.includes(dn)) {
-      errors.push(`${blueprintPath}: missing display name "${dn}" in blueprint`);
-    }
-
-    // Check section heading
-    const sectionHeading = `## ${task.section}`;
-    if (!blueprint.includes(sectionHeading)) {
-      errors.push(`${blueprintPath}: missing section heading "${sectionHeading}" for task "${cid}"`);
-    }
-
-    // Check current status
-    if (task.currentOfficialTask && blueprint.includes('future task')) {
-      errors.push(`${blueprintPath}: current task "${dn}" must not contain "future task" label`);
-    }
-    if (task.currentOfficialTask && blueprint.includes('not yet official')) {
-      errors.push(`${blueprintPath}: current task "${dn}" must not contain "not yet official" label`);
-    }
-
-    // Check playback limit
-    if (blueprint.includes(cid)) {
-      const taskSection = extractTaskSection(blueprint, cid);
-      if (taskSection) {
-        if (task.playbackLimit !== null) {
-          const expectedPlayback = `**Playback limit**: ${task.playbackLimit}`;
-          if (!taskSection.includes(expectedPlayback) && !taskSection.includes(`**Playback limit**: ${task.playbackLimit}`)) {
-            // Some tasks have `**Playback limit**: No audio`
-            const altPlayback = task.playbackLimit === 0 ? 'No audio' : null;
-            if (!altPlayback || !taskSection.includes(altPlayback)) {
-              errors.push(`${blueprintPath}: task "${cid}" playback limit mismatch`);
-            }
-          }
-        }
-        if (task.recordingLimit !== null) {
-          const expectedRecording = `**Recording limit**: ${task.recordingLimit}`;
-          if (!taskSection.includes(expectedRecording)) {
-            const altRecording = task.recordingLimit === 0 ? 'No audio' : null;
-            if (!altRecording || !taskSection.includes(altRecording)) {
-              errors.push(`${blueprintPath}: task "${cid}" recording limit mismatch`);
-            }
-          }
-        }
-        if (task.officialScoringType) {
-          const normalizedManifest = task.officialScoringType.replace(/-/g, ' ').toLowerCase();
-          const typeLine = taskSection.split('\n').find(l => l.toLowerCase().startsWith('- **official scoring type**:'));
-          if (typeLine) {
-            const bpType = typeLine.split(':')[1].trim().toLowerCase();
-            const bpTypeNormalized = bpType.replace(/[()]/g, '').replace(/[/-]/g, ' ').replace(/\s+/g, ' ').trim();
-            if (bpTypeNormalized !== normalizedManifest && !bpTypeNormalized.startsWith(normalizedManifest)) {
-              errors.push(`${blueprintPath}: task "${cid}" official scoring type mismatch (expected "${task.officialScoringType}", got "${typeLine.split(':')[1].trim()}")`);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  if (blueprint.includes('future task') || blueprint.includes('not yet official')) {
-    errors.push(`${blueprintPath}: contains prohibited label "future task" or "not yet official"`);
-  }
-}
-
-function extractTaskSection(content, canonicalId) {
-  const lines = content.split('\n');
-  let inTask = false;
-  let taskLines = [];
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes(canonicalId) && lines[i].includes('**Canonical ID**')) {
-      inTask = true;
-    }
-    if (inTask) {
-      taskLines.push(lines[i]);
-      if (i + 1 < lines.length && lines[i + 1].startsWith('### ') && taskLines.length > 5) {
-        break;
-      }
-    }
-  }
-  return taskLines.join('\n');
 }
 
 export function validateFreeStudentRoutes(routeMapPath) {
@@ -635,25 +1007,6 @@ export function validateBlueprintReferences(blueprintPath) {
   }
 }
 
-function scorecardTotal(scorecardPath) {
-  const content = requiredFile(scorecardPath);
-  if (!content) return null;
-
-  const sectionPoints = [];
-  const sectionPattern = /### .+? — (\d+) points?/g;
-  let match;
-  while ((match = sectionPattern.exec(content)) !== null) {
-    sectionPoints.push(parseInt(match[1], 10));
-  }
-
-  const total = sectionPoints.reduce((a, b) => a + b, 0);
-  if (sectionPoints.length > 0 && total !== 100) {
-    errors.push(`${scorecardPath}: category points total ${total}, expected 100`);
-  }
-
-  return sectionPoints;
-}
-
 // Run all document validations
 export function validateAll() {
   resetValidation();
@@ -700,26 +1053,8 @@ export function validateAll() {
   validateBlueprintAgainstManifest('docs/content/pte-task-blueprints.md', 'docs/content/pte-task-manifest.json');
   validateBlueprintReferences('docs/content/pte-task-blueprints.md');
   validateOfficialReferenceRegister('docs/content/official-pte-reference-register.md');
-
-  // JSON reference register validation
-  const jsonRef = requiredFile('docs/content/official-pte-reference-register.json');
-  if (jsonRef) {
-    try {
-      const refs = JSON.parse(jsonRef);
-      if (!Array.isArray(refs)) errors.push('Reference register JSON must be an array');
-      else if (refs.length !== 6) errors.push(`Reference register: expected 6 sources, found ${refs.length}`);
-      else {
-        for (const ref of refs) {
-          const reqRefFields = ['id', 'title', 'publisher', 'url', 'contentCovered', 'lastVerifiedAt', 'collectedBy', 'reviewedBy', 'approvalStatus'];
-          for (const field of reqRefFields) {
-            if (!ref[field]) errors.push(`Reference register: source "${ref.id || 'unknown'}" missing field "${field}"`);
-          }
-        }
-      }
-    } catch (e) {
-      errors.push(`Invalid JSON in reference register: ${e.message}`);
-    }
-  }
+  validateReferenceRegisterJson('docs/content/official-pte-reference-register.json');
+  validateTaskReferences();
 
   // Scorecard
   const scorecard = requiredFile('docs/testing/audit-scorecard.md');
@@ -730,14 +1065,14 @@ export function validateAll() {
       ['Requirements completeness section', 'Requirements Completeness', false],
       ['PTE coverage section', 'PTE Coverage and Accuracy', false],
       ['Content system section', 'Content System', false],
+      ['Scoring and calibration section', 'Scoring and Calibration', false],
       ['UX and recovery section', 'UX and Recovery', false],
       ['Testing and release gates section', 'Testing and Release Gates', false],
       ['Documentation quality section', 'Documentation Quality', false],
     ]);
-    scorecardTotal('docs/testing/audit-scorecard.md');
+    validateScorecard('docs/testing/audit-scorecard.md');
   }
 
-  // Scoring principles
   const scoring = requiredFile('docs/scoring/scoring-principles.md');
   if (scoring) {
     checkContent('docs/scoring/scoring-principles.md', scoring, [

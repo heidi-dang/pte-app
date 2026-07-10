@@ -28,7 +28,7 @@
 - **Content metadata**: Passage text, source, difficulty, word count, estimated reading time, canonical ID
 - **Validation requirements**: Minimum 1-second recording, audio file integrity check, file format verification
 - **Failure and recovery behaviour**: Recording failure shows error and retry option; partial recording saved server-side; preparation completes before recording begins; browser keeps recording locally until server storage confirmed; interrupted uploads resume without requiring new response
-- **Official reference IDs**: source-1, source-2
+- **Official reference IDs**: source-1, source-2, source-6
 - **Last verified date**: 2026-07-10
 
 ### Repeat Sentence
@@ -57,7 +57,7 @@
 - **Content metadata**: Sentence text, audio duration, difficulty, source, canonical ID
 - **Validation requirements**: Audio file integrity, minimum duration, file format verification
 - **Failure and recovery behaviour**: Audio load failure aborts task; recording failure shows error and retry; browser keeps recording locally until server storage confirmed; interrupted uploads resume without requiring new response
-- **Official reference IDs**: source-1, source-2
+- **Official reference IDs**: source-1, source-2, source-6
 - **Last verified date**: 2026-07-10
 
 ### Describe Image
@@ -86,7 +86,7 @@
 - **Content metadata**: Image file, image type, key points, difficulty, source, canonical ID
 - **Validation requirements**: Image renders correctly, recording quality check, file format verification
 - **Failure and recovery behaviour**: Image load failure shows error; recording failure retry; browser keeps recording locally until server storage confirmed; interrupted uploads resume
-- **Official reference IDs**: source-1, source-2
+- **Official reference IDs**: source-1, source-2, source-6
 - **Last verified date**: 2026-07-10
 
 ### Retell Lecture
@@ -115,7 +115,7 @@
 - **Content metadata**: Lecture audio, transcript, key points, difficulty, source, canonical ID
 - **Validation requirements**: Audio file integrity, lecture duration within limits, recording quality check
 - **Failure and recovery behaviour**: Audio load failure aborts task; recording failure retry; browser keeps recording locally until server storage confirmed
-- **Official reference IDs**: source-1, source-2
+- **Official reference IDs**: source-1, source-2, source-6
 - **Last verified date**: 2026-07-10
 
 ### Answer Short Question
@@ -144,7 +144,7 @@
 - **Content metadata**: Question, answer list of accepted responses, difficulty, topic, source, canonical ID
 - **Validation requirements**: Answer matching against accepted answers list, minimum recording duration
 - **Failure and recovery behaviour**: Audio load failure shows error; recording failure retry; browser keeps recording locally until server storage confirmed
-- **Official reference IDs**: source-1, source-2
+- **Official reference IDs**: source-1, source-2, source-6
 - **Last verified date**: 2026-07-10
 
 ### Summarize Group Discussion
@@ -173,7 +173,7 @@
 - **Content metadata**: Discussion audio, transcript, key discussion points, difficulty, source, canonical ID
 - **Validation requirements**: Multi-speaker audio clarity, file integrity, recording quality check
 - **Failure and recovery behaviour**: Audio load failure aborts task; recording failure retry; browser keeps recording locally until server storage confirmed
-- **Official reference IDs**: source-1, source-4
+- **Official reference IDs**: source-1, source-2, source-5, source-6
 - **Last verified date**: 2026-07-10
 
 ### Respond to a Situation
@@ -202,7 +202,7 @@
 - **Content metadata**: Scenario text, appropriate response criteria, difficulty, source, canonical ID
 - **Validation requirements**: Audio file integrity, recording quality check
 - **Failure and recovery behaviour**: Recording failure retry; browser keeps recording locally until server storage confirmed
-- **Official reference IDs**: source-1, source-2, source-5
+- **Official reference IDs**: source-1, source-2, source-5, source-6
 - **Last verified date**: 2026-07-10
 
 ### Summarize Written Text
@@ -214,7 +214,7 @@
 - **Score contributions**: Reading, Writing
 - **Task purpose**: Assess reading comprehension and summarisation
 - **Prompt type**: Text
-- **Prompt length**: Text passage
+- **Prompt length**: Text up to 300 words
 - **Student interface**: Reading passage displayed, single-line text input area, word count display
 - **Input media**: Text passage
 - **Answer format**: Written text (single sentence, one or more clauses, 5 to 75 words)
@@ -231,7 +231,7 @@
 - **Content metadata**: Passage text, sample summary, difficulty, source, canonical ID
 - **Validation requirements**: Word count within 5-75 range, single sentence validation, autosave verification
 - **Failure and recovery behaviour**: Autosave every 5 seconds; restore on reload; submitted response remains after refresh, API restart and browser restart
-- **Official reference IDs**: source-1, source-2
+- **Official reference IDs**: source-1, source-2, source-6
 - **Last verified date**: 2026-07-10
 
 ### Write Essay
@@ -289,9 +289,9 @@
 - **Platform estimated-scoring evidence**: Correct/incorrect per blank with partial credit scoring
 - **Feedback format**: Correct blanks highlighted, incorrect blanks shown with correct answer, vocabulary explanations
 - **Content metadata**: Passage, blank positions, answer options, correct answers, difficulty, source, canonical ID
-- **Validation requirements**: All blanks must have a selection before submission
+- **Validation requirements**: The stored response may be complete, incomplete or empty. Validate payload structure without forcing an answer. Invalid or corrupt payloads are rejected. Learning mode may warn before submission. Timed and mock modes permit no response and score it according to the versioned no-response rule
 - **Failure and recovery behaviour**: Autosave selections; restore on reload
-- **Official reference IDs**: source-1, source-2, source-6
+- **Official reference IDs**: source-1, source-3, source-6
 - **Last verified date**: 2026-07-10
 
 ### Multiple Choice, Multiple Answers (Reading)
@@ -318,9 +318,9 @@
 - **Platform estimated-scoring evidence**: Correct/incorrect per option with negative marking applied
 - **Feedback format**: Score with partial credit breakdown, correct and incorrect selections identified
 - **Content metadata**: Passage, options, correct answers, scoring rule, difficulty, source, canonical ID
-- **Validation requirements**: At least one selection accepted
+- **Validation requirements**: The stored response may be complete, incomplete or empty. Validate payload structure without forcing an answer. Invalid or corrupt payloads are rejected. Learning mode may warn before submission. Timed and mock modes permit no response and score it according to the versioned no-response rule
 - **Failure and recovery behaviour**: Autosave selections; restore on reload
-- **Official reference IDs**: source-1, source-3
+- **Official reference IDs**: source-1, source-3, source-6
 - **Last verified date**: 2026-07-10
 
 ### Reorder Paragraph
@@ -332,7 +332,7 @@
 - **Score contributions**: Reading
 - **Task purpose**: Assess ability to understand logical text flow
 - **Prompt type**: Text
-- **Prompt length**: 4 to 6 paragraphs
+- **Prompt length**: Text up to 150 words
 - **Student interface**: Scrambled text boxes, drag-and-drop ordering area, touch support for reordering
 - **Input media**: Text paragraphs
 - **Answer format**: Ordered sequence of paragraph identifiers
@@ -347,9 +347,9 @@
 - **Platform estimated-scoring evidence**: Correct adjacent pairs scoring, sequence alignment
 - **Feedback format**: Score per correct adjacent pair, correct order comparison
 - **Content metadata**: Paragraphs, correct order, difficulty, source, canonical ID
-- **Validation requirements**: All paragraphs must be placed in order before submission
+- **Validation requirements**: The stored response may be complete, incomplete or empty. Validate payload structure without forcing an answer. Invalid or corrupt payloads are rejected. Learning mode may warn before submission. Timed and mock modes permit no response and score it according to the versioned no-response rule
 - **Failure and recovery behaviour**: Autosave ordering state; drag state preserved on reload
-- **Official reference IDs**: source-1, source-3
+- **Official reference IDs**: source-1, source-3, source-6
 - **Last verified date**: 2026-07-10
 
 ### Reading: Fill in the Blanks
@@ -376,9 +376,9 @@
 - **Platform estimated-scoring evidence**: Correct/incorrect per blank
 - **Feedback format**: Correct words highlighted, incorrect blanks shown with correct answer
 - **Content metadata**: Passage, blank positions, word bank, correct answers, difficulty, source, canonical ID
-- **Validation requirements**: All blanks filled before submission
+- **Validation requirements**: The stored response may be complete, incomplete or empty. Validate payload structure without forcing an answer. Invalid or corrupt payloads are rejected. Learning mode may warn before submission. Timed and mock modes permit no response and score it according to the versioned no-response rule
 - **Failure and recovery behaviour**: Autosave word placements; restore on reload
-- **Official reference IDs**: source-1, source-3
+- **Official reference IDs**: source-1, source-3, source-6
 - **Last verified date**: 2026-07-10
 
 ### Multiple Choice, Single Answer (Reading)
@@ -405,9 +405,9 @@
 - **Platform estimated-scoring evidence**: Exact match against correct answer
 - **Feedback format**: Correct or incorrect with correct answer shown and explanation
 - **Content metadata**: Passage, options, correct answer, difficulty, source, canonical ID
-- **Validation requirements**: Exactly one selection required
+- **Validation requirements**: The stored response may be complete, incomplete or empty. Validate payload structure without forcing an answer. Invalid or corrupt payloads are rejected. Learning mode may warn before submission. Timed and mock modes permit no response and score it according to the versioned no-response rule
 - **Failure and recovery behaviour**: Autosave selection; restore on reload
-- **Official reference IDs**: source-1, source-3
+- **Official reference IDs**: source-1, source-3, source-6
 - **Last verified date**: 2026-07-10
 
 ## Listening
@@ -426,7 +426,7 @@
 - **Input media**: Audio lecture
 - **Answer format**: Written text (50 to 70 words)
 - **Preparation behaviour**: Audio plays automatically
-- **Response behaviour**: 10-minute response timer from audio end (includes listening and writing), autosave every 5 seconds
+- **Response behaviour**: Ten-minute total task timer includes audio playback and writing time, autosave every 5 seconds
 - **Playback limit**: 1
 - **Recording limit**: No audio
 - **Practice-mode behaviour**: Configurable replay, transcript after attempt, extended time option
@@ -438,7 +438,7 @@
 - **Content metadata**: Audio file, transcript, sample summary, difficulty, source, canonical ID
 - **Validation requirements**: Word count within 50-70 range, autosave check
 - **Failure and recovery behaviour**: Autosave text; restore on reload; submitted response remains after refresh, API restart and browser restart
-- **Official reference IDs**: source-1, source-4
+- **Official reference IDs**: source-1, source-4, source-6
 - **Last verified date**: 2026-07-10
 
 ### Multiple Choice, Multiple Answers (Listening)
@@ -465,9 +465,9 @@
 - **Platform estimated-scoring evidence**: Correct/incorrect per option with negative marking applied
 - **Feedback format**: Score with partial credit breakdown, correct and incorrect selections
 - **Content metadata**: Audio, options, correct answers, transcript, difficulty, source, canonical ID
-- **Validation requirements**: Audio plays fully; at least one selection accepted
+- **Validation requirements**: The stored response may be complete, incomplete or empty. Validate payload structure without forcing an answer. Invalid or corrupt payloads are rejected. Learning mode may warn before submission. Timed and mock modes permit no response and score it according to the versioned no-response rule
 - **Failure and recovery behaviour**: Autosave selections; restore on reload
-- **Official reference IDs**: source-1, source-4
+- **Official reference IDs**: source-1, source-4, source-6
 - **Last verified date**: 2026-07-10
 
 ### Fill in the Blanks (Listening)
@@ -488,7 +488,7 @@
 - **Playback limit**: 1
 - **Recording limit**: No audio
 - **Practice-mode behaviour**: Configurable replay, transcript after submission, correct words shown
-- **Mock-mode behaviour**: Single playback, section-level timer, no transcript before submission, no answer reveal before submission; unanswered mock responses permitted
+- **Mock-mode behaviour**: Single playback, section-level timer, the incomplete transcript with blanks is displayed because it is part of the official prompt, completed transcript and correct words hidden until review, unanswered blanks permitted
 - **Official scoring type**: Partial credit
 - **Official scoring traits**: Listening, Writing
 - **Platform estimated-scoring evidence**: Correct/incorrect spelling per blank, exact match required
@@ -496,7 +496,7 @@
 - **Content metadata**: Audio, transcript, blank positions, correct words, difficulty, source, canonical ID
 - **Validation requirements**: Exact spelling match for correct answer
 - **Failure and recovery behaviour**: Autosave typed words; restore on reload
-- **Official reference IDs**: source-1, source-4
+- **Official reference IDs**: source-1, source-4, source-6
 - **Last verified date**: 2026-07-10
 
 ### Highlight Correct Summary
@@ -525,7 +525,7 @@
 - **Content metadata**: Audio, transcript, summaries, correct summary, difficulty, source, canonical ID
 - **Validation requirements**: Audio plays fully
 - **Failure and recovery behaviour**: Autosave selection; restore on reload
-- **Official reference IDs**: source-1, source-4
+- **Official reference IDs**: source-1, source-4, source-6
 - **Last verified date**: 2026-07-10
 
 ### Multiple Choice, Single Answer (Listening)
@@ -552,9 +552,9 @@
 - **Platform estimated-scoring evidence**: Exact match against correct answer
 - **Feedback format**: Correct or incorrect with correct answer shown and explanation
 - **Content metadata**: Audio, options, correct answer, transcript, difficulty, source, canonical ID
-- **Validation requirements**: Audio plays fully; exactly one selection
+- **Validation requirements**: The stored response may be complete, incomplete or empty. Validate payload structure without forcing an answer. Invalid or corrupt payloads are rejected. Learning mode may warn before submission. Timed and mock modes permit no response and score it according to the versioned no-response rule
 - **Failure and recovery behaviour**: Autosave selection; restore on reload
-- **Official reference IDs**: source-1, source-4
+- **Official reference IDs**: source-1, source-4, source-6
 - **Last verified date**: 2026-07-10
 
 ### Select Missing Word
@@ -583,7 +583,7 @@
 - **Content metadata**: Audio (with beep), options, correct word, transcript, difficulty, source, canonical ID
 - **Validation requirements**: Audio plays fully
 - **Failure and recovery behaviour**: Autosave selection; restore on reload
-- **Official reference IDs**: source-1, source-4
+- **Official reference IDs**: source-1, source-4, source-6
 - **Last verified date**: 2026-07-10
 
 ### Highlight Incorrect Words
@@ -604,7 +604,7 @@
 - **Playback limit**: 1
 - **Recording limit**: No audio
 - **Practice-mode behaviour**: Configurable replay, transcript after submission, correct selections highlighted, score explanation
-- **Mock-mode behaviour**: Single playback, section-level timer, no transcript highlighting before submission, no answer reveal before submission; unanswered mock responses permitted
+- **Mock-mode behaviour**: Single playback, section-level timer, the task transcript is displayed as part of the prompt, correct incorrect-word selections are hidden until review, unanswered mock responses permitted
 - **Official scoring type**: Partial credit (negative marking for incorrect selections)
 - **Official scoring traits**: Listening, Reading
 - **Platform estimated-scoring evidence**: Correct selections minus incorrect selections
@@ -612,7 +612,7 @@
 - **Content metadata**: Audio, original transcript, modified transcript with errors, correct selections, difficulty, source, canonical ID
 - **Validation requirements**: Audio plays fully
 - **Failure and recovery behaviour**: Autosave word selections; restore on reload
-- **Official reference IDs**: source-1, source-4
+- **Official reference IDs**: source-1, source-4, source-6
 - **Last verified date**: 2026-07-10
 
 ### Write From Dictation
@@ -639,7 +639,7 @@
 - **Platform estimated-scoring evidence**: Word-level accuracy against correct sentence
 - **Feedback format**: Word-level accuracy, correct sentence shown, incorrect words highlighted
 - **Content metadata**: Audio, correct sentence, difficulty, source, canonical ID
-- **Validation requirements**: Non-empty response, autosave check
+- **Validation requirements**: The stored response may be complete, incomplete or empty. Validate payload structure without forcing an answer. Invalid or corrupt payloads are rejected. Learning mode may warn before submission. Timed and mock modes permit no response and score it according to the versioned no-response rule
 - **Failure and recovery behaviour**: Autosave typed text; restore on reload; submitted response remains after refresh, API restart and browser restart
-- **Official reference IDs**: source-1, source-4
+- **Official reference IDs**: source-1, source-4, source-6
 - **Last verified date**: 2026-07-10
