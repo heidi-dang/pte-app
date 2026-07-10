@@ -6,8 +6,6 @@ const root = resolve(import.meta.dirname, '..');
 const manifestPath = resolve(root, 'docs/content/pte-task-manifest.json');
 const blueprintPath = resolve(root, 'docs/content/pte-task-blueprints.md');
 
-const SECTIONS = ['Speaking and Writing', 'Reading', 'Listening'];
-
 function sectionLabel(s) {
   if (s === 'Speaking and Writing') return '## Speaking and Writing';
   if (s === 'Reading') return '## Reading';
@@ -21,6 +19,7 @@ function capitalizeWords(s) {
 
 function formatPromptLength(pl) {
   if (!pl) return 'Not specified';
+  if (pl.mode === 'not-applicable') return 'Not applicable (1 image stored as separate interface requirement)';
   if (pl.mode === 'fixed' && pl.minimum === 1 && pl.maximum === 1 && pl.unit === 'image') return '1 image';
   if (pl.mode === 'range' || pl.mode === 'fixed') {
     if (pl.unit === 'words' && pl.minimum === 0) return `Text up to ${pl.maximum} words`;
@@ -40,28 +39,28 @@ function formatScoringType(t) {
   return t;
 }
 
-function formatScoringRule(sr) {
+function formatPlatformScoringRule(sr) {
   if (!sr) return 'Not specified';
-  if (sr.type === 'rubric') {
-    return `Rubric (${sr.scoringEngine || 'ai-evaluation'}): ${sr.traits.join(', ')}`;
+  if (sr.type === 'rubric-estimate') {
+    return 'Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson\'s private scoring engine)';
   }
   if (sr.type === 'per-correct-blank') {
-    let s = `Per-correct-blank: +${sr.correctPoints} correct, ${sr.incorrectPoints} incorrect, minimum ${sr.minimumItemScore}`;
-    return s;
+    return `Per-correct-blank: +${sr.correctPoints} correct, ${sr.incorrectPoints} incorrect, minimum ${sr.minimumItemScore} (platform produces estimated training score)`;
   }
   if (sr.type === 'per-correct-word') {
     let s = `Per-correct-word: +${sr.correctPoints} correct, ${sr.incorrectPoints} incorrect, minimum ${sr.minimumItemScore}`;
     if (sr.requiresCorrectSpelling) s += ', requires correct spelling';
+    s += ' (platform produces estimated training score)';
     return s;
   }
   if (sr.type === 'correct-incorrect') {
-    return `Correct/Incorrect: +${sr.correctPoints} correct, ${sr.incorrectPoints} incorrect, minimum ${sr.minimumItemScore}`;
+    return `Correct/Incorrect: +${sr.correctPoints} correct, ${sr.incorrectPoints} incorrect, minimum ${sr.minimumItemScore} (platform produces estimated training score)`;
   }
   if (sr.type === 'selection-with-negative-marking') {
-    return `Selection with negative marking: +${sr.correctPoints} correct, ${sr.incorrectPoints} incorrect, minimum ${sr.minimumItemScore}`;
+    return `Selection with negative marking: +${sr.correctPoints} correct, ${sr.incorrectPoints} incorrect, minimum ${sr.minimumItemScore} (platform produces estimated training score)`;
   }
   if (sr.type === 'adjacent-pair-order') {
-    return `Adjacent pair order: +${sr.correctPoints} correct pair, ${sr.incorrectPoints} incorrect, minimum ${sr.minimumItemScore}`;
+    return `Adjacent pair order: +${sr.correctPoints} correct pair, ${sr.incorrectPoints} incorrect, minimum ${sr.minimumItemScore} (platform produces estimated training score)`;
   }
   return JSON.stringify(sr);
 }
@@ -94,6 +93,16 @@ function formatTiming(t, context) {
   return JSON.stringify(t);
 }
 
+function formatResponseValidation(rv) {
+  if (!rv) return 'Not specified';
+  return JSON.stringify(rv);
+}
+
+function formatFailureRecovery(beh) {
+  if (!beh) return 'Not specified';
+  return JSON.stringify(beh);
+}
+
 function generateBlueprint(manifest) {
   const lines = [];
   lines.push('# PTE Task Blueprints');
@@ -114,20 +123,20 @@ function generateBlueprint(manifest) {
     lines.push(`- **Canonical ID**: ${task.canonicalId}`);
     lines.push(`- **Current official status**: ${task.currentOfficialTask ? 'Current official task' : 'Not current official task'}`);
     lines.push(`- **Section**: ${task.section}`);
+    lines.push(`- **Task purpose**: ${task.taskPurpose || 'Not specified'}`);
     lines.push(`- **Official skills assessed**: ${(task.officialSkillsAssessed || []).join(', ')}`);
     lines.push(`- **Score contributions**: ${(task.scoreContributions || []).join(', ')}`);
     lines.push(`- **Prompt type**: ${capitalizeWords(task.promptType || '')}`);
     lines.push(`- **Prompt length**: ${formatPromptLength(task.promptLength)}`);
+    lines.push(`- **Student interface**: ${task.studentInterface || 'Not specified'}`);
+    lines.push(`- **Input media**: ${task.inputMedia || 'Not specified'}`);
+    lines.push(`- **Answer format**: ${task.answerFormat || 'Not specified'}`);
     lines.push(`- **Preparation behaviour**: ${formatTiming(task.preparationTiming, 'prep')}`);
-
-    // Response behaviour: use responseTimingDescription if present
     const respDesc = task.responseTimingDescription || formatTiming(task.responseTiming, 'resp');
     lines.push(`- **Response behaviour**: ${respDesc}`);
-
     lines.push(`- **Playback limit**: ${task.playbackLimit === 0 ? 'No audio' : String(task.playbackLimit)}`);
     lines.push(`- **Recording limit**: ${task.recordingLimit === 0 ? 'No audio' : String(task.recordingLimit)}`);
     lines.push(`- **Official scoring type**: ${formatScoringType(task.officialScoringType)}`);
-    lines.push(`- **Official scoring rule**: ${formatScoringRule(task.scoringRule)}`);
 
     const rubricTraits = (task.officialRubricTraits || []);
     if (rubricTraits.length === 0) {
@@ -136,6 +145,31 @@ function generateBlueprint(manifest) {
       lines.push(`- **Official rubric traits**: ${rubricTraits.join(', ')}`);
     }
 
+    const humanTraits = (task.officialHumanReviewTraits || []);
+    if (humanTraits.length === 0) {
+      lines.push('- **Official human-reviewed traits**: None — objective scoring');
+    } else {
+      lines.push(`- **Official human-reviewed traits**: ${humanTraits.join(', ')}`);
+    }
+
+    lines.push(`- **Platform estimated-scoring rule**: ${formatPlatformScoringRule(task.platformEstimatedScoringRule)}`);
+    lines.push(`- **Platform estimated-scoring evidence**: ${task.platformEstimatedScoringEvidence || 'Not specified'}`);
+    lines.push(`- **Feedback format**: ${task.feedbackFormat || 'Not specified'}`);
+    lines.push(`- **Content metadata**: ${task.contentMetadata || 'Not specified'}`);
+
+    // Prompt-specific notes
+    if (task.supportsAudiovisualInput) {
+      lines.push(`- **Audiovisual support**: Supports audio or audiovisual input; optional related image may be displayed`);
+    }
+    if (task.optionalAccompanyingImage) {
+      lines.push(`- **Optional image**: Audio question is required; an accompanying image is optional`);
+    }
+    if (task.oneImageRequired) {
+      lines.push(`- **Image requirement**: One image displayed as part of the student interface (not part of official prompt-length measurement)`);
+    }
+
+    lines.push(`- **Response validation**: ${formatResponseValidation(task.responseValidation)}`);
+    lines.push(`- **Failure and recovery behaviour**: ${formatFailureRecovery(task.failureRecoveryBehavior)}`);
     lines.push(`- **Prompt transcript requirement**: ${task.promptTranscriptRequired ? 'Required' : 'Not required'}`);
     lines.push(`- **Post-attempt transcript availability**: ${task.postAttemptTranscriptAvailable ? 'Available' : 'Not available'}`);
     lines.push(`- **Practice mode**: ${task.practiceMode || 'Not specified'}`);

@@ -34,7 +34,7 @@ const VALID_IDS = new Set([
 const VALID_SECTIONS = ['Speaking and Writing', 'Reading', 'Listening'];
 const VALID_PROMPT_TYPES = ['text', 'audio', 'image', 'text-and-audio'];
 const VALID_RESPONSE_TYPES = ['audio', 'text', 'dropdown-selection', 'checkbox-selection', 'drag-and-drop-order', 'drag-words-to-blanks', 'radio-selection', 'text-input', 'clickable-text-selection'];
-const VALID_TIMING_MODES = ['fixed', 'item-dependent', 'section-timed', 'range'];
+const VALID_TIMING_MODES = ['fixed', 'item-dependent', 'section-timed', 'range', 'not-applicable'];
 const VALID_TIMING_UNITS = ['seconds', 'words', 'sentences', 'paragraphs', 'image'];
 const VALID_SCORING_TYPES = ['partial-credit', 'correct-incorrect', 'partial-credit-negative'];
 const FUTURE_LABELS = ['future task', 'not yet official', 'future', 'unofficial'];
@@ -121,6 +121,8 @@ function validateTimingObject(obj, path, context) {
   if (!VALID_TIMING_MODES.includes(obj.mode)) {
     errors.push(`${path}: ${context} has invalid timing mode "${obj.mode}"`);
   }
+  // not-applicable mode has no unit
+  if (obj.mode === 'not-applicable') return;
   if (!VALID_TIMING_UNITS.includes(obj.unit)) {
     errors.push(`${path}: ${context} has invalid timing unit "${obj.unit}"`);
   }
@@ -463,10 +465,15 @@ export function validateTaskManifest(manifestPath) {
   const requiredFields = [
     'canonicalId', 'displayName', 'section', 'currentOfficialTask',
     'officialSkillsAssessed', 'scoreContributions',
+    'taskPurpose', 'studentInterface', 'inputMedia', 'answerFormat',
     'promptType', 'responseType', 'promptLength',
     'preparationTiming', 'responseTiming',
     'playbackLimit', 'recordingLimit', 'officialScoringType',
-    'scoringRule', 'officialRubricTraits', 'promptTranscriptRequired', 'postAttemptTranscriptAvailable',
+    'officialRubricTraits', 'officialHumanReviewTraits',
+    'platformEstimatedScoringRule', 'platformEstimatedScoringEvidence',
+    'feedbackFormat', 'contentMetadata',
+    'responseValidation', 'failureRecoveryBehavior',
+    'promptTranscriptRequired', 'postAttemptTranscriptAvailable',
     'practiceMode', 'mockMode', 'referenceIds', 'lastVerifiedAt'
   ];
 
@@ -533,21 +540,71 @@ export function validateTaskManifest(manifestPath) {
       errors.push(`${manifestPath}: task "${cid}" invalid officialScoringType "${task.officialScoringType}"`);
     }
 
+    if (task.platformEstimatedScoringRule) {
+      const validRuleTypes = ['rubric-estimate', 'correct-incorrect', 'per-correct-blank', 'per-correct-word', 'selection-with-negative-marking', 'adjacent-pair-order'];
+      if (!validRuleTypes.includes(task.platformEstimatedScoringRule.type)) {
+        errors.push(`${manifestPath}: task "${cid}" platformEstimatedScoringRule has invalid type "${task.platformEstimatedScoringRule.type}"`);
+      }
+      if (task.platformEstimatedScoringRule.minimumItemScore !== undefined && task.platformEstimatedScoringRule.minimumItemScore < 0) {
+        errors.push(`${manifestPath}: task "${cid}" platformEstimatedScoringRule minimumItemScore must be >= 0`);
+      }
+      if ((task.platformEstimatedScoringRule.type === 'selection-with-negative-marking') && task.platformEstimatedScoringRule.minimumItemScore !== 0) {
+        errors.push(`${manifestPath}: task "${cid}" negative-marking platformEstimatedScoringRule must have minimumItemScore 0`);
+      }
+      // Platform scoring must not be labelled as official
+      if (task.platformEstimatedScoringRule.type !== 'rubric-estimate') {
+        const ruleStr = JSON.stringify(task.platformEstimatedScoringRule);
+        if (ruleStr.includes('official') || ruleStr.includes('pearson') || ruleStr.includes('Pearson') || ruleStr.includes('ai-evaluation')) {
+          errors.push(`${manifestPath}: task "${cid}" platformEstimatedScoringRule must not reference official Pearson scoring or ai-evaluation`);
+        }
+      }
+    }
+
+    // responseValidation validation
+    if (task.responseValidation) {
+      const requiredRvKeys = ['allowedSubmissionStates', 'rejectCorruptPayload', 'learningModeWarnBeforeSubmit', 'timedModeForceAnswer', 'noResponseScore'];
+      for (const key of requiredRvKeys) {
+        if (!(key in task.responseValidation)) {
+          errors.push(`${manifestPath}: task "${cid}" responseValidation missing required key "${key}"`);
+        }
+      }
+      if (task.responseValidation.allowedSubmissionStates) {
+        if (!task.responseValidation.allowedSubmissionStates.includes('complete')) {
+          errors.push(`${manifestPath}: task "${cid}" responseValidation.allowedSubmissionStates must include "complete"`);
+        }
+        if (!task.responseValidation.allowedSubmissionStates.includes('incomplete')) {
+          errors.push(`${manifestPath}: task "${cid}" responseValidation.allowedSubmissionStates must include "incomplete"`);
+        }
+        if (!task.responseValidation.allowedSubmissionStates.includes('empty')) {
+          errors.push(`${manifestPath}: task "${cid}" responseValidation.allowedSubmissionStates must include "empty"`);
+        }
+      }
+      if (task.responseValidation.timedModeForceAnswer === true) {
+        errors.push(`${manifestPath}: task "${cid}" responseValidation.timedModeForceAnswer must be false`);
+      }
+      if (task.responseValidation.noResponseScore !== 0) {
+        errors.push(`${manifestPath}: task "${cid}" responseValidation.noResponseScore must be 0`);
+      }
+    }
+
+    // failureRecoveryBehavior validation
+    if (task.failureRecoveryBehavior) {
+      const requiredFrKeys = ['autosaveRequired', 'preserveLocalResponseUntilConfirmed', 'resumableUploadRequired', 'audioLoadFailureAction', 'duplicateSubmissionPrevention'];
+      for (const key of requiredFrKeys) {
+        if (!(key in task.failureRecoveryBehavior)) {
+          errors.push(`${manifestPath}: task "${cid}" failureRecoveryBehavior missing required key "${key}"`);
+        }
+      }
+      // Speaking recordings require resumable upload
+      const speakingTasks = ['read_aloud', 'repeat_sentence', 'describe_image', 'retell_lecture', 'answer_short_question', 'summarize_group_discussion', 'respond_to_situation'];
+      if (speakingTasks.includes(cid) && task.failureRecoveryBehavior.resumableUploadRequired !== true) {
+        errors.push(`${manifestPath}: task "${cid}" speaking recording requires resumableUploadRequired true`);
+      }
+    }
+
+    // Deprecated fields
     if (task.scoringRule) {
-      const validRuleTypes = ['rubric', 'correct-incorrect', 'per-correct-blank', 'per-correct-word', 'selection-with-negative-marking', 'adjacent-pair-order'];
-      if (!validRuleTypes.includes(task.scoringRule.type)) {
-        errors.push(`${manifestPath}: task "${cid}" scoringRule has invalid type "${task.scoringRule.type}"`);
-      }
-      if (task.scoringRule.type === 'rubric' && (!Array.isArray(task.scoringRule.traits) || task.scoringRule.traits.length === 0)) {
-        errors.push(`${manifestPath}: task "${cid}" rubric scoringRule requires non-empty traits`);
-      }
-      if (task.scoringRule.minimumItemScore !== undefined && task.scoringRule.minimumItemScore < 0) {
-        errors.push(`${manifestPath}: task "${cid}" scoringRule minimumItemScore must be >= 0`);
-      }
-      // Negative-marking tasks must use minimum item score zero
-      if ((task.scoringRule.type === 'selection-with-negative-marking') && task.scoringRule.minimumItemScore !== 0) {
-        errors.push(`${manifestPath}: task "${cid}" negative-marking scoringRule must have minimumItemScore 0`);
-      }
+      errors.push(`${manifestPath}: task "${cid}" uses deprecated field "scoringRule"; use "platformEstimatedScoringRule"`);
     }
 
     if (task.promptLength) {
@@ -824,6 +881,41 @@ export function validateTaskManifest(manifestPath) {
       errors.push(`${manifestPath}: task "${cid}" is objective but officialRubricTraits has named traits`);
     }
 
+    // Describe Image: promptLength must be not-applicable
+    if (cid === 'describe_image' && task.promptLength && task.promptLength.mode !== 'not-applicable') {
+      errors.push(`${manifestPath}: task "${cid}" promptLength mode must be not-applicable`);
+    }
+
+    // Retell Lecture: must support audiovisual
+    if (cid === 'retell_lecture' && task.supportsAudiovisualInput !== true) {
+      errors.push(`${manifestPath}: task "${cid}" supportsAudiovisualInput must be true`);
+    }
+
+    // Answer Short Question: optional image
+    if (cid === 'answer_short_question' && task.optionalAccompanyingImage !== true) {
+      errors.push(`${manifestPath}: task "${cid}" optionalAccompanyingImage must be true`);
+    }
+
+    // officialHumanReviewTraits checks
+    const expectedHumanReviewTraits = {
+      describe_image: ['Content'],
+      retell_lecture: ['Content'],
+      summarize_group_discussion: ['Content'],
+      respond_to_situation: ['Content'],
+      summarize_written_text: ['Content'],
+      summarize_spoken_text: ['Content'],
+      write_essay: ['Content', 'Development, Structure and Coherence', 'General Linguistic Range'],
+    };
+    if (expectedHumanReviewTraits[cid]) {
+      const expected = JSON.stringify(expectedHumanReviewTraits[cid]);
+      const actual = JSON.stringify(task.officialHumanReviewTraits || []);
+      if (expected !== actual) {
+        errors.push(`${manifestPath}: task "${cid}" officialHumanReviewTraits mismatch. Expected: ${expected}, Actual: ${actual}`);
+      }
+    } else if (task.officialHumanReviewTraits && task.officialHumanReviewTraits.length > 0) {
+      errors.push(`${manifestPath}: task "${cid}" must have empty officialHumanReviewTraits`);
+    }
+
     // No transcript tasks
     const noTranscriptTasks = ['read_aloud', 'repeat_sentence', 'describe_image', 'retell_lecture',
       'answer_short_question', 'summarize_group_discussion', 'respond_to_situation',
@@ -925,6 +1017,64 @@ export function validateBlueprintReferences(blueprintPath) {
   }
 }
 
+// ---- F: Scoring-principles table validation ----
+
+export function validateScoringPrinciplesTable(principlesPath) {
+  const content = requiredFile(principlesPath);
+  if (!content) return;
+
+  const manifestPath = 'docs/content/pte-task-manifest.json';
+  const manifestContent = requiredFile(manifestPath);
+  if (!manifestContent) return;
+
+  let manifest;
+  try { manifest = JSON.parse(manifestContent); } catch { return; }
+  if (!Array.isArray(manifest)) return;
+
+  // Find the integrated-skill table in scoring-principles.md
+  const tableStart = content.indexOf('| Task | Skills Assessed | Contribution |');
+  if (tableStart === -1) {
+    errors.push(`${principlesPath}: missing integrated-skill contribution table`);
+    return;
+  }
+
+  const tableEnd = content.indexOf('## Result Storage', tableStart);
+  const tableSection = tableEnd === -1 ? content.slice(tableStart) : content.slice(tableStart, tableEnd);
+  const tableLines = tableSection.split('\n').filter(l => l.startsWith('|') && !l.includes('---'));
+
+  for (const task of manifest) {
+    const cid = task.canonicalId;
+    const displayName = task.displayName;
+    const expectedSkills = (task.officialSkillsAssessed || []).join(', ');
+    const expectedContrib = (task.scoreContributions || []).join(', ');
+
+    // Find the matching row by display name
+    const row = tableLines.find(l => l.includes(displayName));
+    if (!row) {
+      errors.push(`${principlesPath}: missing row for "${displayName}" in integrated-skill table`);
+      continue;
+    }
+
+    const cells = row.split('|').filter(c => c.trim().length > 0);
+    if (cells.length < 3) {
+      errors.push(`${principlesPath}: row for "${displayName}" has fewer than 3 cells`);
+      continue;
+    }
+
+    const rowSkills = cells[1].trim();
+    const rowContrib = cells[2].trim();
+
+    // Normalize for comparison
+    const normalize = s => s.trim().split(/\s*,\s*/).sort().join(', ').toLowerCase();
+    if (normalize(rowSkills) !== normalize(expectedSkills)) {
+      errors.push(`${principlesPath}: "${displayName}" skills mismatch. Table says "${rowSkills}", manifest says "${expectedSkills}"`);
+    }
+    if (normalize(rowContrib) !== normalize(expectedContrib)) {
+      errors.push(`${principlesPath}: "${displayName}" contribution mismatch. Table says "${rowContrib}", manifest says "${expectedContrib}"`);
+    }
+  }
+}
+
 // Run all document validations
 export function validateAll() {
   resetValidation();
@@ -973,6 +1123,7 @@ export function validateAll() {
   validateOfficialReferenceRegister('docs/content/official-pte-reference-register.md');
   validateReferenceRegisterJson('docs/content/official-pte-reference-register.json');
   validateTaskReferences();
+  validateScoringPrinciplesTable('docs/scoring/scoring-principles.md');
 
   // Scorecard
   const scorecard = requiredFile('docs/testing/audit-scorecard.md');

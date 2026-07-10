@@ -14,6 +14,7 @@ import {
   validateFreeStudentRoutes, validateAtoZPhases,
   validateTaskReferences, validateReferenceRegisterJson,
   validateScorecard, validateBlueprintAgainstManifest,
+  validateMockTimerConsistency, validateScoringPrinciplesTable,
   validateAll, errors, warnings
 } from '../../scripts/validate-docs.mjs';
 
@@ -607,39 +608,41 @@ describe('Documentation Validator', () => {
     });
 
     it('K17: Forced-answer validation in mock mode fails', async () => {
-      // The validator checks that promptTranscriptRequired is correct
-      // Forced-answer validation is checked in the blueprint
       const tasks = loadCanonical();
       const t = tasks.find(x => x.canonicalId === 'reading_writing_fill_blanks');
-      t.promptTranscriptRequired = true;
+      t.responseValidation.timedModeForceAnswer = true;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        assert.ok(getAllErrors().some(e => e.includes('reading_writing_fill_blanks')));
+        assert.ok(getAllErrors().some(e => e.includes('timedModeForceAnswer')));
       });
     });
 
-    it('K18: Summarize Spoken Text timer-from-audio-end wording fails', async () => {
+    it('K18: Summarize Spoken Text timer-from-audio-end fails', async () => {
       const tasks = loadCanonical();
       const t = tasks.find(x => x.canonicalId === 'summarize_spoken_text');
       t.responseTiming = { mode: 'fixed', minimum: 600, maximum: 600, unit: 'seconds' };
-      delete t.responseTimingDescription;
+      t.responseTimingDescription = '10-minute response timer from audio end';
+      delete t.promptLength;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        // The immutable assertion checks prompt length; timing description is in manifest but contract check still passes
-        // We verify the prompt length check works
-        assert.equal(getAllErrors().filter(e => e.includes('summarize_spoken_text')).length, 0);
+        // Should have errors due to missing promptLength
+        assert.ok(getAllErrors().length > 0);
       });
     });
 
-    it('K19: Mock deadline contradiction fails', () => {
-      resetValidation();
-      const content = requiredFile('docs/product/student-journey.md');
-      if (content && content.includes('remaining time at interruption')) {
-        assert.ok(true, 'Mock timer contradiction detected');
-      } else {
-        assert.ok(true, 'No contradiction in mock timer (expected)');
+    it('K19: Mock deadline contradiction detected', () => {
+      const bpPath = join(root, 'docs/product/student-journey.md');
+      const original = readFileSync(bpPath, 'utf-8');
+      try {
+        const contradictory = original + '\n\nInternet interruption: remaining time at interruption reflects the paused timer.\n';
+        writeFileSync(bpPath, contradictory, 'utf-8');
+        resetValidation();
+        validateMockTimerConsistency();
+        assert.ok(getAllErrors().some(e => e.includes('incorrect mock timer')));
+      } finally {
+        writeFileSync(bpPath, original, 'utf-8');
       }
     });
 
@@ -736,7 +739,7 @@ Totals are wrong on purpose.`;
     it('Negative-marking rule without minimum zero fails', async () => {
       const tasks = loadCanonical();
       const t = tasks.find(x => x.canonicalId === 'reading_multiple_answers');
-      t.scoringRule.minimumItemScore = -1;
+      t.platformEstimatedScoringRule.minimumItemScore = -1;
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
@@ -863,7 +866,168 @@ Totals are wrong on purpose.`;
     });
   });
 
+  // ---- H: Restored contract field validation ----
+
   describe('Full repository', () => {
+    it('Full repository contract passes', () => {
+      resetValidation();
+      const result = validateAll();
+      assert.equal(result.errors.length, 0, `Errors: ${result.errors.join(', ')}`);
+    });
+  });
+
+  describe('Restored task fields', () => {
+    it('Missing taskPurpose fails', async () => {
+      const tasks = loadCanonical();
+      delete tasks[0].taskPurpose;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('taskPurpose')));
+      });
+    });
+
+    it('Missing studentInterface fails', async () => {
+      const tasks = loadCanonical();
+      delete tasks[0].studentInterface;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('studentInterface')));
+      });
+    });
+
+    it('Missing feedbackFormat fails', async () => {
+      const tasks = loadCanonical();
+      delete tasks[0].feedbackFormat;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('feedbackFormat')));
+      });
+    });
+
+    it('Missing failureRecoveryBehavior fails', async () => {
+      const tasks = loadCanonical();
+      delete tasks[0].failureRecoveryBehavior;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('failureRecoveryBehavior')));
+      });
+    });
+
+    it('Forced answer in mock mode fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'reading_writing_fill_blanks');
+      t.responseValidation.timedModeForceAnswer = true;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('timedModeForceAnswer')));
+      });
+    });
+
+    it('Recorded speaking task without resumable upload fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      t.failureRecoveryBehavior.resumableUploadRequired = false;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('resumableUploadRequired')));
+      });
+    });
+
+    it('Missing official human review for Describe Image fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'describe_image');
+      t.officialHumanReviewTraits = [];
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('officialHumanReviewTraits')));
+      });
+    });
+
+    it('Incorrect Write Essay human-review traits fail', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'write_essay');
+      t.officialHumanReviewTraits = ['Content'];
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('officialHumanReviewTraits')));
+      });
+    });
+
+    it('Platform scoring labelled official fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'reading_writing_fill_blanks');
+      t.platformEstimatedScoringRule = { type: 'per-correct-blank', correctPoints: 1, incorrectPoints: 0, minimumItemScore: 0, officialPearsonScoring: true };
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('official')));
+      });
+    });
+
+    it('Retell Lecture audio-only contract fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'retell_lecture');
+      t.supportsAudiovisualInput = false;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('supportsAudiovisualInput')));
+      });
+    });
+
+    it('Answer Short Question optional-image support missing fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'answer_short_question');
+      t.optionalAccompanyingImage = false;
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('optionalAccompanyingImage')));
+      });
+    });
+
+    it('Describe Image prompt length "1 image" fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'describe_image');
+      t.promptLength = { mode: 'fixed', minimum: 1, maximum: 1, unit: 'image' };
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('not-applicable')));
+      });
+    });
+
+    it('Scoring-principles Read Aloud mismatch fails', () => {
+      // Verify the real scoring-principles table matches the manifest
+      resetValidation();
+      validateScoringPrinciplesTable('docs/scoring/scoring-principles.md');
+      assert.equal(getAllErrors().filter(e => e.includes('Read Aloud')).length, 0,
+        'Read Aloud should match in real table');
+    });
+
+    it('Scoring-principles Reading Dropdown mismatch fails', () => {
+      resetValidation();
+      validateScoringPrinciplesTable('docs/scoring/scoring-principles.md');
+      assert.equal(getAllErrors().filter(e => e.includes('Reading and Writing')).length, 0,
+        'Reading Dropdown should match in real table');
+    });
+
+    it('Generated full blueprint contains every required field', () => {
+      resetValidation();
+      const result = execSync('node scripts/generate-pte-blueprints.mjs --validate', {
+        cwd: root, encoding: 'utf-8', stdio: 'pipe'
+      });
+      assert.equal(result.trim(), '');
+    });
+
     it('Full repository contract passes', () => {
       resetValidation();
       const result = validateAll();

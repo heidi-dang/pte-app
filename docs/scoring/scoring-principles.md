@@ -60,28 +60,28 @@ Writing evaluation uses:
 
 | Task | Skills Assessed | Contribution |
 |------|----------------|--------------|
-| Read Aloud | Reading, Speaking | Reading comprehension, oral production |
-| Repeat Sentence | Listening, Speaking | Listening accuracy, oral reproduction |
-| Describe Image | Speaking | Visual interpretation, oral description |
-| Retell Lecture | Listening, Speaking | Listening comprehension, oral summarisation |
-| Answer Short Question | Listening | Listening comprehension, concise response |
-| Summarize Group Discussion | Listening, Speaking | Multi-speaker listening, oral summary |
-| Respond to a Situation | Speaking | Situational response, oral production |
-| Summarize Written Text | Reading, Writing | Reading comprehension, written summarisation |
-| Write Essay | Writing | Written composition |
-| Reading and Writing: Fill in the Blanks | Reading, Writing | Reading comprehension, vocabulary, written accuracy |
-| Multiple Choice, Multiple Answers (Reading) | Reading | Reading comprehension |
-| Reorder Paragraph | Reading | Logical organisation |
-| Reading: Fill in the Blanks | Reading | Reading, vocabulary |
-| Multiple Choice, Single Answer (Reading) | Reading | Reading comprehension |
-| Summarize Spoken Text | Listening, Writing | Listening comprehension, written summarisation |
-| Multiple Choice, Multiple Answers (Listening) | Listening | Listening comprehension |
-| Fill in the Blanks (Listening) | Listening, Writing | Listening, spelling, written accuracy |
-| Highlight Correct Summary | Listening, Reading | Listening comprehension, reading comparison |
-| Multiple Choice, Single Answer (Listening) | Listening | Listening comprehension |
-| Select Missing Word | Listening | Listening prediction |
-| Highlight Incorrect Words | Listening, Reading | Listening accuracy, reading verification |
-| Write From Dictation | Listening, Writing | Listening accuracy, written reproduction |
+| Read Aloud | Speaking | Reading, Speaking |
+| Repeat Sentence | Listening, Speaking | Listening, Speaking |
+| Describe Image | Speaking | Speaking |
+| Retell Lecture | Listening, Speaking | Listening, Speaking |
+| Answer Short Question | Listening | Listening |
+| Summarize Group Discussion | Listening, Speaking | Listening, Speaking |
+| Respond to a Situation | Speaking | Speaking |
+| Summarize Written Text | Reading, Writing | Reading, Writing |
+| Write Essay | Writing | Writing |
+| Reading and Writing: Fill in the Blanks | Reading | Reading |
+| Multiple Choice, Multiple Answers (Reading) | Reading | Reading |
+| Reorder Paragraph | Reading | Reading |
+| Reading: Fill in the Blanks | Reading | Reading |
+| Multiple Choice, Single Answer (Reading) | Reading | Reading |
+| Summarize Spoken Text | Listening, Writing | Listening, Writing |
+| Multiple Choice, Multiple Answers (Listening) | Listening | Listening |
+| Fill in the Blanks (Listening) | Listening | Listening, Writing |
+| Highlight Correct Summary | Listening, Reading | Listening, Reading |
+| Multiple Choice, Single Answer (Listening) | Listening | Listening |
+| Select Missing Word | Listening | Listening |
+| Highlight Incorrect Words | Listening, Reading | Listening, Reading |
+| Write From Dictation | Listening, Writing | Listening, Writing |
 
 ## Result Storage
 
