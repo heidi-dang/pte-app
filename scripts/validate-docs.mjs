@@ -1014,10 +1014,6 @@ export function validateMockTimerConsistency() {
     if (content.includes('remaining time at interruption') || content.includes('reflects the remaining time at the point')) {
       errors.push(`${docPath}: contains incorrect mock timer policy`);
     }
-  }
-  for (const docPath of mockDocs) {
-    const content = requiredFile(docPath);
-    if (!content) continue;
     checkContent(docPath, content, [['Mock deadline continues during interruption', 'deadline continue', false]]);
   }
 }
@@ -1118,6 +1114,187 @@ export function validateAssessmentAcceptanceConsistency(acceptancePath) {
   for (const concept of requiredConcepts) {
     if (!content.toLowerCase().includes(concept.toLowerCase())) {
       errors.push(`${acceptancePath}: missing required concept "${concept}"`);
+    }
+  }
+}
+
+// ---- H: Scoring narrative consistency ----
+
+export function validateScoringNarrativeConsistency(principlesPath) {
+  const content = requiredFile(principlesPath);
+  if (!content) return;
+
+  // Answer Short Question must not claim pronunciation or oral fluency in item scoring
+  const sectionStart = content.indexOf('### Constrained-Response Speaking Tasks');
+  if (sectionStart === -1) {
+    errors.push(`${principlesPath}: missing Constrained-Response Speaking Tasks section`);
+    return;
+  }
+  const sectionEnd = content.indexOf('### ', sectionStart + 10);
+  const section = sectionEnd === -1 ? content.slice(sectionStart) : content.slice(sectionStart, sectionEnd);
+
+  // Answer Short Question must exist
+  if (!section.includes('Answer Short Question')) {
+    errors.push(`${principlesPath}: Answer Short Question must be mentioned in scoring narrative`);
+  }
+
+  // ASQ scoring must be correct/incorrect with vocabulary matching
+  if (!section.toLowerCase().includes('correct/incorrect') && !section.toLowerCase().includes('correct-incorrect')) {
+    errors.push(`${principlesPath}: Answer Short Question must state Correct/Incorrect scoring type`);
+  }
+  if (!section.toLowerCase().includes('vocabulary') && !section.toLowerCase().includes('accepted-answer')) {
+    errors.push(`${principlesPath}: Answer Short Question must mention vocabulary or accepted-answer matching`);
+  }
+
+  // ASQ must not assign pronunciation or oral fluency to the item score
+  const asqSection = section.includes('**Answer Short Question**')
+    ? section.slice(section.indexOf('**Answer Short Question**'))
+    : '';
+  if (asqSection) {
+    // Check that pronunciation/fluency are explicitly excluded or not present in ASQ's scoring
+    const hasPronunciationInAsq = asqSection.match(/pronunciation/i);
+    const hasFluencyInAsq = asqSection.match(/oral fluency/i);
+    // Having these terms is only allowed if they're explicitly excluded from scoring
+    if (hasPronunciationInAsq && !asqSection.toLowerCase().includes('do not affect')) {
+      errors.push(`${principlesPath}: Answer Short Question scoring must exclude pronunciation from item score`);
+    }
+    if (hasFluencyInAsq && !asqSection.toLowerCase().includes('do not affect')) {
+      errors.push(`${principlesPath}: Answer Short Question scoring must exclude oral fluency from item score`);
+    }
+  }
+}
+
+// ---- H: Role-route consistency ----
+
+export function validateRoleRouteConsistency(routeMapPath) {
+  const content = requiredFile(routeMapPath);
+  if (!content) return;
+
+  // Content Reviewer edit permission must be No in permission matrix
+  const matrixSection = content.includes('| Content Reviewer |')
+    ? content.slice(content.indexOf('| Content Reviewer |'))
+    : '';
+  if (matrixSection) {
+    const editCell = matrixSection.split('\n')[0].split('|');
+    // Column 5 is Edit (index 4 after splitting: Role | View | Create | Edit | Review | ...)
+    const editVal = editCell[4] ? editCell[4].trim() : '';
+    if (editVal !== 'No') {
+      errors.push(`${routeMapPath}: Content Reviewer edit permission must be No, found "${editVal}"`);
+    }
+  }
+
+  // The question detail route must state read-only for Content reviewer
+  const questionRouteLine = content.split('\n').find(l => l.includes('/content/questions/[questionId]'));
+  if (questionRouteLine) {
+    if (!questionRouteLine.toLowerCase().includes('read-only') && !questionRouteLine.toLowerCase().includes('read only')) {
+      errors.push(`${routeMapPath}: /content/questions/[questionId] must specify read-only access for Content reviewer`);
+    }
+  }
+
+  // /content/reviews/[reviewId] must exist (but not /teacher/reviews/[reviewId])
+  if (!content.includes('/content/reviews/[reviewId]')) {
+    errors.push(`${routeMapPath}: missing required route /content/reviews/[reviewId]`);
+  }
+}
+
+// ---- H: Content publication authority ----
+
+export function validateContentPublicationAuthority(workflowPath, routeMapPath, acceptancePath) {
+  const workflow = requiredFile(workflowPath);
+  if (!workflow) return;
+
+  // Reviewer approval must not automatically trigger publication
+  if (workflow.includes('triggered by approval')) {
+    errors.push(`${workflowPath}: publication must not be triggered by approval; must require Administrator authorisation`);
+  }
+
+  // Administrator Publication Authorisation must exist
+  if (!workflow.includes('Administrator Publication Authorisation')) {
+    errors.push(`${workflowPath}: missing Administrator Publication Authorisation stage`);
+  }
+
+  // Content Reviewer cannot publish
+  if (!workflow.includes('Content Reviewer cannot publish')) {
+    errors.push(`${workflowPath}: must state that Content Reviewer cannot publish`);
+  }
+
+  // Administrator explicitly authorises publication
+  if (!workflow.toLowerCase().includes('administrator explicitly authorises publication')) {
+    errors.push(`${workflowPath}: must state that Administrator explicitly authorises publication`);
+  }
+
+  // Acceptance criteria alignment
+  if (acceptancePath) {
+    const acceptContent = requiredFile(acceptancePath);
+    if (acceptContent) {
+      if (!acceptContent.includes('reviewer cannot publish')) {
+        errors.push(`${acceptancePath}: must state that content reviewer cannot publish`);
+      }
+      if (!acceptContent.toLowerCase().includes('administrator can authorise publication')) {
+        // Check for equivalent phrase
+        if (!acceptContent.includes('Only an Administrator can authorise publication')) {
+          errors.push(`${acceptancePath}: must state that only Administrator can authorise publication`);
+        }
+      }
+    }
+  }
+
+  // Route map: /content/reviews/[reviewId] must say cannot publish
+  if (routeMapPath) {
+    const routeMap = requiredFile(routeMapPath);
+    if (routeMap) {
+      const reviewRouteLine = routeMap.split('\n').find(l => l.includes('/content/reviews/[reviewId]'));
+      if (reviewRouteLine && !reviewRouteLine.includes('cannot publish')) {
+        errors.push(`${routeMapPath}: /content/reviews/[reviewId] must state it cannot publish or retire content`);
+      }
+    }
+  }
+}
+
+// ---- H: Student assessment routes ----
+
+export function validateStudentAssessmentRoutes(routeMapPath) {
+  const content = requiredFile(routeMapPath);
+  if (!content) return;
+
+  // Diagnostic routes
+  const diagnosticRoutes = [
+    '/app/diagnostic',
+    '/app/diagnostic/attempts/[attemptId]',
+    '/app/diagnostic/results/[reportId]',
+  ];
+  for (const route of diagnosticRoutes) {
+    if (!content.includes(route)) {
+      errors.push(`${routeMapPath}: missing diagnostic route ${route}`);
+    } else {
+      // Check both Free student and Paid student are permitted
+      const routeLine = content.split('\n').find(l => l.includes(route));
+      if (routeLine) {
+        if (!routeLine.includes('Free student') || !routeLine.includes('Paid student')) {
+          errors.push(`${routeMapPath}: route ${route} must permit both Free student and Paid student`);
+        }
+        // Diagnostic results must not be Paid-only
+        if (route.includes('/results/') && !routeLine.includes('Free student')) {
+          errors.push(`${routeMapPath}: route ${route} must be accessible to Free Student`);
+        }
+      }
+    }
+  }
+
+  // Section-test routes
+  const sectionTestRoutes = [
+    '/app/section-tests',
+    '/app/section-tests/[testId]',
+    '/app/section-attempts/[attemptId]',
+  ];
+  for (const route of sectionTestRoutes) {
+    if (!content.includes(route)) {
+      errors.push(`${routeMapPath}: missing section-test route ${route}`);
+    } else {
+      const routeLine = content.split('\n').find(l => l.includes(route));
+      if (routeLine && !routeLine.includes('Paid student')) {
+        errors.push(`${routeMapPath}: route ${route} must permit Paid student`);
+      }
     }
   }
 }
@@ -1271,13 +1448,22 @@ export function validateAll() {
 
   validateFreeStudentRoutes('docs/product/route-map.md');
   validateMockTimerConsistency();
+  validateScoringNarrativeConsistency('docs/scoring/scoring-principles.md');
+  validateRoleRouteConsistency('docs/product/route-map.md');
+  validateContentPublicationAuthority(
+    'docs/content/content-workflow.md',
+    'docs/product/route-map.md',
+    'docs/product/acceptance-criteria.md'
+  );
+  validateStudentAssessmentRoutes('docs/product/route-map.md');
 
   const workflow = requiredFile('docs/content/content-workflow.md');
   if (workflow) {
     checkContent('docs/content/content-workflow.md', workflow, [
       ['Workflow stages', 'Idea', false],
-      ['Approval stage', 'Approval', true],
-      ['Publication stage', 'Publication', true],
+      ['Quality Approval stage', 'Quality Approval', false],
+      ['Administrator Publication Authorisation stage', 'Administrator Publication Authorisation', false],
+      ['System Publication stage', 'System Publication', false],
     ]);
   }
 

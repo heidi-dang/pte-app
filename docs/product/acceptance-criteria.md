@@ -82,6 +82,10 @@
 3. An incomplete diagnostic generates partial results for completed sections.
 4. The diagnostic score is available within `SCORING_TARGET_SECONDS` (default: 60 seconds) of submission.
 5. The diagnostic can be retaken after a configurable period (default: 30 days).
+6. Free Student diagnostic access is limited by entitlement configuration, not by removing route access.
+7. Diagnostic attempts must be resumable across browser restarts and network interruptions.
+8. Basic diagnostic results must remain available to Free Students.
+9. Paid entitlements may add expanded analysis without changing route accessibility.
 
 ## Study Plan
 
@@ -104,6 +108,20 @@
 9. Submitted mock responses are scored and results are available within `SCORING_TARGET_SECONDS` (default: 5 minutes).
 10. A partially completed mock saves all completed section responses.
 11. In mock mode, unanswered responses are permitted without penalty; the platform does not fabricate answers.
+
+## Section Tests
+
+1. Section tests cover individual PTE Academic sections (Speaking and Writing, Reading, Listening).
+2. Section test timing matches the corresponding official PTE section timing.
+3. The server stores an absolute deadline for section attempts. The deadline continues during browser closure or network interruption.
+4. On reconnection, the client obtains the current server time and recalculates remaining time. The timer does not return to the amount remaining at interruption.
+5. Completed responses remain submitted after interruption and reconnection.
+6. Consumed audio playback rights remain consumed after reconnection.
+7. A recording already captured remains available for resumable upload.
+8. The same answer cannot be submitted twice (idempotency enforcement).
+9. Submitted section responses are scored and results are available within `SCORING_TARGET_SECONDS` (default: 5 minutes).
+10. A partially completed section test saves all completed section responses.
+11. In section tests, unanswered responses are permitted without penalty; the platform does not fabricate answers.
 
 ## Scoring
 
@@ -132,10 +150,23 @@
 ## Content Publication
 
 1. A content draft is validated for completeness before submission for review.
-2. A content reviewer can approve or reject submitted content with a reason.
-3. Published content is immutable and revision creates a new version.
-4. Retired content is not available for new practice sessions but remains in historical reports.
-5. Content below 9/10 review score cannot be published.
+2. A content reviewer can review, score, approve for publication readiness, reject or request revision. The reviewer cannot publish, retire or trigger automatic publication.
+3. Only an Administrator can authorise publication. The system publishes only after an Administrator-authorised action.
+4. Only an Administrator can authorise retirement.
+5. Published content is immutable and revision creates a new version.
+6. Retired content is not available for new practice sessions but remains in historical reports.
+7. Content below 9/10 review score cannot be published.
+8. Content Writer cannot approve or publish their own content.
+9. A content reviewer has read-only access to question details for review context.
+10. Every approval, authorisation, publication and retirement action records actor, timestamp, version and reason.
+
+## Content Review
+
+1. A reviewer-accessible question route provides read-only access for review context. Content reviewers cannot edit questions.
+2. The `/content/reviews/[reviewId]` route displays an immutable review snapshot with provenance and validation evidence.
+3. The review route supports submission of approval, rejection or revision feedback.
+4. The review route cannot publish or retire content.
+5. Review feedback must include a reason for rejection or revision requests.
 
 ## Recovery
 

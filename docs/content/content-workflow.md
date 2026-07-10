@@ -2,7 +2,7 @@
 
 ## Stages
 
-Idea → Draft → Automated Validation → Writer Review → PTE Specialist Review → Media Production → Technical Validation → Pilot → Approval → Publication → Monitoring → Revision or Retirement
+Idea → Draft → Automated Validation → Writer Review → PTE Specialist Review → Media Production → Technical Validation → Pilot → Quality Approval → Administrator Publication Authorisation → System Publication → Monitoring → Revision or Retirement
 
 ## Stage Details
 
@@ -78,19 +78,28 @@ Idea → Draft → Automated Validation → Writer Review → PTE Specialist Rev
 - **Audit information**: Pilot group, results, feedback summary
 - **Rejection path**: Issues resolved and content re-piloted if needed
 
-### Approval
+### Quality Approval
 
-- **Responsible role**: Content reviewer or administrator
+- **Responsible role**: Content reviewer
 - **Entry requirements**: Passed all previous stages
 - **Required checks**: Final quality check; all metadata complete; review score documented
-- **Possible outcomes**: Approved for publication
-- **Audit information**: Approver, approval date
-- **Rejection path**: Content returned to appropriate earlier stage
+- **Possible outcomes**: Approved for publication readiness; Rejected; Revision needed
+- **Audit information**: Approver, approval date, review score, version, reason
+- **Rejection path**: Content returned to appropriate earlier stage. Content Reviewer cannot publish, retire or trigger automatic publication.
 
-### Publication
+### Administrator Publication Authorisation
 
-- **Responsible role**: System (triggered by approval)
-- **Entry requirements**: Approved content
+- **Responsible role**: Administrator
+- **Entry requirements**: Content approved by Content Reviewer
+- **Required checks**: Reviewer approval confirmed; no unresolved quality flags; publication readiness verified
+- **Possible outcomes**: Authorised for publication; Returned for further review
+- **Audit information**: Authoriser, authorisation date, version, reason
+- **Rejection path**: Content returned to Quality Approval stage. Administrator explicitly authorises publication; the system publishes only after an Administrator-authorised action.
+
+### System Publication
+
+- **Responsible role**: System (triggered by Administrator authorisation)
+- **Entry requirements**: Administrator authorisation received
 - **Required checks**: Immutable version created; content indexed; available for practice sessions
 - **Possible outcomes**: Published; Publication failed
 - **Audit information**: Publication timestamp, version number, published by
@@ -113,3 +122,13 @@ Idea → Draft → Automated Validation → Writer Review → PTE Specialist Rev
 - **Possible outcomes**: Content revised (new version published); Content retired (marked inactive for new sessions but available in historical reports)
 - **Audit information**: Revision reason, changes made, version increment; or retirement reason, date
 - **Rejection path**: Decision escalated to super administrator if disputed
+
+## Authority Rules
+
+- Content Reviewer can review, score, approve for publication readiness, reject or request revision.
+- Content Reviewer cannot publish, retire or trigger automatic publication.
+- Administrator explicitly authorises publication.
+- The system publishes only after an Administrator-authorised action.
+- Administrator explicitly authorises retirement.
+- Content Writer cannot approve or publish their own content.
+- Every approval, authorisation, publication and retirement action records actor, timestamp, version and reason.

@@ -18,13 +18,21 @@ Speaking evaluation is separated into two categories based on response type.
 
 Tasks: Read Aloud, Repeat Sentence, Answer Short Question
 
-These tasks have a single expected response or a limited set of acceptable answers. Scoring uses:
+These tasks have a single expected response or a limited set of acceptable answers.
 
+**Read Aloud and Repeat Sentence** may use:
 - **Word alignment**: Alignment of speech-to-text output against the expected text
 - **Sequence comparison**: Order and completeness of spoken content relative to expected word sequence
-- **Accepted-answer matching**: Vocabulary-based matching against list of acceptable answers (Answer Short Question)
 - **Pronunciation evidence**: Phonetic accuracy, stress patterns, intelligibility
 - **Oral fluency**: Speech rate, pause frequency and duration, rhythm
+  according to their versioned scoring profiles.
+
+**Answer Short Question**:
+- **Official scoring type**: Correct/Incorrect
+- **Accepted-answer matching**: Vocabulary-based matching against list of acceptable answers
+- Assesses and contributes to **Listening** only.
+- Pronunciation, accent, speaking style and oral fluency do not affect the Answer Short Question estimated item score.
+- Optional pronunciation feedback may only be presented as non-scored coaching feedback and must be clearly labelled as excluded from the score.
 
 ### Open-Response Speaking Tasks
 
