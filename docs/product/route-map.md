@@ -34,6 +34,9 @@ Entitlements decide which content and usage limits are available. Free students 
 | `/app` | Free student, Paid student | App entry and redirect | User context | Full-page spinner | N/A | Redirect to login | Responsive shell |
 | `/app/onboarding` | Free student, Paid student | New-user onboarding | Onboarding state | Progress stepper | N/A | Step-specific error with retry | Touch-friendly stepper |
 | `/app/dashboard` | Free student, Paid student | Main student dashboard | Progress, plan, recent activity | Dashboard skeleton widgets | Welcome state for new users | Widget-level error fallbacks | Card layout, swipeable |
+| `/app/diagnostic` | Free student, Paid student | Diagnostic test entry and overview | Available attempts, history, start action | Card skeleton | No diagnostic available message | Retry | Touch-friendly start, responsive |
+| `/app/diagnostic/attempts/[attemptId]` | Free student, Paid student | Active or resumed diagnostic attempt | Questions, timer, responses | Attempt skeleton | N/A | Attempt not found, expired, resume available | Section-navigation optimised, touch-friendly |
+| `/app/diagnostic/results/[reportId]` | Free student, Paid student | Diagnostic score report | Scores, breakdown, section results | Report skeleton | N/A | Report not found | Scrollable report, touch-friendly |
 | `/app/study-plan` | Paid student | Personalised study plan | Plan structure, progress | Plan skeleton | No plan message (needs diagnostic) | Regenerate option on error | Scrollable timeline |
 | `/app/courses` | Free student, Paid student | Course listing | enrolled courses | Card skeleton grid | No courses message | Retry | Single-column cards |
 | `/app/courses/[courseId]` | Free student, Paid student | Course detail and lessons | Course content, lessons | Course skeleton | N/A | Course not found | Accordion lessons |
@@ -44,6 +47,9 @@ Entitlements decide which content and usage limits are available. Free students 
 | `/app/mock-tests` | Free student, Paid student | Mock exam listing | Available attempts, history | Card skeleton | No mocks available message | Retry | Scrollable list |
 | `/app/mock-tests/[mockId]` | Free student, Paid student | Mock exam detail and start | Mock configuration | Skeleton | N/A | Mock not found | Touch-friendly start |
 | `/app/mock-attempts/[attemptId]` | Paid student | Active or past mock attempt | Questions, timer, responses | Attempt skeleton | N/A | Attempt not found, expired, resume | Section-navigation optimised |
+| `/app/section-tests` | Paid student | Section test listing and entry | Available sections, history | Card skeleton | No section tests available message | Retry | Scrollable list, touch-friendly |
+| `/app/section-tests/[testId]` | Paid student | Section test detail and start | Section configuration | Skeleton | N/A | Test not found | Touch-friendly start |
+| `/app/section-attempts/[attemptId]` | Paid student | Active or past section-test attempt | Questions, timer, responses. Uses same server-deadline, recovery, consumed-playback and resumable-recording contract as mock exams. | Attempt skeleton | N/A | Attempt not found, expired, resume | Section-navigation optimised |
 | `/app/results/[reportId]` | Paid student | Score report | Scores, breakdown, comparison | Report skeleton | N/A | Report not found | Scrollable report sections |
 | `/app/mistakes` | Paid student | Mistake notebook | Mistake list, filters | List skeleton | No mistakes message, start practising prompt | Retry | Filterable list |
 | `/app/vocabulary` | Paid student | Vocabulary notebook | Vocabulary list, review schedule | List skeleton | No vocabulary yet | Retry | Swipeable cards |
@@ -71,8 +77,9 @@ Entitlements decide which content and usage limits are available. Free students 
 | `/content` | Content writer, Content reviewer, Administrator | Content dashboard | Overview, queue | Skeleton | Welcome message | Retry | Responsive |
 | `/content/questions` | Content writer, Content reviewer, Administrator | Question list | Question bank | Table skeleton | No questions | Retry | Filterable list |
 | `/content/questions/new` | Content writer | Create new question | Question form | Form skeleton | N/A | Save failure with autosave recovery | Touch-friendly form |
-| `/content/questions/[questionId]` | Content writer, Content reviewer, Administrator | Question detail and edit | Question data | Question skeleton | N/A | Question not found | Scrollable form |
+| `/content/questions/[questionId]` | Content writer, Content reviewer, Administrator | Question detail (Content reviewer: read-only access for review context; Content writer and Administrator: may edit according to role permissions) | Question data | Question skeleton | N/A | Question not found | Scrollable form |
 | `/content/reviews` | Content reviewer, Administrator | Content review queue | Review queue | List skeleton | No pending reviews | Retry | Filterable list |
+| `/content/reviews/[reviewId]` | Content reviewer, Administrator | Read the immutable review snapshot, inspect provenance and validation evidence, submit approval, rejection or revision feedback. This route cannot publish or retire content. | Review snapshot | Review skeleton | Review not found | Immutable review error with provenance details | Scrollable review with evidence |
 | `/content/sources` | Content writer, Content reviewer, Administrator | Source management | Source list | List skeleton | No sources | Retry | List view |
 | `/content/assets` | Content writer, Content reviewer, Administrator | Asset library | Asset list, upload | Grid skeleton | No assets | Upload failure | Grid view |
 | `/content/courses` | Content writer, Content reviewer, Administrator | Course content management | Course list | List skeleton | No courses | Retry | List view |

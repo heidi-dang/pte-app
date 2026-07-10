@@ -16,6 +16,8 @@ import {
   validateScorecard, validateBlueprintAgainstManifest,
   validateMockTimerConsistency, validateScoringPrinciplesTable,
   validateAssessmentAcceptanceConsistency,
+  validateScoringNarrativeConsistency, validateRoleRouteConsistency,
+  validateContentPublicationAuthority, validateStudentAssessmentRoutes,
   validateAll, errors, warnings
 } from '../../scripts/validate-docs.mjs';
 
@@ -1263,6 +1265,306 @@ Totals are wrong on purpose.`;
       resetValidation();
       const result = validateAll();
       assert.equal(result.errors.length, 0, `Errors: ${result.errors.join(', ')}`);
+    });
+
+    // ---- I: Final contract consistency regression tests ----
+
+    it('ASQ pronunciation scoring claim fails', () => {
+      const badContent = `### Constrained-Response Speaking Tasks\nTasks: Read Aloud, Repeat Sentence, Answer Short Question\n**Answer Short Question**: Uses pronunciation evidence for scoring.\n`;
+      const tmpPath = join(fixturesDir, 'tmp-asq-pron.md');
+      writeFixture('tmp-asq-pron.md', badContent);
+      resetValidation();
+      validateScoringNarrativeConsistency(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('pronunciation')));
+    });
+
+    it('ASQ oral-fluency scoring claim fails', () => {
+      const badContent = `### Constrained-Response Speaking Tasks\nTasks: Read Aloud, Repeat Sentence, Answer Short Question\n**Answer Short Question**: Uses oral fluency for scoring.\n`;
+      const tmpPath = join(fixturesDir, 'tmp-asq-flu.md');
+      writeFixture('tmp-asq-flu.md', badContent);
+      resetValidation();
+      validateScoringNarrativeConsistency(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('oral fluency')));
+    });
+
+    it('Correct Vocabulary-only ASQ contract passes', () => {
+      resetValidation();
+      validateScoringNarrativeConsistency('docs/scoring/scoring-principles.md');
+      assert.equal(getAllErrors().filter(e => e.includes('Answer Short Question')).length, 0,
+        'ASQ scoring narrative should be correct in production file');
+    });
+
+    it('Content Reviewer edit access fails', () => {
+      resetValidation();
+      const badRoles = `# Roles\n\n| Role | View | Create | Edit | Review | Publish | Retire |\n|------|------|--------|------|--------|---------|--------|\n| Content Reviewer | All drafts | No | Edit | Assigned | No | No |\n`;
+      const tmpRoles = join(fixturesDir, 'tmp-bad-roles.md');
+      writeFixture('tmp-bad-roles.md', badRoles);
+      // Provide a valid route map and the bad roles file
+      validateRoleRouteConsistency('docs/product/route-map.md', tmpRoles);
+      try { rmSync(tmpRoles); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('Content Reviewer Edit')));
+    });
+
+    it('Read-only Content Reviewer access passes', () => {
+      resetValidation();
+      validateRoleRouteConsistency('docs/product/route-map.md');
+      assert.equal(getAllErrors().filter(e => e.includes('Content Reviewer edit')).length, 0,
+        'Content Reviewer should not have edit permission');
+    });
+
+    it('Reviewer-triggered automatic publication fails', () => {
+      const badWorkflow = `### Publication\n- **Responsible role**: System (triggered by approval)\n`;
+      const tmpPath = join(fixturesDir, 'tmp-bad-pub.md');
+      writeFixture('tmp-bad-pub.md', badWorkflow);
+      resetValidation();
+      validateContentPublicationAuthority(tmpPath, null, null);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('triggered by approval')));
+    });
+
+    it('Administrator-authorised publication passes', () => {
+      resetValidation();
+      validateContentPublicationAuthority(
+        'docs/content/content-workflow.md',
+        'docs/product/route-map.md',
+        'docs/product/acceptance-criteria.md'
+      );
+      assert.equal(getAllErrors().filter(e => e.includes('Administrator Publication Authorisation')).length, 0,
+        'Administrator authorisation should be present');
+    });
+
+    it('Missing /content/reviews/[reviewId] fails', () => {
+      resetValidation();
+      const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
+      const withoutReview = content.replace(/.*\/content\/reviews\/\[reviewId\].*\n/, '');
+      const tmpPath = join(fixturesDir, 'tmp-no-review-route.md');
+      writeFixture('tmp-no-review-route.md', withoutReview);
+      validateRoleRouteConsistency(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('/content/reviews/[reviewId]')));
+    });
+
+    it('Missing authenticated diagnostic entry route fails', () => {
+      resetValidation();
+      const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
+      const withoutDiag = content.split('\n').filter(l => !l.includes('/app/diagnostic')).join('\n');
+      const tmpPath = join(fixturesDir, 'tmp-no-diag.md');
+      writeFixture('tmp-no-diag.md', withoutDiag);
+      validateStudentAssessmentRoutes(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('/app/diagnostic')));
+    });
+
+    it('Diagnostic results restricted to Paid Student fail', () => {
+      resetValidation();
+      const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
+      const tmpPath = join(fixturesDir, 'tmp-bad-diag.md');
+      const lines = content.split('\n').map(l => {
+        if (l.includes('/app/diagnostic/results/') && l.includes('Free student')) {
+          return l.replace('Free student, ', '');
+        }
+        return l;
+      });
+      writeFixture('tmp-bad-diag.md', lines.join('\n'));
+      validateStudentAssessmentRoutes(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('/app/diagnostic/results/')));
+    });
+
+    it('Missing section-test route fails', () => {
+      resetValidation();
+      const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
+      const withoutSec = content.split('\n').filter(l => !l.includes('/app/section-tests')).join('\n');
+      const tmpPath = join(fixturesDir, 'tmp-no-sectest.md');
+      writeFixture('tmp-no-sectest.md', withoutSec);
+      validateStudentAssessmentRoutes(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('/app/section-tests')));
+    });
+
+    it('The corrected full repository passes', () => {
+      resetValidation();
+      const result = validateAll();
+      assert.equal(result.errors.length, 0, `Errors: ${result.errors.join(', ')}`);
+    });
+
+    // ---- G: 16 additional regression tests (target 132) ----
+
+    it('Production role matrix read from user-roles.md fails when matrix missing', () => {
+      const noMatrix = '# User Roles\n\n## Guest\n- View pages\n';
+      const tmpPath = join(fixturesDir, 'tmp-no-matrix.md');
+      writeFixture('tmp-no-matrix.md', noMatrix);
+      resetValidation();
+      validateRoleRouteConsistency('docs/product/route-map.md', tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('missing Content Reviewer row')));
+    });
+
+    it('Missing Content Reviewer matrix row fails', () => {
+      const noReviewer = '| Role | View | Create | Edit | Publish | Retire |\n|------|------|--------|------|---------|--------|\n| Administrator | All | Yes | Yes | Yes | Yes |\n';
+      const tmpPath = join(fixturesDir, 'tmp-no-reviewer.md');
+      writeFixture('tmp-no-reviewer.md', noReviewer);
+      resetValidation();
+      validateRoleRouteConsistency('docs/product/route-map.md', tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('missing Content Reviewer row')));
+    });
+
+    it('Content Reviewer Publish = Yes fails', () => {
+      const badPub = '| Role | View | Create | Edit | Review | Publish | Retire |\n|------|------|--------|------|--------|---------|--------|\n| Content Reviewer | All drafts | No | No | Assigned | Yes | No |\n';
+      const tmpPath = join(fixturesDir, 'tmp-bad-pub-role.md');
+      writeFixture('tmp-bad-pub-role.md', badPub);
+      resetValidation();
+      validateRoleRouteConsistency('docs/product/route-map.md', tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('Publish') && e.includes('No')));
+    });
+
+    it('Content Reviewer Retire = Yes fails', () => {
+      const badRet = '| Role | View | Create | Edit | Review | Publish | Retire |\n|------|------|--------|------|--------|---------|--------|\n| Content Reviewer | All drafts | No | No | Assigned | No | Yes |\n';
+      const tmpPath = join(fixturesDir, 'tmp-bad-ret-role.md');
+      writeFixture('tmp-bad-ret-role.md', badRet);
+      resetValidation();
+      validateRoleRouteConsistency('docs/product/route-map.md', tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('Retire') && e.includes('No')));
+    });
+
+    it('Missing exact /app/diagnostic while child routes remain fails', () => {
+      const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
+      const lines = content.split('\n');
+      const modified = lines.filter(l => !l.includes('`/app/diagnostic` ')).join('\n');
+      const tmpPath = join(fixturesDir, 'tmp-no-exact-diag.md');
+      writeFixture('tmp-no-exact-diag.md', modified);
+      resetValidation();
+      validateStudentAssessmentRoutes(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('missing exact diagnostic route /app/diagnostic')));
+    });
+
+    it('Missing exact /app/section-tests while child routes remain fails', () => {
+      const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
+      const lines = content.split('\n');
+      const modified = lines.filter(l => !l.includes('`/app/section-tests` ')).join('\n');
+      const tmpPath = join(fixturesDir, 'tmp-no-exact-sectest.md');
+      writeFixture('tmp-no-exact-sectest.md', modified);
+      resetValidation();
+      validateStudentAssessmentRoutes(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('missing exact section-test route /app/section-tests')));
+    });
+
+    it('Missing exact /content/reviews/[reviewId] while /content/reviews remains fails', () => {
+      const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
+      const lines = content.split('\n');
+      const modified = lines.filter(l => !l.includes('`/content/reviews/[reviewId]` ')).join('\n');
+      const tmpPath = join(fixturesDir, 'tmp-no-exact-rev.md');
+      writeFixture('tmp-no-exact-rev.md', modified);
+      resetValidation();
+      validateRoleRouteConsistency(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('/content/reviews/[reviewId]')));
+    });
+
+    it('Similar prefix does not satisfy exact route', () => {
+      // Verify that /app/diagnostic-old does not satisfy /app/diagnostic
+      const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
+      const lines = content.split('\n');
+      const modified = lines.filter(l => {
+        if (l.includes('`/app/diagnostic` ') && !l.includes('/attempts/') && !l.includes('/results/')) return false;
+        return true;
+      }).join('\n');
+      const tmpPath = join(fixturesDir, 'tmp-prefix-diag.md');
+      writeFixture('tmp-prefix-diag.md', modified);
+      resetValidation();
+      validateStudentAssessmentRoutes(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('missing exact diagnostic route /app/diagnostic')));
+    });
+
+    it('Content Reviewer directly retiring content fails', () => {
+      const badWorkflow = `### Administrator Retirement Authorisation\n- **Responsible role**: Content reviewer\n- **Possible outcomes**: Content retired\n`;
+      const tmpPath = join(fixturesDir, 'tmp-direct-retire.md');
+      writeFixture('tmp-direct-retire.md', badWorkflow);
+      resetValidation();
+      validateContentPublicationAuthority(tmpPath, null, null, null);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().length > 0);
+    });
+
+    it('Reviewer retirement recommendation + Administrator authorisation passes', () => {
+      resetValidation();
+      validateContentPublicationAuthority(
+        'docs/content/content-workflow.md',
+        'docs/product/route-map.md',
+        'docs/product/acceptance-criteria.md',
+        'docs/product/user-roles.md'
+      );
+      assert.equal(getAllErrors().filter(e => e.includes('Administrator Retirement Authorisation')).length, 0,
+        'Administrator Retirement Authorisation should exist');
+    });
+
+    it('Automatic publication using synonym fails', () => {
+      const badPub = `### Administrator Publication Authorisation\n- **Responsible role**: Content reviewer\n- **Possible outcomes**: Public after reviewer approval\n`;
+      const tmpPath = join(fixturesDir, 'tmp-synonym-pub.md');
+      writeFixture('tmp-synonym-pub.md', badPub);
+      resetValidation();
+      validateContentPublicationAuthority(tmpPath, null, null, null);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().length > 0);
+    });
+
+    it('ASQ contradictory exclusion plus scoring statement fails', () => {
+      const contradictory = `### Constrained-Response Speaking Tasks\nTasks: Read Aloud, Repeat Sentence\n\n**Answer Short Question**:\nPronunciation does not normally affect the score.\nPronunciation evidence is also used to calculate the item score.\n`;
+      const tmpPath = join(fixturesDir, 'tmp-asq-contra.md');
+      writeFixture('tmp-asq-contra.md', contradictory);
+      resetValidation();
+      validateScoringNarrativeConsistency(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('Answer Short Question')));
+    });
+
+    it('ASQ scoring claim without bold Markdown fails', () => {
+      const noBold = `### Constrained-Response Speaking Tasks\nAnswer Short Question uses oral fluency as scoring evidence.\n`;
+      const tmpPath = join(fixturesDir, 'tmp-asq-nobold.md');
+      writeFixture('tmp-asq-nobold.md', noBold);
+      resetValidation();
+      validateScoringNarrativeConsistency(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('oral fluency') || e.includes('pronunciation')));
+    });
+
+    it('Correct ASQ non-scored coaching narrative passes', () => {
+      resetValidation();
+      validateScoringNarrativeConsistency('docs/scoring/scoring-principles.md');
+      assert.equal(getAllErrors().filter(e => e.includes('Answer Short Question')).length, 0,
+        'ASQ narrative should be correct in production file');
+    });
+
+    it('Correct full repository passes', () => {
+      resetValidation();
+      const result = validateAll();
+      assert.equal(result.errors.length, 0, `Errors: ${result.errors.join(', ')}`);
+    });
+
+    it('Route map has all required exact routes', () => {
+      resetValidation();
+      const content = readFileSync(join(root, 'docs/product/route-map.md'), 'utf-8');
+      const routes = content.split('\n').filter(l => l.startsWith('|') && l.includes('`/'));
+      const routePaths = routes.map(l => {
+        const m = l.match(/`([^`]+)`/);
+        return m ? m[1] : '';
+      }).filter(Boolean);
+      const required = [
+        '/app/diagnostic', '/app/diagnostic/attempts/[attemptId]', '/app/diagnostic/results/[reportId]',
+        '/app/section-tests', '/app/section-tests/[testId]', '/app/section-attempts/[attemptId]',
+        '/content/reviews/[reviewId]',
+      ];
+      for (const r of required) {
+        assert.ok(routePaths.includes(r), `Route map must contain exactly "${r}"`);
+      }
     });
   });
 });
