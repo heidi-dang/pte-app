@@ -42,6 +42,19 @@ export function validatePort(val, key) {
   return num;
 }
 
+export const REQUIRED_ENV_VARS = [
+  'NODE_ENV', 'WEB_HOST', 'WEB_PORT', 'API_HOST', 'API_PORT',
+  'SCORING_HOST', 'SCORING_PORT', 'POSTGRES_HOST', 'POSTGRES_PORT',
+  'POSTGRES_DATABASE', 'POSTGRES_USER', 'POSTGRES_PASSWORD',
+  'REDIS_HOST', 'REDIS_PORT', 'LOG_LEVEL', 'APP_VERSION',
+  'WEB_ORIGIN', 'NEXT_PUBLIC_API_URL', 'NEXT_PUBLIC_SCORING_URL',
+  'LOCAL_STARTUP_TIMEOUT_MS', 'LOCAL_SMOKE_TIMEOUT_MS',
+];
+
+export const PORT_KEYS = ['WEB_PORT', 'API_PORT', 'SCORING_PORT', 'POSTGRES_PORT', 'REDIS_PORT'];
+export const URL_KEYS = ['NEXT_PUBLIC_API_URL', 'NEXT_PUBLIC_SCORING_URL'];
+export const WORKSPACES = ['apps/web', 'services/api', 'services/scoring', 'services/worker', 'packages/eslint-config', 'packages/typescript-config'];
+
 const REQUIRED_LOCAL = [
   'NODE_ENV',
   'WEB_HOST',

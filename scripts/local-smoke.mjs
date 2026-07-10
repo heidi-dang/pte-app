@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync } from 'fs';
 import { spawn, execSync } from 'child_process';
-import { loadEnvLocal, REQUIRED_ENV_VARS } from './lib/local-env.mjs';
+import { loadEnvLocal } from './lib/local-env.mjs';
 
 const env = loadEnvLocal();
 const isCI = process.argv.includes('--ci');
