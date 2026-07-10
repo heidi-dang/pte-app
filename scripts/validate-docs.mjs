@@ -32,7 +32,7 @@ const VALID_IDS = new Set([
 ]);
 
 const VALID_SECTIONS = ['Speaking and Writing', 'Reading', 'Listening'];
-const VALID_PROMPT_TYPES = ['text', 'audio', 'image', 'text-and-audio'];
+const VALID_PROMPT_TYPES = ['text', 'audio', 'image', 'text-and-audio', 'audio-or-video'];
 const VALID_RESPONSE_TYPES = ['audio', 'text', 'dropdown-selection', 'checkbox-selection', 'drag-and-drop-order', 'drag-words-to-blanks', 'radio-selection', 'text-input', 'clickable-text-selection'];
 const VALID_TIMING_MODES = ['fixed', 'item-dependent', 'section-timed', 'range', 'not-applicable'];
 const VALID_TIMING_UNITS = ['seconds', 'words', 'sentences', 'paragraphs', 'image'];
@@ -220,9 +220,20 @@ export function validateTaskReferences(manifestOverride) {
         errors.push(`Task "${cid}": missing source-6 (Score Guide) required when score contributions are documented`);
       }
     }
-    if (task.officialScoringTraits && task.officialScoringTraits.length > 0) {
+    // source-6 required for scoring fields (use "Task" prefix, no manifestPath in scope)
+    if (task.officialRubricTraits && task.officialRubricTraits.length > 0) {
       if (!refs.includes('source-6')) {
-        errors.push(`Task "${cid}": missing source-6 (Score Guide) required when scoring traits are documented`);
+        errors.push(`Task "${cid}": missing source-6 (Score Guide) required when rubric traits are documented`);
+      }
+    }
+    if (task.officialHumanReviewTraits && task.officialHumanReviewTraits.length > 0) {
+      if (!refs.includes('source-6')) {
+        errors.push(`Task "${cid}": missing source-6 (Score Guide) required when human-review traits are documented`);
+      }
+    }
+    if (task.platformEstimatedScoringRule) {
+      if (!refs.includes('source-6')) {
+        errors.push(`Task "${cid}": missing source-6 (Score Guide) required when scoring rules are documented`);
       }
     }
 
@@ -776,6 +787,10 @@ export function validateTaskManifest(manifestPath) {
       if (task.officialRubricTraits && !task.officialRubricTraits.includes('Spelling')) {
         errors.push(`${manifestPath}: task "${cid}" must include Spelling in officialRubricTraits`);
       }
+      // Timing description must say total task timer includes listening and writing
+      if (task.responseTimingDescription && task.responseTimingDescription.includes('begins after the audio ends')) {
+        errors.push(`${manifestPath}: task "${cid}" timer wording "begins after the audio ends" is invalid; must state "total task timer includes audio playback and writing time"`);
+      }
     }
 
     // Write Essay: 2-3 sentence prompt
@@ -1075,6 +1090,38 @@ export function validateScoringPrinciplesTable(principlesPath) {
   }
 }
 
+export function validateAssessmentAcceptanceConsistency(acceptancePath) {
+  const content = requiredFile(acceptancePath);
+  if (!content) return;
+
+  // Reject forbidden patterns
+  const forbiddenPatterns = [
+    'A writing response of 0 words cannot be submitted',
+    'In mock mode, no transcript is visible before submission',
+    'All blanks must be completed',
+    'Exactly one answer is required before submission',
+  ];
+  for (const pattern of forbiddenPatterns) {
+    if (content.includes(pattern)) {
+      errors.push(`${acceptancePath}: contains forbidden pattern "${pattern}"`);
+    }
+  }
+
+  // Require essential concepts
+  const requiredConcepts = [
+    'empty response',
+    'no-response score',
+    'prompt transcript',
+    'Listening Fill in the Blanks',
+    'Highlight Incorrect Words',
+  ];
+  for (const concept of requiredConcepts) {
+    if (!content.toLowerCase().includes(concept.toLowerCase())) {
+      errors.push(`${acceptancePath}: missing required concept "${concept}"`);
+    }
+  }
+}
+
 // Run all document validations
 export function validateAll() {
   resetValidation();
@@ -1124,6 +1171,7 @@ export function validateAll() {
   validateReferenceRegisterJson('docs/content/official-pte-reference-register.json');
   validateTaskReferences();
   validateScoringPrinciplesTable('docs/scoring/scoring-principles.md');
+  validateAssessmentAcceptanceConsistency('docs/product/acceptance-criteria.md');
 
   // Scorecard
   const scorecard = requiredFile('docs/testing/audit-scorecard.md');

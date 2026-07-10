@@ -50,7 +50,7 @@
       "Oral fluency"
     ],
     "taskPurpose": "Assess pronunciation and oral fluency",
-    "studentInterface": "Text passage displayed, recording button, preparation countdown, response countdown",
+    "studentInterface": "Text passage displayed, preparation countdown and recording status box. The microphone opens automatically after the tone.",
     "inputMedia": "Text passage on screen",
     "answerFormat": "Audio recording",
     "platformEstimatedScoringEvidence": "Content (word alignment and sequence comparison against expected passage), Pronunciation (phonetic accuracy, stress patterns, intelligibility), Oral fluency (speech rate, pause frequency, rhythm)",
@@ -209,7 +209,7 @@
       "Oral fluency"
     ],
     "taskPurpose": "Assess ability to describe an image orally",
-    "studentInterface": "Image displayed, recording button, preparation countdown, response countdown",
+    "studentInterface": "Image displayed with preparation countdown and recording status box. The microphone opens automatically after the tone.",
     "inputMedia": "Static image on screen",
     "answerFormat": "Audio recording",
     "platformEstimatedScoringEvidence": "Relevant content concepts, Organisation of spoken response, Pronunciation (phonetic accuracy, stress patterns, intelligibility), Oral fluency (speech rate, pause frequency)",
@@ -254,7 +254,7 @@
       "Listening",
       "Speaking"
     ],
-    "promptType": "audio",
+    "promptType": "audio-or-video",
     "responseType": "audio",
     "promptLength": {
       "mode": "range",
@@ -294,7 +294,7 @@
       "Oral fluency"
     ],
     "taskPurpose": "Assess listening comprehension and oral summarisation",
-    "studentInterface": "Audio or audiovisual playback, optional related image may be displayed, recording button, preparation countdown, response countdown",
+    "studentInterface": "Audio or video playback with an optional related image, preparation countdown and recording status box. The microphone opens automatically after the tone.",
     "inputMedia": "Audio or audiovisual recording, optional related image may be displayed",
     "answerFormat": "Audio recording",
     "platformEstimatedScoringEvidence": "Key content points from lecture, Coverage of main ideas, Organisation of spoken response, Pronunciation (phonetic accuracy, stress patterns, intelligibility), Oral fluency (speech rate, pause frequency)",
@@ -462,7 +462,7 @@
       "Oral fluency"
     ],
     "taskPurpose": "Assess multi-speaker listening comprehension and oral summary",
-    "studentInterface": "Audio playback of group discussion, recording button, preparation countdown, response countdown",
+    "studentInterface": "Audio playback of group discussion with preparation countdown and recording status box. The microphone opens automatically after the tone.",
     "inputMedia": "Audio recording of group discussion",
     "answerFormat": "Audio recording",
     "platformEstimatedScoringEvidence": "Coverage of different speaker viewpoints, Key content points, Organisation of spoken summary, Pronunciation, Oral fluency",
@@ -545,7 +545,7 @@
       "Oral fluency"
     ],
     "taskPurpose": "Assess ability to respond appropriately to a written and spoken scenario",
-    "studentInterface": "Text and audio prompt displayed and played, recording button, preparation countdown, response countdown",
+    "studentInterface": "Text and audio prompt with preparation countdown and recording status box. The microphone opens automatically after the tone.",
     "inputMedia": "Text prompt and audio recording",
     "answerFormat": "Audio recording",
     "platformEstimatedScoringEvidence": "Situational goal completion, Appropriateness of response, Organisation, Pronunciation, Oral fluency",

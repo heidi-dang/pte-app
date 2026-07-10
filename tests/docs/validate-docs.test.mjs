@@ -15,6 +15,7 @@ import {
   validateTaskReferences, validateReferenceRegisterJson,
   validateScorecard, validateBlueprintAgainstManifest,
   validateMockTimerConsistency, validateScoringPrinciplesTable,
+  validateAssessmentAcceptanceConsistency,
   validateAll, errors, warnings
 } from '../../scripts/validate-docs.mjs';
 
@@ -618,17 +619,15 @@ describe('Documentation Validator', () => {
       });
     });
 
-    it('K18: Summarize Spoken Text timer-from-audio-end fails', async () => {
+    it('K18: SST post-audio timer wording fails for the correct reason', async () => {
       const tasks = loadCanonical();
       const t = tasks.find(x => x.canonicalId === 'summarize_spoken_text');
-      t.responseTiming = { mode: 'fixed', minimum: 600, maximum: 600, unit: 'seconds' };
-      t.responseTimingDescription = '10-minute response timer from audio end';
-      delete t.promptLength;
+      t.responseTimingDescription = 'Ten-minute response timer begins after the audio ends';
       await withManifest(JSON.stringify(tasks), (path) => {
         resetValidation();
         validateTaskManifest(path);
-        // Should have errors due to missing promptLength
-        assert.ok(getAllErrors().length > 0);
+        assert.ok(getAllErrors().some(e => e.includes('summarize_spoken_text')));
+        assert.ok(getAllErrors().some(e => e.includes('timer')));
       });
     });
 
@@ -1006,26 +1005,258 @@ Totals are wrong on purpose.`;
     });
 
     it('Scoring-principles Read Aloud mismatch fails', () => {
-      // Verify the real scoring-principles table matches the manifest
-      resetValidation();
-      validateScoringPrinciplesTable('docs/scoring/scoring-principles.md');
-      assert.equal(getAllErrors().filter(e => e.includes('Read Aloud')).length, 0,
-        'Read Aloud should match in real table');
+      // Create a temporary modified scoring-principles file
+      const bpPath = join(root, 'docs/scoring/scoring-principles.md');
+      const original = readFileSync(bpPath, 'utf-8');
+      try {
+        const mutated = original.replace(
+          '| Read Aloud | Speaking | Reading, Speaking |',
+          '| Read Aloud | Reading, Speaking | Reading, Speaking |'
+        );
+        const tmpPath = join(fixturesDir, 'tmp-scoring-principles.md');
+        writeFixture('tmp-scoring-principles.md', mutated);
+        resetValidation();
+        validateScoringPrinciplesTable(fixturePath('tmp-scoring-principles.md'));
+        assert.ok(getAllErrors().some(e => e.includes('skills mismatch')));
+      } finally {
+        try { rmSync(fixturePath('tmp-scoring-principles.md')); } catch {}
+      }
     });
 
     it('Scoring-principles Reading Dropdown mismatch fails', () => {
-      resetValidation();
-      validateScoringPrinciplesTable('docs/scoring/scoring-principles.md');
-      assert.equal(getAllErrors().filter(e => e.includes('Reading and Writing')).length, 0,
-        'Reading Dropdown should match in real table');
+      const bpPath = join(root, 'docs/scoring/scoring-principles.md');
+      const original = readFileSync(bpPath, 'utf-8');
+      try {
+        const mutated = original.replace(
+          '| Reading and Writing: Fill in the Blanks | Reading | Reading |',
+          '| Reading and Writing: Fill in the Blanks | Reading, Writing | Reading |'
+        );
+        const tmpPath = join(fixturesDir, 'tmp-scoring-principles2.md');
+        writeFixture('tmp-scoring-principles2.md', mutated);
+        resetValidation();
+        validateScoringPrinciplesTable(fixturePath('tmp-scoring-principles2.md'));
+        assert.ok(getAllErrors().some(e => e.includes('skills mismatch')));
+      } finally {
+        try { rmSync(fixturePath('tmp-scoring-principles2.md')); } catch {}
+      }
     });
 
     it('Generated full blueprint contains every required field', () => {
-      resetValidation();
-      const result = execSync('node scripts/generate-pte-blueprints.mjs --validate', {
+      // Generate blueprint text and inspect each section for required labels
+      const generated = execSync('node scripts/generate-pte-blueprints.mjs --validate', {
         cwd: root, encoding: 'utf-8', stdio: 'pipe'
       });
-      assert.equal(result.trim(), '');
+      assert.equal(generated.trim(), '');
+      // Verify every task section has required fields by loading the generated file
+      const bp = readFileSync(join(root, 'docs/content/pte-task-blueprints.md'), 'utf-8');
+      const requiredLabels = [
+        'Task purpose', 'Student interface', 'Input media', 'Answer format',
+        'Preparation behaviour', 'Response behaviour',
+        'Official scoring type', 'Official rubric traits', 'Official human-reviewed traits',
+        'Platform estimated-scoring rule', 'Platform estimated-scoring evidence',
+        'Feedback format', 'Content metadata', 'Response validation',
+        'Failure and recovery behaviour', 'Prompt transcript requirement',
+        'Post-attempt transcript availability', 'Official reference IDs', 'Last verified date'
+      ];
+      // Count sections - each starts with ###
+      const sections = bp.match(/^### /gm);
+      assert.equal(sections ? sections.length : 0, 22, 'Should have 22 task sections');
+      for (const label of requiredLabels) {
+        const count = (bp.match(new RegExp(`\\*\\*${label}\\*\\*`, 'g')) || []).length;
+        assert.equal(count, 22, `Required label "${label}" should appear 22 times, found ${count}`);
+      }
+    });
+
+    it('Full repository contract passes', () => {
+      resetValidation();
+      const result = validateAll();
+      assert.equal(result.errors.length, 0, `Errors: ${result.errors.join(', ')}`);
+    });
+  });
+
+  // ---- 11: Focused regression tests ----
+
+  describe('Focused regression tests', () => {
+    it('Writing zero-word forced-submission prohibition fails', () => {
+      resetValidation();
+      const content = '## Writing\n5. A writing response of 0 words cannot be submitted.\n';
+      const tmpPath = join(fixturesDir, 'tmp-write-accept.md');
+      writeFixture('tmp-write-accept.md', content);
+      validateAssessmentAcceptanceConsistency(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('forbidden pattern')));
+    });
+
+    it('Empty timed response contract passes', () => {
+      resetValidation();
+      const content = '## Writing\nIn timed practice, an empty response is a valid stored state. The no-response score rule applies. The prompt transcript inherent in the prompt is visible. Listening Fill in the Blanks displays the incomplete transcript with blanks. Highlight Incorrect Words displays the task transcript.\n';
+      const tmpPath = join(fixturesDir, 'tmp-empty-ok.md');
+      writeFixture('tmp-empty-ok.md', content);
+      validateAssessmentAcceptanceConsistency(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.equal(getAllErrors().filter(e => e.includes('required concept')).length, 0);
+    });
+
+    it('Global no-transcript rule fails', () => {
+      resetValidation();
+      const content = '## Listening\n5. In mock mode, no transcript is visible before submission.\n';
+      const tmpPath = join(fixturesDir, 'tmp-notrans.md');
+      writeFixture('tmp-notrans.md', content);
+      validateAssessmentAcceptanceConsistency(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      assert.ok(getAllErrors().some(e => e.includes('forbidden pattern')));
+    });
+
+    it('Prompt-transcript exception contract passes', () => {
+      resetValidation();
+      const content = '## Listening\nIn mock mode, prompt transcript is inherent. Listening Fill in the Blanks displays the incomplete transcript with blanks. Highlight Incorrect Words displays the task transcript.\n';
+      const tmpPath = join(fixturesDir, 'tmp-trans-ex.md');
+      writeFixture('tmp-trans-ex.md', content);
+      validateAssessmentAcceptanceConsistency(tmpPath);
+      try { rmSync(tmpPath); } catch {}
+      // Should not error on "prompt transcript" or the task names
+      assert.equal(getAllErrors().filter(e => e.includes('prompt transcript') || e.includes('Listening Fill')).length, 0);
+    });
+
+    it('Read Aloud human-review is AI-scored only, not objective', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      // Check that read_aloud has rubric-estimate rule and empty human-review traits
+      assert.equal(t.platformEstimatedScoringRule.type, 'rubric-estimate');
+      assert.equal(t.officialHumanReviewTraits.length, 0);
+    });
+
+    it('Repeat Sentence human-review is AI-scored only, not objective', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'repeat_sentence');
+      assert.equal(t.platformEstimatedScoringRule.type, 'rubric-estimate');
+      assert.equal(t.officialHumanReviewTraits.length, 0);
+    });
+
+    it('Reading objective task is rendered as objective scoring', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'reading_single_answer');
+      assert.equal(t.platformEstimatedScoringRule.type, 'correct-incorrect');
+      assert.equal(t.officialHumanReviewTraits.length, 0);
+    });
+
+    it('Read Aloud student interface containing recording button fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'read_aloud');
+      assert.ok(!t.studentInterface.includes('recording button'),
+        'read_aloud studentInterface must not contain "recording button"');
+    });
+
+    it('Describe Image student interface containing recording button fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'describe_image');
+      assert.ok(!t.studentInterface.includes('recording button'),
+        'describe_image studentInterface must not contain "recording button"');
+    });
+
+    it('Retell Lecture promptType audio fails', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'retell_lecture');
+      assert.equal(t.promptType, 'audio-or-video', 'retell_lecture promptType must be audio-or-video');
+    });
+
+    it('Retell Lecture promptType audio-or-video passes', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'retell_lecture');
+      assert.equal(t.promptType, 'audio-or-video');
+      assert.equal(t.supportsAudiovisualInput, true);
+      assert.equal(t.optionalRelatedImage, true);
+    });
+
+    it('Stale officialScoringTraits source validation absent', () => {
+      resetValidation();
+      const manifest = JSON.parse(readFileSync(join(root, 'docs/content/pte-task-manifest.json'), 'utf-8'));
+      const t = manifest.find(x => x.canonicalId === 'read_aloud');
+      t.referenceIds = ['source-1', 'source-2'];
+      validateTaskReferences(manifest);
+      // Should fail due to source-6 missing for scoring contributions
+      assert.ok(getAllErrors().some(e => e.includes('source-6')));
+    });
+
+    it('Missing source-6 for human-reviewed traits fails', () => {
+      resetValidation();
+      const manifest = JSON.parse(readFileSync(join(root, 'docs/content/pte-task-manifest.json'), 'utf-8'));
+      const t = manifest.find(x => x.canonicalId === 'describe_image');
+      t.referenceIds = ['source-1', 'source-2', 'source-5'];
+      // describe_image has officialHumanReviewTraits ['Content']
+      validateTaskReferences(manifest);
+      assert.ok(getAllErrors().some(e => e.includes('source-6') && e.includes('human-review')));
+    });
+
+    it('SST post-audio timer wording fails for the correct reason', async () => {
+      const tasks = loadCanonical();
+      const t = tasks.find(x => x.canonicalId === 'summarize_spoken_text');
+      t.responseTimingDescription = 'Ten-minute response timer begins after the audio ends';
+      await withManifest(JSON.stringify(tasks), (path) => {
+        resetValidation();
+        validateTaskManifest(path);
+        assert.ok(getAllErrors().some(e => e.includes('summarize_spoken_text')));
+        assert.ok(getAllErrors().some(e => e.includes('timer')));
+      });
+    });
+
+    it('Mutated Read Aloud scoring-principles row fails', () => {
+      const bpPath = join(root, 'docs/scoring/scoring-principles.md');
+      const original = readFileSync(bpPath, 'utf-8');
+      try {
+        const mutated = original.replace(
+          '| Read Aloud | Speaking | Reading, Speaking |',
+          '| Read Aloud | Reading, Speaking | Reading |'
+        );
+        const tmpPath = join(fixturesDir, 'tmp-mutate-ra.md');
+        writeFixture('tmp-mutate-ra.md', mutated);
+        resetValidation();
+        validateScoringPrinciplesTable(fixturePath('tmp-mutate-ra.md'));
+        assert.ok(getAllErrors().some(e => e.includes('skills mismatch')));
+      } finally {
+        try { rmSync(fixturePath('tmp-mutate-ra.md')); } catch {}
+      }
+    });
+
+    it('Mutated Reading Dropdown scoring-principles row fails', () => {
+      const bpPath = join(root, 'docs/scoring/scoring-principles.md');
+      const original = readFileSync(bpPath, 'utf-8');
+      try {
+        const mutated = original.replace(
+          '| Reading and Writing: Fill in the Blanks | Reading | Reading |',
+          '| Reading and Writing: Fill in the Blanks | Writing | Reading |'
+        );
+        const tmpPath = join(fixturesDir, 'tmp-mutate-rd.md');
+        writeFixture('tmp-mutate-rd.md', mutated);
+        resetValidation();
+        validateScoringPrinciplesTable(fixturePath('tmp-mutate-rd.md'));
+        assert.ok(getAllErrors().some(e => e.includes('skills mismatch')));
+      } finally {
+        try { rmSync(fixturePath('tmp-mutate-rd.md')); } catch {}
+      }
+    });
+
+    it('Generated blueprint contains every required field for all 22 tasks', () => {
+      resetValidation();
+      execSync('node scripts/generate-pte-blueprints.mjs --validate', {
+        cwd: root, encoding: 'utf-8', stdio: 'pipe'
+      });
+      const bp = readFileSync(join(root, 'docs/content/pte-task-blueprints.md'), 'utf-8');
+      const requiredLabels = [
+        'Task purpose', 'Student interface', 'Input media', 'Answer format',
+        'Preparation behaviour', 'Response behaviour',
+        'Official scoring type', 'Official rubric traits', 'Official human-reviewed traits',
+        'Platform estimated-scoring rule', 'Platform estimated-scoring evidence',
+        'Feedback format', 'Content metadata', 'Response validation',
+        'Failure and recovery behaviour', 'Prompt transcript requirement',
+        'Post-attempt transcript availability', 'Official reference IDs', 'Last verified date'
+      ];
+      const sections = bp.match(/^### /gm);
+      assert.equal(sections ? sections.length : 0, 22, 'Should have 22 task sections');
+      for (const label of requiredLabels) {
+        const count = (bp.match(new RegExp(`\\*\\*${label}\\*\\*`, 'g')) || []).length;
+        assert.equal(count, 22, `Required label "${label}" should appear 22 times, found ${count}`);
+      }
     });
 
     it('Full repository contract passes', () => {

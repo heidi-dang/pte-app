@@ -14,6 +14,7 @@ function sectionLabel(s) {
 }
 
 function capitalizeWords(s) {
+  if (s === 'audio-or-video') return 'Audio Or Video';
   return s.split(/[-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
@@ -146,10 +147,12 @@ function generateBlueprint(manifest) {
     }
 
     const humanTraits = (task.officialHumanReviewTraits || []);
-    if (humanTraits.length === 0) {
-      lines.push('- **Official human-reviewed traits**: None — objective scoring');
-    } else {
+    if (humanTraits.length > 0) {
       lines.push(`- **Official human-reviewed traits**: ${humanTraits.join(', ')}`);
+    } else if (task.platformEstimatedScoringRule && task.platformEstimatedScoringRule.type === 'rubric-estimate') {
+      lines.push('- **Official human-reviewed traits**: None — AI-scored only');
+    } else {
+      lines.push('- **Official human-reviewed traits**: None — objective scoring');
     }
 
     lines.push(`- **Platform estimated-scoring rule**: ${formatPlatformScoringRule(task.platformEstimatedScoringRule)}`);

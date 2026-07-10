@@ -56,7 +56,7 @@
 2. Word count is displayed and updated in real time.
 3. A submitted writing response must remain available after page refresh, API restart and browser restart.
 4. The editor restores the last autosaved version on page reload after an interruption.
-5. A writing response of 0 words cannot be submitted.
+5. In learning mode, an empty writing response may trigger a warning before submission. In timed practice, section tests and mock exams, empty and incomplete responses are valid stored submission states. An empty response is submitted as no response and receives zero under the versioned no-response score rule. The platform must not fabricate an answer or prevent navigation solely because the response is empty.
 
 ## Reading
 
@@ -72,7 +72,7 @@
 2. In practice mode, audio controls include play, pause and volume adjustment when permitted by configuration.
 3. In practice mode, audio can be replayed according to task-specific playback limit configuration.
 4. In mock mode, playback limit is 1 per task as defined by the official task specification.
-5. In mock mode, no transcript is visible before submission.
+5. A completed answer transcript or post-attempt transcript remains hidden before submission. A prompt transcript that is an inherent part of the official task prompt remains visible. Listening Fill in the Blanks displays the incomplete transcript with blanks. Highlight Incorrect Words displays the task transcript. Correct words, correct highlights and completed transcripts remain hidden until review.
 6. Section-level timer displays remaining time and auto-submits when time expires.
 
 ## Diagnostic

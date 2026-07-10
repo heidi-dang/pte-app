@@ -14,7 +14,7 @@ Auto-generated from pte-task-manifest.json. Do not edit manually.
 - **Score contributions**: Reading, Speaking
 - **Prompt type**: Text
 - **Prompt length**: Text up to 60 words
-- **Student interface**: Text passage displayed, recording button, preparation countdown, response countdown
+- **Student interface**: Text passage displayed, preparation countdown and recording status box. The microphone opens automatically after the tone.
 - **Input media**: Text passage on screen
 - **Answer format**: Audio recording
 - **Preparation behaviour**: Item-dependent (varies by item)
@@ -23,7 +23,7 @@ Auto-generated from pte-task-manifest.json. Do not edit manually.
 - **Recording limit**: 1
 - **Official scoring type**: Partial credit
 - **Official rubric traits**: Content, Pronunciation, Oral fluency
-- **Official human-reviewed traits**: None — objective scoring
+- **Official human-reviewed traits**: None — AI-scored only
 - **Platform estimated-scoring rule**: Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson's private scoring engine)
 - **Platform estimated-scoring evidence**: Content (word alignment and sequence comparison against expected passage), Pronunciation (phonetic accuracy, stress patterns, intelligibility), Oral fluency (speech rate, pause frequency, rhythm)
 - **Feedback format**: Component scores, overall estimated score, transcript comparison, fluency metrics
@@ -56,7 +56,7 @@ Auto-generated from pte-task-manifest.json. Do not edit manually.
 - **Recording limit**: 1
 - **Official scoring type**: Partial credit
 - **Official rubric traits**: Content, Pronunciation, Oral fluency
-- **Official human-reviewed traits**: None — objective scoring
+- **Official human-reviewed traits**: None — AI-scored only
 - **Platform estimated-scoring rule**: Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson's private scoring engine)
 - **Platform estimated-scoring evidence**: Word-level alignment against expected sentence, Pronunciation (phonetic accuracy, stress, intelligibility), Oral fluency (speech rate, pause frequency)
 - **Feedback format**: Word-level accuracy, overall estimated score, fluency metrics
@@ -80,7 +80,7 @@ Auto-generated from pte-task-manifest.json. Do not edit manually.
 - **Score contributions**: Speaking
 - **Prompt type**: Image
 - **Prompt length**: Not applicable (1 image stored as separate interface requirement)
-- **Student interface**: Image displayed, recording button, preparation countdown, response countdown
+- **Student interface**: Image displayed with preparation countdown and recording status box. The microphone opens automatically after the tone.
 - **Input media**: Static image on screen
 - **Answer format**: Audio recording
 - **Preparation behaviour**: 25 seconds preparation
@@ -112,9 +112,9 @@ Auto-generated from pte-task-manifest.json. Do not edit manually.
 - **Task purpose**: Assess listening comprehension and oral summarisation
 - **Official skills assessed**: Listening, Speaking
 - **Score contributions**: Listening, Speaking
-- **Prompt type**: Audio
+- **Prompt type**: Audio Or Video
 - **Prompt length**: Audio up to 90 seconds
-- **Student interface**: Audio or audiovisual playback, optional related image may be displayed, recording button, preparation countdown, response countdown
+- **Student interface**: Audio or video playback with an optional related image, preparation countdown and recording status box. The microphone opens automatically after the tone.
 - **Input media**: Audio or audiovisual recording, optional related image may be displayed
 - **Answer format**: Audio recording
 - **Preparation behaviour**: 10 seconds preparation
@@ -182,7 +182,7 @@ Auto-generated from pte-task-manifest.json. Do not edit manually.
 - **Score contributions**: Listening, Speaking
 - **Prompt type**: Audio
 - **Prompt length**: Audio up to 180 seconds
-- **Student interface**: Audio playback of group discussion, recording button, preparation countdown, response countdown
+- **Student interface**: Audio playback of group discussion with preparation countdown and recording status box. The microphone opens automatically after the tone.
 - **Input media**: Audio recording of group discussion
 - **Answer format**: Audio recording
 - **Preparation behaviour**: 10 seconds preparation
@@ -215,7 +215,7 @@ Auto-generated from pte-task-manifest.json. Do not edit manually.
 - **Score contributions**: Speaking
 - **Prompt type**: Text And Audio
 - **Prompt length**: Text up to 60 words
-- **Student interface**: Text and audio prompt displayed and played, recording button, preparation countdown, response countdown
+- **Student interface**: Text and audio prompt with preparation countdown and recording status box. The microphone opens automatically after the tone.
 - **Input media**: Text prompt and audio recording
 - **Answer format**: Audio recording
 - **Preparation behaviour**: 10 seconds preparation
