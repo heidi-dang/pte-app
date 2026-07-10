@@ -8,8 +8,8 @@
     "start": "next start --port ${WEB_PORT:-3000}",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "test:unit": "echo \"web: unit tests tbd\"",
-    "test:integration": "echo \"web: integration tests tbd\""
+    "test:unit": "echo \"web: no unit tests in Phase B\"",
+    "test:integration": "echo \"web: no integration tests in Phase B\""
   },
   "dependencies": {
     "next": "^15.3.0",

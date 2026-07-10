@@ -1,94 +1,133 @@
 #!/usr/bin/env node
-import { execSync, spawn } from 'child_process';
-import { loadEnvLocal, getRequired } from './lib/local-env.mjs';
+import { existsSync, writeFileSync, rmSync, readFileSync } from 'fs';
+import { spawn, execSync } from 'child_process';
+import { loadEnvLocal, validateConfig } from './lib/local-env.mjs';
 
 const env = loadEnvLocal();
+const errors = validateConfig(env);
+if (errors.length > 0) {
+  console.error('Environment validation failed:');
+  errors.forEach(e => console.error(`  - ${e}`));
+  process.exit(1);
+}
 
-const apiHost = getRequired(env, 'API_HOST');
-const apiPort = getRequired(env, 'API_PORT');
-const scoringHost = getRequired(env, 'SCORING_HOST');
-const scoringPort = getRequired(env, 'SCORING_PORT');
-const webPort = getRequired(env, 'WEB_PORT');
-const webOrigin = env.WEB_ORIGIN || `http://localhost:${webPort}`;
-const postgresUser = getRequired(env, 'POSTGRES_USER');
-const postgresDb = getRequired(env, 'POSTGRES_DATABASE');
-const logLevel = env.LOG_LEVEL || 'info';
+const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const apiPort = env.API_PORT;
+const scoringPort = env.SCORING_PORT;
+const webPort = env.WEB_PORT;
+const apiHost = env.API_HOST;
+const scoringHost = env.SCORING_HOST;
+const webHost = env.WEB_HOST;
+const timeout = parseInt(env.LOCAL_STARTUP_TIMEOUT_MS || '30000', 10);
 
-console.log('[1/5] Checking environment...');
+const children = [];
+const pids = {};
+
+async function waitForUrl(url, label, timeoutMs) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
+      if (res.ok) { console.log(`  ✓ ${label}`); return true; }
+    } catch {}
+    await new Promise(r => setTimeout(r, 500));
+  }
+  console.error(`  ✗ ${label} timed out after ${timeoutMs}ms`);
+  return false;
+}
+
+console.log('[1/5] Validating environment...');
+try { execSync('npm run doctor', { stdio: 'pipe' }); } catch {
+  console.error('Doctor failed. Run npm run doctor for details.');
+  process.exit(1);
+}
 console.log('OK');
 
 console.log('[2/5] Starting infrastructure...');
 try {
   execSync('docker compose --env-file .env.local up -d', { stdio: 'inherit' });
-} catch (e) {
-  console.error('FAILED: Docker Compose could not start. Check Docker is running.');
-  process.exit(1);
-}
+} catch { console.error('Docker Compose failed'); process.exit(1); }
 console.log('OK');
 
 console.log('[3/5] Waiting for containers...');
-try {
-  execSync(`docker compose exec postgres pg_isready -U ${postgresUser} -d ${postgresDb}`, {
-    stdio: 'pipe',
-    timeout: 30000,
-  });
-} catch {
-  console.error('FAILED: PostgreSQL did not become healthy.');
-  process.exit(1);
+const pgUser = env.POSTGRES_USER;
+const pgDb = env.POSTGRES_DATABASE;
+// Actually use proper polling
+const pgStart = Date.now();
+let pgHealthy = false;
+while (Date.now() - pgStart < timeout && !pgHealthy) {
+  try {
+    execSync(`docker compose exec postgres pg_isready -U ${pgUser} -d ${pgDb}`, { stdio: 'pipe' });
+    pgHealthy = true;
+    console.log('  ✓ PostgreSQL healthy');
+  } catch { await new Promise(r => setTimeout(r, 1000)); }
 }
+if (!pgHealthy) { console.error('  ✗ PostgreSQL not healthy'); process.exit(1); }
+
+const redisStart = Date.now();
+let redisHealthy = false;
+while (Date.now() - redisStart < timeout && !redisHealthy) {
+  try {
+    execSync('docker compose exec redis redis-cli ping', { stdio: 'pipe' });
+    redisHealthy = true;
+    console.log('  ✓ Redis healthy');
+  } catch { await new Promise(r => setTimeout(r, 1000)); }
+}
+if (!redisHealthy) { console.error('  ✗ Redis not healthy'); process.exit(1); }
 console.log('OK');
 
-console.log(`[4/5] Starting services...`);
-console.log(`  API:      http://${apiHost}:${apiPort}`);
-console.log(`  Scoring:  http://${scoringHost}:${scoringPort}`);
-console.log(`  Worker:   npm run dev (in services/worker)`);
-console.log(`  Web:      http://localhost:${webPort}`);
-
-const services = [
-  { name: 'api', cwd: 'services/api', cmd: 'npx', args: ['tsx', 'watch', 'src/main.ts'] },
-  { name: 'scoring', cwd: 'services/scoring', cmd: 'npx', args: ['tsx', 'watch', 'src/main.ts'] },
-  { name: 'worker', cwd: 'services/worker', cmd: 'npx', args: ['tsx', 'watch', 'src/main.ts'] },
-  { name: 'web', cwd: 'apps/web', cmd: 'npx', args: ['next', 'dev', '--port', webPort] },
+console.log('[4/5] Starting services...');
+const workspaces = [
+  { name: 'api', ws: '@pte-app/api', dir: 'services/api' },
+  { name: 'scoring', ws: '@pte-app/scoring', dir: 'services/scoring' },
+  { name: 'worker', ws: '@pte-app/worker', dir: 'services/worker' },
+  { name: 'web', ws: '@pte-app/web', dir: 'apps/web' },
 ];
 
-const children = [];
-for (const svc of services) {
-  const child = spawn(svc.cmd, svc.args, {
-    cwd: svc.cwd,
-    stdio: 'pipe',
-    env: {
-      ...process.env,
-      ...env,
-      API_HOST: apiHost,
-      API_PORT: apiPort,
-      SCORING_HOST: scoringHost,
-      SCORING_PORT: scoringPort,
-      WEB_PORT: webPort,
-      WEB_ORIGIN: webOrigin,
-    },
-  });
-  child.stdout.on('data', (d) => process.stdout.write(`[${svc.name}] ${d}`));
-  child.stderr.on('data', (d) => process.stderr.write(`[${svc.name}] ${d}`));
-  child.on('exit', (code) => {
-    console.error(`[${svc.name}] exited with code ${code}`);
-    children.forEach((c) => !c.killed && c.kill());
-    process.exit(1);
+for (const ws of workspaces) {
+  const child = spawn(npmCmd, ['--workspace', ws.ws, 'run', 'dev'], {
+    stdio: 'pipe', env: { ...process.env, ...env },
   });
   children.push(child);
+  pids[ws.name] = child.pid;
+  child.stdout.on('data', d => process.stdout.write(`[${ws.name}] ${d}`));
+  child.stderr.on('data', d => process.stderr.write(`[${ws.name}] ${d}`));
+  child.on('exit', code => {
+    console.error(`[${ws.name}] exited with code ${code}`);
+    children.forEach(c => !c.killed && c.kill());
+    process.exit(1);
+  });
 }
 
-console.log('[5/5] All services started. Press Ctrl+C to stop.');
-console.log(`\n  Web:      http://localhost:${webPort}`);
-console.log(`  API:      http://${apiHost}:${apiPort}/health/live`);
-console.log(`  Scoring:  http://${scoringHost}:${scoringPort}/health/live`);
+// Write PIDs
+if (!existsSync('.local-runtime')) require('fs').mkdirSync('.local-runtime');
+writeFileSync('.local-runtime/pids.json', JSON.stringify(pids, null, 2));
+
+console.log('[5/5] Waiting for service health...');
+const apiLive = await waitForUrl(`http://${apiHost}:${apiPort}/health/live`, 'API live', timeout);
+const apiReady = await waitForUrl(`http://${apiHost}:${apiPort}/health/ready`, 'API ready', timeout);
+const scLive = await waitForUrl(`http://${scoringHost}:${scoringPort}/health/live`, 'Scoring live', timeout);
+const scReady = await waitForUrl(`http://${scoringHost}:${scoringPort}/health/ready`, 'Scoring ready', timeout);
+const webOk = await waitForUrl(`http://${webHost}:${webPort}`, 'Web', timeout);
+const workerOk = await waitForUrl(`http://${apiHost}:${apiPort}/health/live`, 'Worker', 5000);
+
+const allOk = apiLive && apiReady && scLive && scReady && webOk;
+if (allOk) {
+  console.log('\nAll services started.');
+  console.log(`  Web:      http://${webHost}:${webPort}`);
+  console.log(`  API:      http://${apiHost}:${apiPort}`);
+  console.log(`  Scoring:  http://${scoringHost}:${scoringPort}`);
+} else {
+  console.error('\nSome services failed to start.');
+  process.exit(1);
+}
 
 process.on('SIGINT', () => {
   console.log('\nShutting down...');
-  children.forEach((c) => !c.killed && c.kill());
-  process.exit(0);
+  children.forEach(c => !c.killed && c.kill('SIGTERM'));
+  setTimeout(() => children.forEach(c => !c.killed && c.kill('SIGKILL')), 5000);
 });
-
 process.on('SIGTERM', () => {
-  children.forEach((c) => !c.killed && c.kill());
-  process.exit(0);
+  children.forEach(c => !c.killed && c.kill('SIGTERM'));
+  setTimeout(() => children.forEach(c => !c.killed && c.kill('SIGKILL')), 5000);
 });
