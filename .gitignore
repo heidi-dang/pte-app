@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+# Build output
+.next/
+dist/
+build/
+coverage/
+.turbo/
+playwright-report/
+test-results/
+# Environment
+.env
+.env.*
+!.env.example
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+# Logs
+*.log
+logs/
+# Local databases and storage
+*.sqlite
+*.sqlite3
+data/
+storage/
+uploads/
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.example.json
+# Operating system
+.DS_Store
+Thumbs.db
+# Temporary files
+tmp/
+temp/
+*.swp
+*.swo
