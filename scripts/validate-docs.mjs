@@ -1118,13 +1118,13 @@ export function validateAssessmentAcceptanceConsistency(acceptancePath) {
   }
 }
 
-// ---- H: Scoring narrative consistency ----
+// ---- E: Scoring narrative consistency ----
 
 export function validateScoringNarrativeConsistency(principlesPath) {
   const content = requiredFile(principlesPath);
   if (!content) return;
 
-  // Answer Short Question must not claim pronunciation or oral fluency in item scoring
+  // Locate the constrained-response section
   const sectionStart = content.indexOf('### Constrained-Response Speaking Tasks');
   if (sectionStart === -1) {
     errors.push(`${principlesPath}: missing Constrained-Response Speaking Tasks section`);
@@ -1133,120 +1133,298 @@ export function validateScoringNarrativeConsistency(principlesPath) {
   const sectionEnd = content.indexOf('### ', sectionStart + 10);
   const section = sectionEnd === -1 ? content.slice(sectionStart) : content.slice(sectionStart, sectionEnd);
 
-  // Answer Short Question must exist
+  // Answer Short Question must exist (without depending on bold formatting)
   if (!section.includes('Answer Short Question')) {
     errors.push(`${principlesPath}: Answer Short Question must be mentioned in scoring narrative`);
+    return;
   }
 
+  // Find ASQ narrative block: try bold first, then fall back to plain text
+  let boldAsqIdx = section.indexOf('\n**Answer Short Question**');
+  if (boldAsqIdx === -1) {
+    // Fallback: find the last occurrence (the actual narrative, not the task list)
+    const lastAsqIdx = section.lastIndexOf('Answer Short Question');
+    boldAsqIdx = lastAsqIdx > 0 ? lastAsqIdx - 1 : -1;
+    // If still not found, use the first occurrence after the task list
+    if (boldAsqIdx === -2) {
+      errors.push(`${principlesPath}: Answer Short Question must have a separate scoring narrative entry`);
+      return;
+    }
+  }
+  const afterAsq = section.slice(boldAsqIdx);
+  // Split at next "**" block boundary
+  const nextBoldIdx = afterAsq.search(/\n\*\*/);
+  const asqBlock = nextBoldIdx > 0 ? afterAsq.slice(0, nextBoldIdx) : afterAsq;
+  const asqLower = asqBlock.toLowerCase();
+
   // ASQ scoring must be correct/incorrect with vocabulary matching
-  if (!section.toLowerCase().includes('correct/incorrect') && !section.toLowerCase().includes('correct-incorrect')) {
+  if (!asqLower.includes('correct/incorrect') && !asqLower.includes('correct-incorrect')) {
     errors.push(`${principlesPath}: Answer Short Question must state Correct/Incorrect scoring type`);
   }
-  if (!section.toLowerCase().includes('vocabulary') && !section.toLowerCase().includes('accepted-answer')) {
+  if (!asqLower.includes('vocabulary') && !asqLower.includes('accepted-answer')) {
     errors.push(`${principlesPath}: Answer Short Question must mention vocabulary or accepted-answer matching`);
   }
 
-  // ASQ must not assign pronunciation or oral fluency to the item score
-  const asqSection = section.includes('**Answer Short Question**')
-    ? section.slice(section.indexOf('**Answer Short Question**'))
-    : '';
-  if (asqSection) {
-    // Check that pronunciation/fluency are explicitly excluded or not present in ASQ's scoring
-    const hasPronunciationInAsq = asqSection.match(/pronunciation/i);
-    const hasFluencyInAsq = asqSection.match(/oral fluency/i);
-    // Having these terms is only allowed if they're explicitly excluded from scoring
-    if (hasPronunciationInAsq && !asqSection.toLowerCase().includes('do not affect')) {
-      errors.push(`${principlesPath}: Answer Short Question scoring must exclude pronunciation from item score`);
+  // ASQ must reference Listening as assessed/contributing skill
+  if (!asqLower.includes('listening')) {
+    errors.push(`${principlesPath}: Answer Short Question must assess and contribute to Listening`);
+  }
+
+  // Check for scoring claims about pronunciation or oral fluency in the ASQ block
+  // Reject any statement that says pronunciation/fluency:
+  //   - is scored, contributes, changes the score, is used as scoring evidence, or forms part of the scored rubric
+  // Exclude statements that explicitly say "do not affect" or "excluded" (negation clauses)
+
+  function hasScoringClaim(text, term) {
+    // Check for scoring claims about `term` that are not negated
+    const termEscaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Pattern: term followed by scoring-related words within the same sentence, excluding negations
+    const scoringClaimPattern = new RegExp(
+      termEscaped + '[^.]*?(?:scor|evidenc|contribut|rubric|calculated|forms part of)',
+      'i'
+    );
+    if (!scoringClaimPattern.test(text)) return false;
+    // Check if the sentence containing the match has a negation
+    const match = text.match(new RegExp('[^.]*?' + termEscaped + '[^.]*\\.', 'i'));
+    if (match) {
+      const sentence = match[0].toLowerCase();
+      if (sentence.includes('do not affect') || sentence.includes('excluded') ||
+          sentence.includes('non-scored') || sentence.includes('not affect') ||
+          sentence.includes('does not')) {
+        return false;
+      }
     }
-    if (hasFluencyInAsq && !asqSection.toLowerCase().includes('do not affect')) {
-      errors.push(`${principlesPath}: Answer Short Question scoring must exclude oral fluency from item score`);
+    return true;
+  }
+
+  let asqHasScoringClaim = false;
+  if (hasScoringClaim(asqBlock, 'pronunciation')) {
+    asqHasScoringClaim = true;
+  }
+  if (hasScoringClaim(asqBlock, 'oral fluency')) {
+    asqHasScoringClaim = true;
+  }
+  if (asqHasScoringClaim) {
+    errors.push(`${principlesPath}: Answer Short Question must not assign pronunciation or oral fluency to the item score`);
+  }
+
+  // Also reject broader ASQ section if it contains pronunciation as scoring without clear exclusion
+  // Handle: "Pronunciation evidence is also used to calculate the item score"
+  if (/Pronunciation evidence.*item score/i.test(asqBlock) || /Pronunciation[^.]*?item score/i.test(asqBlock)) {
+    const pronSentence = asqBlock.match(/[^.]*?[Pp]ronunciation[^.]*\./);
+    if (pronSentence && !pronSentence[0].toLowerCase().includes('do not affect')) {
+      errors.push(`${principlesPath}: Answer Short Question must exclude pronunciation from item scoring`);
     }
+  }
+  if (/oral fluency[^.]*?item score/i.test(asqBlock) || /oral fluency[^.]*?scoring evidence/i.test(asqBlock)) {
+    const fluencySentence = asqBlock.match(/[^.]*?oral fluency[^.]*\./);
+    if (fluencySentence && !fluencySentence[0].toLowerCase().includes('do not affect')) {
+      errors.push(`${principlesPath}: Answer Short Question must exclude oral fluency from item scoring`);
+    }
+  }
+
+  // Check "Answer Short Question uses X as scoring evidence" without bold
+  if (/Answer Short Question uses.*(?:pronunciation|oral fluency).*scoring/i.test(asqBlock)) {
+    errors.push(`${principlesPath}: Answer Short Question must not use pronunciation or oral fluency as scoring evidence`);
   }
 }
 
-// ---- H: Role-route consistency ----
+// ---- D: Exact route-table parser ----
 
-export function validateRoleRouteConsistency(routeMapPath) {
-  const content = requiredFile(routeMapPath);
-  if (!content) return;
-
-  // Content Reviewer edit permission must be No in permission matrix
-  const matrixSection = content.includes('| Content Reviewer |')
-    ? content.slice(content.indexOf('| Content Reviewer |'))
-    : '';
-  if (matrixSection) {
-    const editCell = matrixSection.split('\n')[0].split('|');
-    // Column 5 is Edit (index 4 after splitting: Role | View | Create | Edit | Review | ...)
-    const editVal = editCell[4] ? editCell[4].trim() : '';
-    if (editVal !== 'No') {
-      errors.push(`${routeMapPath}: Content Reviewer edit permission must be No, found "${editVal}"`);
+function parseMarkdownRouteTable(content) {
+  const lines = content.split('\n');
+  const routes = [];
+  let inTable = false;
+  for (const line of lines) {
+    if (line.startsWith('|') && line.includes('| `') && (line.includes('/app/') || line.includes('/content/') || line.includes('/teacher/'))) {
+      inTable = true;
+      const cells = line.split('|').map(c => c.trim());
+      // Route is the first data cell (usually index 1 after splitting, but may contain backticks)
+      if (cells.length >= 2) {
+        const routeMatch = cells[1].match(/`([^`]+)`/);
+        if (routeMatch) {
+          const route = routeMatch[1];
+          const roles = cells[2] || '';
+          const purpose = cells[3] || '';
+          routes.push({ route, roles, purpose, raw: line });
+        }
+      }
+    } else if (inTable && !line.startsWith('|')) {
+      inTable = false;
     }
   }
+  return routes;
+}
 
-  // The question detail route must state read-only for Content reviewer
-  const questionRouteLine = content.split('\n').find(l => l.includes('/content/questions/[questionId]'));
-  if (questionRouteLine) {
-    if (!questionRouteLine.toLowerCase().includes('read-only') && !questionRouteLine.toLowerCase().includes('read only')) {
-      errors.push(`${routeMapPath}: /content/questions/[questionId] must specify read-only access for Content reviewer`);
-    }
+// ---- H/C: Role-route consistency (cross-document) ----
+
+export function validateRoleRouteConsistency(routeMapPath, userRolesPath) {
+  const routeContent = requiredFile(routeMapPath);
+  if (!routeContent) return;
+  const rolesContent = requiredFile(userRolesPath || 'docs/product/user-roles.md');
+  if (!rolesContent) return;
+
+  // Parse permission matrix from user-roles.md
+  const roleRows = rolesContent.split('\n').filter(l => l.startsWith('|') && l.includes('Content Reviewer'));
+  if (roleRows.length === 0) {
+    errors.push(`${userRolesPath}: missing Content Reviewer row in permission matrix`);
+    return;
   }
 
-  // /content/reviews/[reviewId] must exist (but not /teacher/reviews/[reviewId])
-  if (!content.includes('/content/reviews/[reviewId]')) {
+  // Parse the header to find column positions by name
+  const headerLines = rolesContent.split('\n').filter(l => l.startsWith('|') && l.includes('Role') && l.includes('Edit'));
+  let editCol = -1, publishCol = -1, retireCol = -1;
+  if (headerLines.length > 0) {
+    const headers = headerLines[0].split('|').map(h => h.trim().toLowerCase());
+    editCol = headers.indexOf('edit');
+    publishCol = headers.indexOf('publish');
+    retireCol = headers.indexOf('retire');
+  }
+
+  if (editCol === -1) {
+    errors.push(`${userRolesPath}: cannot find Edit column in permission matrix header`);
+  }
+
+  const reviewRow = roleRows[0].split('|').map(c => c.trim());
+  const editVal = editCol >= 0 && editCol < reviewRow.length ? reviewRow[editCol] : '';
+  const publishVal = publishCol >= 0 && publishCol < reviewRow.length ? reviewRow[publishCol] : '';
+  const retireVal = retireCol >= 0 && retireCol < reviewRow.length ? reviewRow[retireCol] : '';
+
+  if (editVal !== 'No') {
+    errors.push(`${userRolesPath}: Content Reviewer Edit permission must be No, found "${editVal}"`);
+  }
+  if (publishVal !== 'No') {
+    errors.push(`${userRolesPath}: Content Reviewer Publish permission must be No, found "${publishVal}"`);
+  }
+  if (retireVal !== 'No') {
+    errors.push(`${userRolesPath}: Content Reviewer Retire permission must be No, found "${retireVal}"`);
+  }
+
+  // Parse route map for exact route validation
+  const routes = parseMarkdownRouteTable(routeContent);
+
+  // Check /content/questions/[questionId] must state read-only
+  const questionRoute = routes.find(r => r.route === '/content/questions/[questionId]');
+  if (!questionRoute) {
+    errors.push(`${routeMapPath}: missing required route /content/questions/[questionId]`);
+  } else if (!questionRoute.purpose.toLowerCase().includes('read-only') &&
+             !questionRoute.purpose.toLowerCase().includes('read only')) {
+    errors.push(`${routeMapPath}: /content/questions/[questionId] must specify read-only access for Content reviewer`);
+  }
+
+  // Check /content/reviews/[reviewId] exists
+  const reviewRoute = routes.find(r => r.route === '/content/reviews/[reviewId]');
+  if (!reviewRoute) {
     errors.push(`${routeMapPath}: missing required route /content/reviews/[reviewId]`);
+  } else if (!reviewRoute.purpose.includes('cannot publish')) {
+    errors.push(`${routeMapPath}: /content/reviews/[reviewId] must state it cannot publish or retire content`);
   }
 }
 
-// ---- H: Content publication authority ----
+// ---- F: Content publication and retirement authority (cross-document) ----
 
-export function validateContentPublicationAuthority(workflowPath, routeMapPath, acceptancePath) {
+export function validateContentPublicationAuthority(workflowPath, routeMapPath, acceptancePath, userRolesPath) {
   const workflow = requiredFile(workflowPath);
+  const routeMap = routeMapPath ? requiredFile(routeMapPath) : '';
+  const acceptContent = acceptancePath ? requiredFile(acceptancePath) : '';
+  const rolesContent = userRolesPath ? requiredFile(userRolesPath) : '';
   if (!workflow) return;
 
-  // Reviewer approval must not automatically trigger publication
-  if (workflow.includes('triggered by approval')) {
-    errors.push(`${workflowPath}: publication must not be triggered by approval; must require Administrator authorisation`);
+  // 1. Quality Approval must exist (reviewer approval is NOT publication)
+  if (!workflow.includes('Quality Approval')) {
+    errors.push(`${workflowPath}: missing Quality Approval stage`);
   }
 
-  // Administrator Publication Authorisation must exist
+  // 2. Administrator Publication Authorisation must exist
   if (!workflow.includes('Administrator Publication Authorisation')) {
     errors.push(`${workflowPath}: missing Administrator Publication Authorisation stage`);
   }
 
-  // Content Reviewer cannot publish
-  if (!workflow.includes('Content Reviewer cannot publish')) {
-    errors.push(`${workflowPath}: must state that Content Reviewer cannot publish`);
+  // 3. No reviewer action can directly or automatically publish
+  if (workflow.includes('triggered by approval') && !workflow.includes('triggered by Administrator authorisation')) {
+    errors.push(`${workflowPath}: publication must not be triggered by approval; must require Administrator authorisation`);
+  }
+  // Check for synonyms or equivalent contradictions
+  const pubStages = workflow.split('\n### ').filter(s => s.toLowerCase().includes('public'));
+  for (const stage of pubStages) {
+    if (stage.includes('reviewer') && stage.includes('publication') && !stage.includes('cannot publish')) {
+      errors.push(`${workflowPath}: Content Reviewer must not be able to publish content`);
+    }
   }
 
-  // Administrator explicitly authorises publication
-  if (!workflow.toLowerCase().includes('administrator explicitly authorises publication')) {
-    errors.push(`${workflowPath}: must state that Administrator explicitly authorises publication`);
+  // 4. System publication requires prior Administrator authorisation
+  const systemPubStage = workflow.split('\n### ').find(s => s.startsWith('System Publication'));
+  if (systemPubStage) {
+    if (!systemPubStage.toLowerCase().includes('administrator authorisation')) {
+      errors.push(`${workflowPath}: System Publication must require Administrator authorisation`);
+    }
   }
 
-  // Acceptance criteria alignment
-  if (acceptancePath) {
-    const acceptContent = requiredFile(acceptancePath);
-    if (acceptContent) {
-      if (!acceptContent.includes('reviewer cannot publish')) {
-        errors.push(`${acceptancePath}: must state that content reviewer cannot publish`);
-      }
-      if (!acceptContent.toLowerCase().includes('administrator can authorise publication')) {
-        // Check for equivalent phrase
-        if (!acceptContent.includes('Only an Administrator can authorise publication')) {
-          errors.push(`${acceptancePath}: must state that only Administrator can authorise publication`);
+  // 5. Content Reviewer may recommend revision or retirement but cannot execute
+  const recStage = workflow.split('\n### ').find(s => s.startsWith('Revision or Retirement Recommendation'));
+  if (recStage) {
+    if (!recStage.includes('Content reviewer')) {
+      errors.push(`${workflowPath}: Revision or Retirement Recommendation must be by Content reviewer`);
+    }
+    if (!recStage.includes('cannot retire')) {
+      errors.push(`${workflowPath}: must state Content Reviewer cannot retire content`);
+    }
+  }
+
+  // 6. Administrator Retirement Authorisation must exist
+  if (!workflow.includes('Administrator Retirement Authorisation')) {
+    errors.push(`${workflowPath}: missing Administrator Retirement Authorisation stage`);
+  }
+
+  // 7. System Retirement requires Administrator authorisation
+  const systemRetStage = workflow.split('\n### ').find(s => s.startsWith('System Retirement'));
+  if (systemRetStage && !systemRetStage.toLowerCase().includes('administrator authorisation')) {
+    errors.push(`${workflowPath}: System Retirement must require Administrator authorisation`);
+  }
+
+  // 8. Content Writer cannot approve or publish their own content
+  if (!workflow.includes('Content Writer cannot approve')) {
+    errors.push(`${workflowPath}: must state Content Writer cannot approve or publish their own content`);
+  }
+
+  // 9. User roles matrix check
+  if (rolesContent) {
+    const revRows = rolesContent.split('\n').filter(l => l.startsWith('|') && l.includes('Content Reviewer'));
+    if (revRows.length === 0) {
+      errors.push(`${userRolesPath}: missing Content Reviewer row`);
+    } else {
+      const cells = revRows[0].split('|').map(c => c.trim());
+      const headers = rolesContent.split('\n').filter(l => l.startsWith('|') && l.includes('Role'))[0];
+      if (headers) {
+        const hdrs = headers.split('|').map(h => h.trim().toLowerCase());
+        const pubIdx = hdrs.indexOf('publish');
+        const retIdx = hdrs.indexOf('retire');
+        if (pubIdx >= 0 && pubIdx < cells.length && cells[pubIdx] !== 'No') {
+          errors.push(`${userRolesPath}: Content Reviewer Publish must be No, found "${cells[pubIdx]}"`);
+        }
+        if (retIdx >= 0 && retIdx < cells.length && cells[retIdx] !== 'No') {
+          errors.push(`${userRolesPath}: Content Reviewer Retire must be No, found "${cells[retIdx]}"`);
         }
       }
     }
   }
 
-  // Route map: /content/reviews/[reviewId] must say cannot publish
-  if (routeMapPath) {
-    const routeMap = requiredFile(routeMapPath);
-    if (routeMap) {
-      const reviewRouteLine = routeMap.split('\n').find(l => l.includes('/content/reviews/[reviewId]'));
-      if (reviewRouteLine && !reviewRouteLine.includes('cannot publish')) {
-        errors.push(`${routeMapPath}: /content/reviews/[reviewId] must state it cannot publish or retire content`);
-      }
+  // 10. Route map check
+  if (routeMap) {
+    const reviewRouteLine = routeMap.split('\n').find(l => l.includes('/content/reviews/[reviewId]'));
+    if (reviewRouteLine && !reviewRouteLine.includes('cannot publish')) {
+      errors.push(`${routeMapPath}: /content/reviews/[reviewId] must state it cannot publish or retire content`);
+    }
+  }
+
+  // 11. Acceptance criteria alignment
+  if (acceptContent) {
+    if (!acceptContent.includes('reviewer cannot publish') && !acceptContent.includes('cannot publish content')) {
+      errors.push(`${acceptancePath}: must state that content reviewer cannot publish`);
+    }
+    if (!acceptContent.includes('Only an Administrator can authorise publication') &&
+        !acceptContent.toLowerCase().includes('administrator can authorise')) {
+      errors.push(`${acceptancePath}: must state that only Administrator can authorise publication`);
     }
   }
 }
@@ -1257,44 +1435,45 @@ export function validateStudentAssessmentRoutes(routeMapPath) {
   const content = requiredFile(routeMapPath);
   if (!content) return;
 
-  // Diagnostic routes
+  const routes = parseMarkdownRouteTable(content);
+
+  // Helper: find route by exact match
+  function findExactRoute(routes, path) {
+    return routes.find(r => r.route === path);
+  }
+
+  // Diagnostic routes (exact match only)
   const diagnosticRoutes = [
     '/app/diagnostic',
     '/app/diagnostic/attempts/[attemptId]',
     '/app/diagnostic/results/[reportId]',
   ];
   for (const route of diagnosticRoutes) {
-    if (!content.includes(route)) {
-      errors.push(`${routeMapPath}: missing diagnostic route ${route}`);
+    const found = findExactRoute(routes, route);
+    if (!found) {
+      errors.push(`${routeMapPath}: missing exact diagnostic route ${route}`);
     } else {
-      // Check both Free student and Paid student are permitted
-      const routeLine = content.split('\n').find(l => l.includes(route));
-      if (routeLine) {
-        if (!routeLine.includes('Free student') || !routeLine.includes('Paid student')) {
-          errors.push(`${routeMapPath}: route ${route} must permit both Free student and Paid student`);
-        }
-        // Diagnostic results must not be Paid-only
-        if (route.includes('/results/') && !routeLine.includes('Free student')) {
-          errors.push(`${routeMapPath}: route ${route} must be accessible to Free Student`);
-        }
+      if (!found.roles.includes('Free student') || !found.roles.includes('Paid student')) {
+        errors.push(`${routeMapPath}: route ${route} must permit both Free student and Paid student`);
+      }
+      if (route.includes('/results/') && !found.roles.includes('Free student')) {
+        errors.push(`${routeMapPath}: route ${route} must be accessible to Free Student`);
       }
     }
   }
 
-  // Section-test routes
+  // Section-test routes (exact match only)
   const sectionTestRoutes = [
     '/app/section-tests',
     '/app/section-tests/[testId]',
     '/app/section-attempts/[attemptId]',
   ];
   for (const route of sectionTestRoutes) {
-    if (!content.includes(route)) {
-      errors.push(`${routeMapPath}: missing section-test route ${route}`);
-    } else {
-      const routeLine = content.split('\n').find(l => l.includes(route));
-      if (routeLine && !routeLine.includes('Paid student')) {
-        errors.push(`${routeMapPath}: route ${route} must permit Paid student`);
-      }
+    const found = findExactRoute(routes, route);
+    if (!found) {
+      errors.push(`${routeMapPath}: missing exact section-test route ${route}`);
+    } else if (!found.roles.includes('Paid student')) {
+      errors.push(`${routeMapPath}: route ${route} must permit Paid student`);
     }
   }
 }
@@ -1449,11 +1628,12 @@ export function validateAll() {
   validateFreeStudentRoutes('docs/product/route-map.md');
   validateMockTimerConsistency();
   validateScoringNarrativeConsistency('docs/scoring/scoring-principles.md');
-  validateRoleRouteConsistency('docs/product/route-map.md');
+  validateRoleRouteConsistency('docs/product/route-map.md', 'docs/product/user-roles.md');
   validateContentPublicationAuthority(
     'docs/content/content-workflow.md',
     'docs/product/route-map.md',
-    'docs/product/acceptance-criteria.md'
+    'docs/product/acceptance-criteria.md',
+    'docs/product/user-roles.md'
   );
   validateStudentAssessmentRoutes('docs/product/route-map.md');
 
