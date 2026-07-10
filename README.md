@@ -10,7 +10,7 @@ This is an independent PTE Academic preparation platform. It is not affiliated w
 
 ## Current Project Status
 
-Phase A — Product Contract (complete). No application code has been written yet.
+Phase A — Product Contract (under audit correction). No application code has been written yet.
 
 ## Supported PTE Product
 
@@ -46,16 +46,32 @@ Phase A — Product Contract (complete). No application code has been written ye
 
 | Phase | Description |
 |-------|-------------|
-| A | Product contract, architecture, documentation |
-| B | Project scaffolding, tooling, CI/CD |
-| C | Database, authentication, user accounts |
-| D | Content system, question banks |
-| E | Practice engine, objective scoring |
-| F | Speaking and writing AI evaluation |
-| G | Diagnostic, study plans, mock exams |
-| H | Payments, subscriptions, teacher review |
-| I | Launch preparation, pilot, calibration |
-| J | Production release |
+| A | Product contract |
+| B | Monorepo, tooling and local environment |
+| C | Shared contracts and configuration |
+| D | Database and domain model |
+| E | Authentication, profiles and permissions |
+| F | Design system and application shell |
+| G | Content provenance and licence register |
+| H | Course and lesson engine |
+| I | Universal question engine |
+| J | Reading task types |
+| K | Listening task types |
+| L | Speaking recorder and speaking tasks |
+| M | Writing task types |
+| N | Objective scoring engine |
+| O | Speech and writing evaluation |
+| P | Diagnostic test and personalised study plan |
+| Q | Mock-exam engine |
+| R | Dashboard, reports and skill mastery |
+| S | Teacher and administration portals |
+| T | Payments, subscriptions and entitlements |
+| U | Content-production factory |
+| V | Calibration and educational validation |
+| W | Notifications, support and operations |
+| X | Complete QA and performance gate |
+| Y | Production deployment |
+| Z | Pilot, launch and continuous improvement |
 
 ## Repository Structure
 
@@ -74,6 +90,7 @@ pte-app/
 ├── packages/          Shared libraries
 ├── scripts/           Utility scripts
 ├── services/          Backend services
+├── tests/             Test suites
 ├── .editorconfig
 ├── .gitattributes
 ├── .gitignore
@@ -111,7 +128,7 @@ pte-app/
 - Pearson's private scoring engine will not be represented as reproduced.
 - Objective questions use deterministic scoring.
 - AI must not provide unsupported final scores.
-- Speaking scoring uses: transcript comparison, content coverage, fluency features, pronunciation evidence and timing evidence.
+- Speaking scoring distinguishes constrained-response tasks (word alignment, sequence comparison, accepted-answer matching) from open-response tasks (content concepts, relevance, main-point coverage, organisation).
 - Writing scoring uses: content, form, structure, coherence, grammar, vocabulary, linguistic range and spelling.
 - Every result stores scoring-profile version, question version, provider version, component evidence and confidence range.
 - Historical results cannot silently change after a scoring update.
@@ -128,13 +145,13 @@ pte-app/
 
 ## Current Active Phase
 
-**Phase A** — Product Contract. Establishing the product, architecture, content, scoring and quality contracts that every following phase must follow.
+**Phase A** — Product Contract. Establishing the product, architecture, content, scoring and quality contracts that every following phase must follow. This phase is under audit correction.
 
 ## Contribution Workflow
 
-1. Receive one phase.
+1. Receive one phase specification.
 2. Pull latest main.
-3. Create phase branch: `feat/phase-<letter>-<description>`.
+3. Create phase branch: `feat/phase-<letter>-<description>` or `fix/phase-<letter>-<description>`.
 4. Implement phase.
 5. Run checks.
 6. Commit using conventional commit format.

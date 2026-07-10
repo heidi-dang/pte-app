@@ -117,10 +117,10 @@ Landing page → Registration → Email verification → Profile setup → Targe
 ### Timed Practice
 
 - **Student objective**: Simulate test conditions
-- **Interface requirements**: Question interface with timer, no hints, section-appropriate time limits
+- **Interface requirements**: Question interface with timer controlled by the selected timing profile, section-appropriate time limits
 - **Data saved**: Response, score, time taken, completion status
 - **Failure states**: Timer desync, response lost
-- **Recovery path**: Server-authoritative timer, periodic autosave, response recovery on reconnect
+- **Recovery path**: Server-authoritative timer, periodic autosave, response recovery on reconnect. Timer behaviour is controlled by the selected timing profile; may pause when configuration permits.
 - **Next action**: Review mistakes
 
 ### Mistake Review
@@ -147,7 +147,7 @@ Landing page → Registration → Email verification → Profile setup → Targe
 - **Interface requirements**: Full-length PTE Academic simulation, all sections, real timing, breaks, auto-submit
 - **Data saved**: Complete response set, timer data, scores, question versions
 - **Failure states**: Internet interruption, browser crash, accidental close, scoring provider timeout, scoring provider unavailable
-- **Recovery path**: Autosave every response immediately, persist session state server-side, resume from last completed task, reprocess scoring when provider available, no duplicate submission
+- **Recovery path**: Autosave every response immediately, persist session state server-side, resume from last completed task. Server stores an absolute deadline that continues during browser closure or network interruption. On reconnection, obtain current server time and recalculate remaining time. Completed responses remain submitted. Consumed audio playback rights remain consumed. A recording already captured remains available for resumable upload. The same answer cannot be submitted twice. Unanswered mock responses are permitted; the platform does not fabricate answers. Reprocess scoring when provider available.
 - **Next action**: View readiness report
 
 ### Readiness Report
@@ -184,7 +184,7 @@ Speaking tasks are disabled. Platform displays guidance on enabling microphone p
 
 ### Internet Interruption
 
-Autosave stores current response locally. On reconnection, saved response syncs to server. Timer pauses for practice mode. For mock mode, server-authoritative timer continues but session can be resumed.
+Autosave stores current response locally. On reconnection, saved response syncs to server. In learning mode, timer may pause when configuration permits. In mock mode, server-authoritative deadline continues; remaining time is recalculated on reconnection.
 
 ### Incomplete Diagnostic
 
@@ -200,7 +200,7 @@ Active sessions complete gracefully. Access to paid content is restricted on nex
 
 ### Mock Is Interrupted
 
-Session state persists on server. Student can resume from the exact point of interruption. If speaking responses were partially uploaded, upload resumes. Timer state reflects remaining time at interruption.
+Session state persists on server. Server stores an absolute deadline that continues during interruption. On reconnection, remaining time is recalculated from server time. Completed responses remain submitted. Consumed audio playback rights remain consumed. If speaking responses were partially uploaded, upload resumes without requiring a new response. The same answer cannot be submitted twice.
 
 ### Scoring Provider Is Temporarily Unavailable
 

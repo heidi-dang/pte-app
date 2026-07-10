@@ -39,19 +39,23 @@ Practice and mock-test sessions use persisted server-side state with local recov
 
 - Timer state is managed on the server, not the client.
 - The client displays a countdown synced with the server.
-- On reconnection, the client receives the authoritative remaining time.
-- This prevents timer manipulation and ensures accurate timing across interruptions.
+- **Learning mode**: Timer may pause when the selected practice configuration permits it.
+- **Timed practice**: Behaviour is controlled by the selected timing profile.
+- **Section tests and full mocks**: Server stores an absolute deadline. The deadline continues during browser closure or network interruption. On reconnection, the client obtains the current server time and recalculates remaining time. The timer does not return to the amount remaining at interruption.
 
 ### Media Playback Tracking
 
 - Audio playback progress is tracked on the server.
-- On interruption and resume, playback continues from the last tracked position (within task rules).
+- On interruption and resume, consumed playback rights remain consumed.
+- Playback does not reset on reconnection.
 
 ### Recording-Upload State
 
 - Recording uploads include chunk tracking.
 - On reconnection, only missing chunks are uploaded.
 - Partial recordings are preserved even if upload is interrupted.
+- The browser keeps the recording locally until server storage is confirmed.
+- Interrupted uploads resume or retry without requiring a new response.
 
 ### Duplicate-Submission Prevention
 
@@ -63,5 +67,7 @@ Practice and mock-test sessions use persisted server-side state with local recov
 
 - On reconnection after interruption, the student returns to the exact task they were working on.
 - Completed tasks remain completed with their original responses.
-- The timer reflects the remaining time at the point of interruption.
+- For mock mode: remaining time is recalculated from the server deadline, not restored to the amount at interruption.
+- Consumed audio playback rights remain consumed.
+- A recording already captured remains available for resumable upload.
 - Session expiry policies are clearly communicated before the session starts.

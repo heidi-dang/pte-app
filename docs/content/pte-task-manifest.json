@@ -1,0 +1,1785 @@
+[
+  {
+    "canonicalId": "read_aloud",
+    "displayName": "Read Aloud",
+    "section": "Speaking and Writing",
+    "officialSkillsAssessed": [
+      "Speaking"
+    ],
+    "scoreContributions": [
+      "Reading",
+      "Speaking"
+    ],
+    "promptType": "text",
+    "responseType": "audio",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 0,
+      "maximum": 60,
+      "unit": "words"
+    },
+    "preparationTiming": {
+      "mode": "item-dependent",
+      "minimum": 30,
+      "maximum": 40,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "item-dependent",
+      "minimum": null,
+      "maximum": null,
+      "unit": "seconds"
+    },
+    "playbackLimit": 0,
+    "recordingLimit": 1,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay of own recording, transcript after attempt, hints, model answer, extended preparation option",
+    "mockMode": "microphone opens automatically after countdown/tone, item-dependent response duration, one recording, no hints, no transcript before submission, no answer correction after submission",
+    "referenceIds": [
+      "source-1",
+      "source-2",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Pronunciation",
+      "Oral fluency"
+    ],
+    "taskPurpose": "Assess pronunciation and oral fluency",
+    "studentInterface": "Text passage displayed, preparation countdown and recording status box. The microphone opens automatically after the tone.",
+    "inputMedia": "Text passage on screen",
+    "answerFormat": "Audio recording",
+    "platformEstimatedScoringEvidence": "Content (word alignment and sequence comparison against expected passage), Pronunciation (phonetic accuracy, stress patterns, intelligibility), Oral fluency (speech rate, pause frequency, rhythm)",
+    "feedbackFormat": "Component scores, overall estimated score, transcript comparison, fluency metrics",
+    "contentMetadata": "Passage text, source, difficulty, word count, estimated reading time, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": true,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "rubric-estimate",
+      "profileConfigured": true
+    }
+  },
+  {
+    "canonicalId": "repeat_sentence",
+    "displayName": "Repeat Sentence",
+    "section": "Speaking and Writing",
+    "officialSkillsAssessed": [
+      "Listening",
+      "Speaking"
+    ],
+    "scoreContributions": [
+      "Listening",
+      "Speaking"
+    ],
+    "promptType": "audio",
+    "responseType": "audio",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 3,
+      "maximum": 9,
+      "unit": "seconds"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "fixed",
+      "minimum": 15,
+      "maximum": 15,
+      "unit": "seconds"
+    },
+    "playbackLimit": 1,
+    "recordingLimit": 1,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay, transcript after attempt, slow playback, repeat attempt",
+    "mockMode": "single playback, 15-second answer period, one recording, no transcript before submission",
+    "referenceIds": [
+      "source-1",
+      "source-2",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Pronunciation",
+      "Oral fluency"
+    ],
+    "taskPurpose": "Assess listening and speaking accuracy",
+    "studentInterface": "Audio playback occurs automatically, recording activates after playback ends, countdown timer",
+    "inputMedia": "Audio sentence playback",
+    "answerFormat": "Audio recording",
+    "platformEstimatedScoringEvidence": "Word-level alignment against expected sentence, Pronunciation (phonetic accuracy, stress, intelligibility), Oral fluency (speech rate, pause frequency)",
+    "feedbackFormat": "Word-level accuracy, overall estimated score, fluency metrics",
+    "contentMetadata": "Sentence text, audio duration, difficulty, source, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": true,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "rubric-estimate",
+      "profileConfigured": true
+    }
+  },
+  {
+    "canonicalId": "describe_image",
+    "displayName": "Describe Image",
+    "section": "Speaking and Writing",
+    "officialSkillsAssessed": [
+      "Speaking"
+    ],
+    "scoreContributions": [
+      "Speaking"
+    ],
+    "promptType": "image",
+    "responseType": "audio",
+    "promptLength": {
+      "mode": "not-applicable"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 25,
+      "maximum": 25,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "fixed",
+      "minimum": 40,
+      "maximum": 40,
+      "unit": "seconds"
+    },
+    "playbackLimit": 0,
+    "recordingLimit": 1,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "extended preparation, configurable replay, transcript, model response, hints on key features",
+    "mockMode": "25-second preparation, 40-second response, one recording, no replay, no hints",
+    "referenceIds": [
+      "source-1",
+      "source-2",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Pronunciation",
+      "Oral fluency"
+    ],
+    "taskPurpose": "Assess ability to describe an image orally",
+    "studentInterface": "Image displayed with preparation countdown and recording status box. The microphone opens automatically after the tone.",
+    "inputMedia": "Static image on screen",
+    "answerFormat": "Audio recording",
+    "platformEstimatedScoringEvidence": "Relevant content concepts, Organisation of spoken response, Pronunciation (phonetic accuracy, stress patterns, intelligibility), Oral fluency (speech rate, pause frequency)",
+    "feedbackFormat": "Component scores, overall estimated score, model response comparison, fluency metrics",
+    "contentMetadata": "Image file, description, difficulty, source, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": true,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [
+      "Content"
+    ],
+    "platformEstimatedScoringRule": {
+      "type": "rubric-estimate",
+      "profileConfigured": true
+    },
+    "oneImageRequired": true
+  },
+  {
+    "canonicalId": "retell_lecture",
+    "displayName": "Retell Lecture",
+    "section": "Speaking and Writing",
+    "officialSkillsAssessed": [
+      "Listening",
+      "Speaking"
+    ],
+    "scoreContributions": [
+      "Listening",
+      "Speaking"
+    ],
+    "promptType": "audio-or-video",
+    "responseType": "audio",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 0,
+      "maximum": 90,
+      "unit": "seconds"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 10,
+      "maximum": 10,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "fixed",
+      "minimum": 40,
+      "maximum": 40,
+      "unit": "seconds"
+    },
+    "playbackLimit": 1,
+    "recordingLimit": 1,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay, transcript after attempt, hints on key points, model response",
+    "mockMode": "single playback only, 10-second preparation, 40-second response, one recording, no transcript before submission",
+    "referenceIds": [
+      "source-1",
+      "source-2",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Pronunciation",
+      "Oral fluency"
+    ],
+    "taskPurpose": "Assess listening comprehension and oral summarisation",
+    "studentInterface": "Audio or video playback with an optional related image, preparation countdown and recording status box. The microphone opens automatically after the tone.",
+    "inputMedia": "Audio or audiovisual recording, optional related image may be displayed",
+    "answerFormat": "Audio recording",
+    "platformEstimatedScoringEvidence": "Key content points from lecture, Coverage of main ideas, Organisation of spoken response, Pronunciation (phonetic accuracy, stress patterns, intelligibility), Oral fluency (speech rate, pause frequency)",
+    "feedbackFormat": "Component scores, overall estimated score, key points covered, fluency metrics",
+    "contentMetadata": "Audio or audiovisual file, transcript, difficulty, source, duration, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": true,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [
+      "Content"
+    ],
+    "platformEstimatedScoringRule": {
+      "type": "rubric-estimate",
+      "profileConfigured": true
+    },
+    "supportsAudiovisualInput": true,
+    "optionalRelatedImage": true
+  },
+  {
+    "canonicalId": "answer_short_question",
+    "displayName": "Answer Short Question",
+    "section": "Speaking and Writing",
+    "officialSkillsAssessed": [
+      "Listening"
+    ],
+    "scoreContributions": [
+      "Listening"
+    ],
+    "promptType": "audio",
+    "responseType": "audio",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 3,
+      "maximum": 9,
+      "unit": "seconds"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "fixed",
+      "minimum": 10,
+      "maximum": 10,
+      "unit": "seconds"
+    },
+    "playbackLimit": 1,
+    "recordingLimit": 1,
+    "officialScoringType": "correct-incorrect",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay, correct answer after submission, hints",
+    "mockMode": "single playback, 10-second answer period, one microphone recording, no text-response fallback, no answer reveal before submission",
+    "referenceIds": [
+      "source-1",
+      "source-2",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Vocabulary"
+    ],
+    "taskPurpose": "Assess listening comprehension and concise spoken response",
+    "studentInterface": "Audio question plays automatically, optional accompanying image may be displayed, recording activates after playback",
+    "inputMedia": "Audio question, optional accompanying image may be displayed",
+    "answerFormat": "Audio recording",
+    "platformEstimatedScoringEvidence": "Vocabulary-based matching against acceptable answers",
+    "feedbackFormat": "Correct answer shown, vocabulary match score, overall estimated score",
+    "contentMetadata": "Question text, audio file, acceptable answers, difficulty, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": true,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "correct-incorrect",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    },
+    "optionalAccompanyingImage": true
+  },
+  {
+    "canonicalId": "summarize_group_discussion",
+    "displayName": "Summarize Group Discussion",
+    "section": "Speaking and Writing",
+    "officialSkillsAssessed": [
+      "Listening",
+      "Speaking"
+    ],
+    "scoreContributions": [
+      "Listening",
+      "Speaking"
+    ],
+    "promptType": "audio",
+    "responseType": "audio",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 0,
+      "maximum": 180,
+      "unit": "seconds"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 10,
+      "maximum": 10,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "fixed",
+      "minimum": 120,
+      "maximum": 120,
+      "unit": "seconds"
+    },
+    "playbackLimit": 1,
+    "recordingLimit": 1,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay, transcript after attempt, hints on summarisation strategy, model response",
+    "mockMode": "single playback, 10-second preparation, 2-minute response, one recording, no transcript before submission",
+    "referenceIds": [
+      "source-1",
+      "source-2",
+      "source-5",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Pronunciation",
+      "Oral fluency"
+    ],
+    "taskPurpose": "Assess multi-speaker listening comprehension and oral summary",
+    "studentInterface": "Audio playback of group discussion with preparation countdown and recording status box. The microphone opens automatically after the tone.",
+    "inputMedia": "Audio recording of group discussion",
+    "answerFormat": "Audio recording",
+    "platformEstimatedScoringEvidence": "Coverage of different speaker viewpoints, Key content points, Organisation of spoken summary, Pronunciation, Oral fluency",
+    "feedbackFormat": "Component scores, overall estimated score, speaker coverage, fluency metrics",
+    "contentMetadata": "Audio file, speaker count, transcript, difficulty, duration, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": true,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [
+      "Content"
+    ],
+    "platformEstimatedScoringRule": {
+      "type": "rubric-estimate",
+      "profileConfigured": true
+    }
+  },
+  {
+    "canonicalId": "respond_to_situation",
+    "displayName": "Respond to a Situation",
+    "section": "Speaking and Writing",
+    "officialSkillsAssessed": [
+      "Speaking"
+    ],
+    "scoreContributions": [
+      "Speaking"
+    ],
+    "promptType": "text-and-audio",
+    "responseType": "audio",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 0,
+      "maximum": 60,
+      "unit": "words"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 10,
+      "maximum": 10,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "fixed",
+      "minimum": 40,
+      "maximum": 40,
+      "unit": "seconds"
+    },
+    "playbackLimit": 1,
+    "recordingLimit": 1,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay, transcript after attempt, model response, hints on situational goal",
+    "mockMode": "text and audio both required, single playback, 10-second preparation, 40-second spoken response, one recording, no hints",
+    "referenceIds": [
+      "source-1",
+      "source-2",
+      "source-5",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Pronunciation",
+      "Oral fluency"
+    ],
+    "taskPurpose": "Assess ability to respond appropriately to a written and spoken scenario",
+    "studentInterface": "Text and audio prompt with preparation countdown and recording status box. The microphone opens automatically after the tone.",
+    "inputMedia": "Text prompt and audio recording",
+    "answerFormat": "Audio recording",
+    "platformEstimatedScoringEvidence": "Situational goal completion, Appropriateness of response, Organisation, Pronunciation, Oral fluency",
+    "feedbackFormat": "Component scores, overall estimated score, goal completion, fluency metrics",
+    "contentMetadata": "Scenario text, audio file, difficulty, source, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": true,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [
+      "Content"
+    ],
+    "platformEstimatedScoringRule": {
+      "type": "rubric-estimate",
+      "profileConfigured": true
+    }
+  },
+  {
+    "canonicalId": "summarize_written_text",
+    "displayName": "Summarize Written Text",
+    "section": "Speaking and Writing",
+    "officialSkillsAssessed": [
+      "Reading",
+      "Writing"
+    ],
+    "scoreContributions": [
+      "Reading",
+      "Writing"
+    ],
+    "promptType": "text",
+    "responseType": "text",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 0,
+      "maximum": 300,
+      "unit": "words"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "fixed",
+      "minimum": 600,
+      "maximum": 600,
+      "unit": "seconds"
+    },
+    "playbackLimit": 0,
+    "recordingLimit": 0,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "extended time, outline tool, model response, multiple attempts",
+    "mockMode": "10-minute timer, single sentence, 5-75 word limit, autosave, no hints, no spell check",
+    "referenceIds": [
+      "source-1",
+      "source-2",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Form",
+      "Grammar",
+      "Vocabulary"
+    ],
+    "taskPurpose": "Assess reading comprehension and written summarisation",
+    "studentInterface": "Text passage displayed, text input area, response timer",
+    "inputMedia": "Text passage on screen",
+    "answerFormat": "Text response (single sentence)",
+    "platformEstimatedScoringEvidence": "Content relevance and task completion, Form adherence, Grammatical accuracy and range, Vocabulary range and appropriateness",
+    "feedbackFormat": "Component scores, overall estimated score, model answer comparison",
+    "contentMetadata": "Passage text, source, difficulty, word count, reading time, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [
+      "Content"
+    ],
+    "platformEstimatedScoringRule": {
+      "type": "rubric-estimate",
+      "profileConfigured": true
+    }
+  },
+  {
+    "canonicalId": "write_essay",
+    "displayName": "Write Essay",
+    "section": "Speaking and Writing",
+    "officialSkillsAssessed": [
+      "Writing"
+    ],
+    "scoreContributions": [
+      "Writing"
+    ],
+    "promptType": "text",
+    "responseType": "text",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 2,
+      "maximum": 3,
+      "unit": "sentences"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "fixed",
+      "minimum": 1200,
+      "maximum": 1200,
+      "unit": "seconds"
+    },
+    "playbackLimit": 0,
+    "recordingLimit": 0,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "extended time option, outline tool, spell check, model response, multiple attempts",
+    "mockMode": "20-minute response, 200-300 words, autosave, no spell check, no outlines",
+    "referenceIds": [
+      "source-1",
+      "source-2",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Form",
+      "Development, Structure and Coherence",
+      "Grammar",
+      "General Linguistic Range",
+      "Vocabulary Range",
+      "Spelling"
+    ],
+    "taskPurpose": "Assess written composition skills",
+    "studentInterface": "Essay prompt displayed, text input area with word count, response timer",
+    "inputMedia": "Text prompt on screen",
+    "answerFormat": "Text response (200-300 words)",
+    "platformEstimatedScoringEvidence": "Content relevance, Form adherence, Development, Structure and Coherence, Grammatical accuracy and range, General Linguistic Range, Vocabulary Range, Spelling",
+    "feedbackFormat": "Component scores, overall estimated score, model answer, specific improvement suggestions",
+    "contentMetadata": "Prompt text, source, difficulty, word count guidelines, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [
+      "Content",
+      "Development, Structure and Coherence",
+      "General Linguistic Range"
+    ],
+    "platformEstimatedScoringRule": {
+      "type": "rubric-estimate",
+      "profileConfigured": true
+    }
+  },
+  {
+    "canonicalId": "reading_writing_fill_blanks",
+    "displayName": "Reading and Writing: Fill in the Blanks",
+    "section": "Reading",
+    "officialSkillsAssessed": [
+      "Reading"
+    ],
+    "scoreContributions": [
+      "Reading"
+    ],
+    "promptType": "text",
+    "responseType": "dropdown-selection",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 0,
+      "maximum": 300,
+      "unit": "words"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "section-timed",
+      "minimum": null,
+      "maximum": null,
+      "unit": "seconds"
+    },
+    "playbackLimit": 0,
+    "recordingLimit": 0,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "show correct answers after submission, hints for each blank, explanation of vocabulary",
+    "mockMode": "section-level timer, no hints, no answer reveal until section ends, no partial feedback",
+    "referenceIds": [
+      "source-1",
+      "source-3",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [],
+    "taskPurpose": "Assess reading comprehension and vocabulary in context",
+    "studentInterface": "Text passage with dropdown menus at each blank, section-level timer",
+    "inputMedia": "Text passage with dropdown menus",
+    "answerFormat": "Dropdown selections",
+    "platformEstimatedScoringEvidence": "Per-blank exact match: +1 correct, 0 incorrect, minimum 0 per item",
+    "feedbackFormat": "Per-blank correct/incorrect indication, overall estimated score",
+    "contentMetadata": "Passage text, blank positions, dropdown options, difficulty, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "per-correct-blank",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    }
+  },
+  {
+    "canonicalId": "reading_multiple_answers",
+    "displayName": "Multiple Choice, Multiple Answers (Reading)",
+    "section": "Reading",
+    "officialSkillsAssessed": [
+      "Reading"
+    ],
+    "scoreContributions": [
+      "Reading"
+    ],
+    "promptType": "text",
+    "responseType": "checkbox-selection",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 0,
+      "maximum": 350,
+      "unit": "words"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "section-timed",
+      "minimum": null,
+      "maximum": null,
+      "unit": "seconds"
+    },
+    "playbackLimit": 0,
+    "recordingLimit": 0,
+    "officialScoringType": "partial-credit-negative",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "show correct answers after submission, explanation, partial credit explanation",
+    "mockMode": "section-level timer, no hints, no answer reveal until section ends",
+    "referenceIds": [
+      "source-1",
+      "source-3",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [],
+    "taskPurpose": "Assess reading comprehension with multiple correct answers",
+    "studentInterface": "Text passage with checkbox options, section-level timer",
+    "inputMedia": "Text passage with checkbox options",
+    "answerFormat": "Checkbox selections",
+    "platformEstimatedScoringEvidence": "Selection with negative marking: +1 correct, -1 incorrect, minimum 0 per item",
+    "feedbackFormat": "Per-selection correct/incorrect indication, overall estimated score",
+    "contentMetadata": "Passage text, options, correct answer set, difficulty, source, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "selection-with-negative-marking",
+      "correctPoints": 1,
+      "incorrectPoints": -1,
+      "minimumItemScore": 0
+    }
+  },
+  {
+    "canonicalId": "reorder_paragraph",
+    "displayName": "Reorder Paragraph",
+    "section": "Reading",
+    "officialSkillsAssessed": [
+      "Reading"
+    ],
+    "scoreContributions": [
+      "Reading"
+    ],
+    "promptType": "text",
+    "responseType": "drag-and-drop-order",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 0,
+      "maximum": 150,
+      "unit": "words"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "section-timed",
+      "minimum": null,
+      "maximum": null,
+      "unit": "seconds"
+    },
+    "playbackLimit": 0,
+    "recordingLimit": 0,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "correct order shown after submission, logical flow explanation, hints on connectors",
+    "mockMode": "section-level timer, no hints, no answer reveal until section ends",
+    "referenceIds": [
+      "source-1",
+      "source-3",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [],
+    "taskPurpose": "Assess ability to understand logical text organisation",
+    "studentInterface": "Draggable text boxes, section-level timer",
+    "inputMedia": "Draggable text boxes",
+    "answerFormat": "Drag-and-drop ordering",
+    "platformEstimatedScoringEvidence": "Adjacent-pair ordering: +1 per correct adjacent pair, 0 per incorrect pair, minimum 0 per item",
+    "feedbackFormat": "Correct order shown after submission, logical flow explanation",
+    "contentMetadata": "Paragraph texts, correct order, difficulty, source, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "adjacent-pair-order",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    }
+  },
+  {
+    "canonicalId": "reading_fill_blanks",
+    "displayName": "Reading: Fill in the Blanks",
+    "section": "Reading",
+    "officialSkillsAssessed": [
+      "Reading"
+    ],
+    "scoreContributions": [
+      "Reading"
+    ],
+    "promptType": "text",
+    "responseType": "drag-words-to-blanks",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 0,
+      "maximum": 80,
+      "unit": "words"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "section-timed",
+      "minimum": null,
+      "maximum": null,
+      "unit": "seconds"
+    },
+    "playbackLimit": 0,
+    "recordingLimit": 0,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "show correct words after submission, hints available per blank",
+    "mockMode": "section-level timer, no hints, no answer reveal until section ends",
+    "referenceIds": [
+      "source-1",
+      "source-3",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [],
+    "taskPurpose": "Assess reading comprehension and vocabulary",
+    "studentInterface": "Text passage with blank spaces and draggable word bank, section-level timer",
+    "inputMedia": "Text passage with blank spaces and word bank",
+    "answerFormat": "Drag-words-to-blanks placements",
+    "platformEstimatedScoringEvidence": "Per-correct-word placement: +1 correct, 0 incorrect, minimum 0 per item",
+    "feedbackFormat": "Per-blank correct words shown after submission, overall estimated score",
+    "contentMetadata": "Passage text, blank positions, word bank, difficulty, source, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "per-correct-word",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    }
+  },
+  {
+    "canonicalId": "reading_single_answer",
+    "displayName": "Multiple Choice, Single Answer (Reading)",
+    "section": "Reading",
+    "officialSkillsAssessed": [
+      "Reading"
+    ],
+    "scoreContributions": [
+      "Reading"
+    ],
+    "promptType": "text",
+    "responseType": "radio-selection",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 0,
+      "maximum": 300,
+      "unit": "words"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "section-timed",
+      "minimum": null,
+      "maximum": null,
+      "unit": "seconds"
+    },
+    "playbackLimit": 0,
+    "recordingLimit": 0,
+    "officialScoringType": "correct-incorrect",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "correct answer and explanation after submission",
+    "mockMode": "section-level timer, no hints, no answer reveal until section ends",
+    "referenceIds": [
+      "source-1",
+      "source-3",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [],
+    "taskPurpose": "Assess reading comprehension with single correct answer",
+    "studentInterface": "Text passage with radio-button options, section-level timer",
+    "inputMedia": "Text passage with radio-button options",
+    "answerFormat": "Radio-button selection",
+    "platformEstimatedScoringEvidence": "Correct/Incorrect: +1 correct, 0 incorrect, minimum 0 per item",
+    "feedbackFormat": "Correct answer shown with explanation, overall estimated score",
+    "contentMetadata": "Passage text, options, correct answer, difficulty, source, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "correct-incorrect",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    }
+  },
+  {
+    "canonicalId": "summarize_spoken_text",
+    "displayName": "Summarize Spoken Text",
+    "section": "Listening",
+    "officialSkillsAssessed": [
+      "Listening",
+      "Writing"
+    ],
+    "scoreContributions": [
+      "Listening",
+      "Writing"
+    ],
+    "promptType": "audio",
+    "responseType": "text",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 60,
+      "maximum": 90,
+      "unit": "seconds"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "fixed",
+      "minimum": 600,
+      "maximum": 600,
+      "unit": "seconds"
+    },
+    "responseTimingDescription": "Ten minutes total includes listening and writing",
+    "playbackLimit": 1,
+    "recordingLimit": 0,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay, transcript after attempt, extended time option",
+    "mockMode": "single playback, 10 minutes total to listen and write, 50-70 word response, no transcript before submission",
+    "referenceIds": [
+      "source-1",
+      "source-4",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [
+      "Content",
+      "Form",
+      "Grammar",
+      "Vocabulary",
+      "Spelling"
+    ],
+    "taskPurpose": "Assess listening comprehension and written summarisation",
+    "studentInterface": "Audio playback, text input area, total task timer includes listening and writing",
+    "inputMedia": "Audio recording",
+    "answerFormat": "Text response (50-70 words)",
+    "platformEstimatedScoringEvidence": "Content relevance and key points, Form adherence, Grammatical accuracy and range, Vocabulary range and appropriateness, Spelling accuracy",
+    "feedbackFormat": "Component scores, overall estimated score, model answer comparison",
+    "contentMetadata": "Audio file, transcript, difficulty, duration, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [
+      "Content"
+    ],
+    "platformEstimatedScoringRule": {
+      "type": "rubric-estimate",
+      "profileConfigured": true
+    }
+  },
+  {
+    "canonicalId": "listening_multiple_answers",
+    "displayName": "Multiple Choice, Multiple Answers (Listening)",
+    "section": "Listening",
+    "officialSkillsAssessed": [
+      "Listening"
+    ],
+    "scoreContributions": [
+      "Listening"
+    ],
+    "promptType": "audio",
+    "responseType": "checkbox-selection",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 80,
+      "maximum": 120,
+      "unit": "seconds"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 7,
+      "maximum": 7,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "section-timed",
+      "minimum": null,
+      "maximum": null,
+      "unit": "seconds"
+    },
+    "playbackLimit": 1,
+    "recordingLimit": 0,
+    "officialScoringType": "partial-credit-negative",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay, transcript after submission, correct answers highlighted, explanation",
+    "mockMode": "single playback, section-level timer, no transcript before submission, no answer reveal before submission",
+    "referenceIds": [
+      "source-1",
+      "source-4",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [],
+    "taskPurpose": "Assess listening comprehension with multiple correct answers",
+    "studentInterface": "Audio playback, checkbox options, section-level timer",
+    "inputMedia": "Audio recording",
+    "answerFormat": "Checkbox selections",
+    "platformEstimatedScoringEvidence": "Selection with negative marking: +1 correct, -1 incorrect, minimum 0 per item",
+    "feedbackFormat": "Per-selection correct/incorrect indication, overall estimated score",
+    "contentMetadata": "Audio file, options, correct answer set, difficulty, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "selection-with-negative-marking",
+      "correctPoints": 1,
+      "incorrectPoints": -1,
+      "minimumItemScore": 0
+    }
+  },
+  {
+    "canonicalId": "listening_fill_blanks",
+    "displayName": "Fill in the Blanks (Listening)",
+    "section": "Listening",
+    "officialSkillsAssessed": [
+      "Listening"
+    ],
+    "scoreContributions": [
+      "Listening",
+      "Writing"
+    ],
+    "promptType": "audio",
+    "responseType": "text-input",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 30,
+      "maximum": 60,
+      "unit": "seconds"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 7,
+      "maximum": 7,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "section-timed",
+      "minimum": null,
+      "maximum": null,
+      "unit": "seconds"
+    },
+    "playbackLimit": 1,
+    "recordingLimit": 0,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": true,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay, transcript after submission, correct words shown",
+    "mockMode": "single playback, section-level timer, the incomplete transcript with blanks is displayed before and during playback because it is part of the official prompt, no answer reveal before submission",
+    "referenceIds": [
+      "source-1",
+      "source-4",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [],
+    "taskPurpose": "Assess listening comprehension and accurate spelling",
+    "studentInterface": "Audio playback, incomplete transcript with blanks displayed before and during playback, text input per blank, section-level timer",
+    "inputMedia": "Audio recording with partially displayed transcript",
+    "answerFormat": "Text input per blank",
+    "platformEstimatedScoringEvidence": "Per-correct-word: +1 correct, 0 incorrect, requires correct spelling, minimum 0 per item",
+    "feedbackFormat": "Correct words shown after submission, overall estimated score",
+    "contentMetadata": "Audio file, transcript with blanks, correct words, difficulty, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "per-correct-word",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "requiresCorrectSpelling": true,
+      "minimumItemScore": 0
+    }
+  },
+  {
+    "canonicalId": "highlight_correct_summary",
+    "displayName": "Highlight Correct Summary",
+    "section": "Listening",
+    "officialSkillsAssessed": [
+      "Listening",
+      "Reading"
+    ],
+    "scoreContributions": [
+      "Listening",
+      "Reading"
+    ],
+    "promptType": "audio",
+    "responseType": "radio-selection",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 30,
+      "maximum": 90,
+      "unit": "seconds"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "section-timed",
+      "minimum": null,
+      "maximum": null,
+      "unit": "seconds"
+    },
+    "playbackLimit": 1,
+    "recordingLimit": 0,
+    "officialScoringType": "correct-incorrect",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay, transcript after submission, correct summary highlighted with explanation",
+    "mockMode": "single playback, section-level timer, no transcript before submission, no answer reveal before submission",
+    "referenceIds": [
+      "source-1",
+      "source-4",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [],
+    "taskPurpose": "Assess listening comprehension and ability to identify correct summary",
+    "studentInterface": "Audio playback, radio-button summary options, section-level timer",
+    "inputMedia": "Audio recording",
+    "answerFormat": "Radio-button selection",
+    "platformEstimatedScoringEvidence": "Correct/Incorrect: +1 correct, 0 incorrect, minimum 0 per item",
+    "feedbackFormat": "Correct summary highlighted with explanation, overall estimated score",
+    "contentMetadata": "Audio file, summary options, correct summary, difficulty, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "correct-incorrect",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    }
+  },
+  {
+    "canonicalId": "listening_single_answer",
+    "displayName": "Multiple Choice, Single Answer (Listening)",
+    "section": "Listening",
+    "officialSkillsAssessed": [
+      "Listening"
+    ],
+    "scoreContributions": [
+      "Listening"
+    ],
+    "promptType": "audio",
+    "responseType": "radio-selection",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 30,
+      "maximum": 90,
+      "unit": "seconds"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 5,
+      "maximum": 5,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "section-timed",
+      "minimum": null,
+      "maximum": null,
+      "unit": "seconds"
+    },
+    "playbackLimit": 1,
+    "recordingLimit": 0,
+    "officialScoringType": "correct-incorrect",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay, transcript after submission, correct answer shown with explanation",
+    "mockMode": "single playback, section-level timer, no transcript before submission, no answer reveal before submission",
+    "referenceIds": [
+      "source-1",
+      "source-4",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [],
+    "taskPurpose": "Assess listening comprehension with single correct answer",
+    "studentInterface": "Audio playback, radio-button options, section-level timer",
+    "inputMedia": "Audio recording",
+    "answerFormat": "Radio-button selection",
+    "platformEstimatedScoringEvidence": "Correct/Incorrect: +1 correct, 0 incorrect, minimum 0 per item",
+    "feedbackFormat": "Correct answer shown with explanation, overall estimated score",
+    "contentMetadata": "Audio file, options, correct answer, difficulty, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "correct-incorrect",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    }
+  },
+  {
+    "canonicalId": "select_missing_word",
+    "displayName": "Select Missing Word",
+    "section": "Listening",
+    "officialSkillsAssessed": [
+      "Listening"
+    ],
+    "scoreContributions": [
+      "Listening"
+    ],
+    "promptType": "audio",
+    "responseType": "radio-selection",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 20,
+      "maximum": 70,
+      "unit": "seconds"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "section-timed",
+      "minimum": null,
+      "maximum": null,
+      "unit": "seconds"
+    },
+    "playbackLimit": 1,
+    "recordingLimit": 0,
+    "officialScoringType": "correct-incorrect",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay, transcript after submission, correct word shown with context explanation",
+    "mockMode": "single playback, section-level timer, no transcript before submission, no answer reveal before submission",
+    "referenceIds": [
+      "source-1",
+      "source-4",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [],
+    "taskPurpose": "Assess ability to predict missing word from context",
+    "studentInterface": "Audio playback, radio-button options for missing word, section-level timer",
+    "inputMedia": "Audio recording with transcript ending before missing word",
+    "answerFormat": "Radio-button selection",
+    "platformEstimatedScoringEvidence": "Correct/Incorrect: +1 correct, 0 incorrect, minimum 0 per item",
+    "feedbackFormat": "Correct word shown with context explanation, overall estimated score",
+    "contentMetadata": "Audio file, transcript with missing word marked, options, difficulty, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "correct-incorrect",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "minimumItemScore": 0
+    }
+  },
+  {
+    "canonicalId": "highlight_incorrect_words",
+    "displayName": "Highlight Incorrect Words",
+    "section": "Listening",
+    "officialSkillsAssessed": [
+      "Listening",
+      "Reading"
+    ],
+    "scoreContributions": [
+      "Listening",
+      "Reading"
+    ],
+    "promptType": "audio",
+    "responseType": "clickable-text-selection",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 15,
+      "maximum": 50,
+      "unit": "seconds"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 10,
+      "maximum": 10,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "section-timed",
+      "minimum": null,
+      "maximum": null,
+      "unit": "seconds"
+    },
+    "playbackLimit": 1,
+    "recordingLimit": 0,
+    "officialScoringType": "partial-credit-negative",
+    "promptTranscriptRequired": true,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay, transcript after submission, correct selections highlighted, score explanation",
+    "mockMode": "single playback, section-level timer, no transcript highlighting before submission, no answer reveal before submission",
+    "referenceIds": [
+      "source-1",
+      "source-4",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [],
+    "taskPurpose": "Assess listening accuracy and reading verification",
+    "studentInterface": "Audio playback, transcript with clickable words displayed, section-level timer",
+    "inputMedia": "Audio recording with displayed transcript",
+    "answerFormat": "Clickable-text selections",
+    "platformEstimatedScoringEvidence": "Selection with negative marking: +1 correct, -1 incorrect, minimum 0 per item",
+    "feedbackFormat": "Correct selections highlighted, score explanation, overall estimated score",
+    "contentMetadata": "Audio file, transcript with incorrect words marked, difficulty, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "selection-with-negative-marking",
+      "correctPoints": 1,
+      "incorrectPoints": -1,
+      "minimumItemScore": 0
+    }
+  },
+  {
+    "canonicalId": "write_from_dictation",
+    "displayName": "Write From Dictation",
+    "section": "Listening",
+    "officialSkillsAssessed": [
+      "Listening",
+      "Writing"
+    ],
+    "scoreContributions": [
+      "Listening",
+      "Writing"
+    ],
+    "promptType": "audio",
+    "responseType": "text-input",
+    "promptLength": {
+      "mode": "range",
+      "minimum": 3,
+      "maximum": 5,
+      "unit": "seconds"
+    },
+    "preparationTiming": {
+      "mode": "fixed",
+      "minimum": 0,
+      "maximum": 0,
+      "unit": "seconds"
+    },
+    "responseTiming": {
+      "mode": "item-dependent",
+      "minimum": null,
+      "maximum": null,
+      "unit": "seconds"
+    },
+    "playbackLimit": 1,
+    "recordingLimit": 0,
+    "officialScoringType": "partial-credit",
+    "promptTranscriptRequired": false,
+    "postAttemptTranscriptAvailable": true,
+    "practiceMode": "configurable replay, correct sentence after submission, word-level accuracy shown",
+    "mockMode": "single playback, 3 to 5 second prompt, no replay, no transcript before submission, word-level partial credit",
+    "referenceIds": [
+      "source-1",
+      "source-4",
+      "source-6"
+    ],
+    "lastVerifiedAt": "2026-07-10",
+    "currentOfficialTask": true,
+    "officialRubricTraits": [],
+    "taskPurpose": "Assess listening accuracy and written reproduction",
+    "studentInterface": "Audio playback, text input area",
+    "inputMedia": "Audio recording",
+    "answerFormat": "Text input (sentence)",
+    "platformEstimatedScoringEvidence": "Per-correct-word: +1 correct, 0 incorrect, requires correct spelling, minimum 0 per item",
+    "feedbackFormat": "Correct sentence shown, word-level accuracy, overall estimated score",
+    "contentMetadata": "Audio file, correct sentence, difficulty, canonical ID",
+    "responseValidation": {
+      "allowedSubmissionStates": [
+        "complete",
+        "incomplete",
+        "empty"
+      ],
+      "rejectCorruptPayload": true,
+      "learningModeWarnBeforeSubmit": true,
+      "timedModeForceAnswer": false,
+      "noResponseScore": 0
+    },
+    "failureRecoveryBehavior": {
+      "autosaveRequired": true,
+      "preserveLocalResponseUntilConfirmed": true,
+      "resumableUploadRequired": false,
+      "audioLoadFailureAction": "retry-or-block-with-actionable-error",
+      "duplicateSubmissionPrevention": true
+    },
+    "officialHumanReviewTraits": [],
+    "platformEstimatedScoringRule": {
+      "type": "per-correct-word",
+      "correctPoints": 1,
+      "incorrectPoints": 0,
+      "requiresCorrectSpelling": true,
+      "minimumItemScore": 0
+    }
+  }
+]

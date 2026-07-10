@@ -1,312 +1,738 @@
 # PTE Task Blueprints
 
+Auto-generated from pte-task-manifest.json. Do not edit manually.
+
 ## Speaking and Writing
 
 ### Read Aloud
 
+- **Canonical ID**: read_aloud
+- **Current official status**: Current official task
+- **Section**: Speaking and Writing
 - **Task purpose**: Assess pronunciation and oral fluency
-- **Student interface**: Text passage displayed, recording button, countdown timer
+- **Official skills assessed**: Speaking
+- **Score contributions**: Reading, Speaking
+- **Prompt type**: Text
+- **Prompt length**: Text up to 60 words
+- **Student interface**: Text passage displayed, preparation countdown and recording status box. The microphone opens automatically after the tone.
 - **Input media**: Text passage on screen
-- **Answer format**: Audio recording (MP4/WAV)
-- **Preparation behaviour**: Fixed preparation time (30-40 seconds), timer counts down, recording indicator before response starts
-- **Response behaviour**: Recording active for set duration, automatic stop after time expires
-- **Practice-mode behaviour**: Unlimited preparation, replay recording, review transcript
-- **Mock-mode behaviour**: Exact official timing, no replay, no pause
-- **Scoring components**: Content, pronunciation, oral fluency
-- **Feedback format**: Overall score, component scores, transcript comparison
-- **Content metadata**: Passage text, source, difficulty, word count, estimated reading time
-- **Validation requirements**: Minimum 5-second recording, audio file integrity check
-- **Failure and recovery behaviour**: Recording failure shows error and retry option; partial recording saved; server-side check for empty/corrupt audio
+- **Answer format**: Audio recording
+- **Preparation behaviour**: Item-dependent (varies by item)
+- **Response behaviour**: Item-dependent (varies)
+- **Playback limit**: No audio
+- **Recording limit**: 1
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: Content, Pronunciation, Oral fluency
+- **Official human-reviewed traits**: None — AI-scored only
+- **Platform estimated-scoring rule**: Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson's private scoring engine)
+- **Platform estimated-scoring evidence**: Content (word alignment and sequence comparison against expected passage), Pronunciation (phonetic accuracy, stress patterns, intelligibility), Oral fluency (speech rate, pause frequency, rhythm)
+- **Feedback format**: Component scores, overall estimated score, transcript comparison, fluency metrics
+- **Content metadata**: Passage text, source, difficulty, word count, estimated reading time, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":true,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay of own recording, transcript after attempt, hints, model answer, extended preparation option
+- **Mock mode**: microphone opens automatically after countdown/tone, item-dependent response duration, one recording, no hints, no transcript before submission, no answer correction after submission
+- **Official reference IDs**: source-1, source-2, source-6
+- **Last verified date**: 2026-07-10
 
 ### Repeat Sentence
 
+- **Canonical ID**: repeat_sentence
+- **Current official status**: Current official task
+- **Section**: Speaking and Writing
 - **Task purpose**: Assess listening and speaking accuracy
-- **Student interface**: Audio playback button, recording button after playback
+- **Official skills assessed**: Listening, Speaking
+- **Score contributions**: Listening, Speaking
+- **Prompt type**: Audio
+- **Prompt length**: Audio 3 to 9 seconds
+- **Student interface**: Audio playback occurs automatically, recording activates after playback ends, countdown timer
 - **Input media**: Audio sentence playback
 - **Answer format**: Audio recording
-- **Preparation behaviour**: Audio plays once automatically; no text displayed
-- **Response behaviour**: Recording starts automatically after playback ends; fixed response time
-- **Practice-mode behaviour**: Replay audio limited times; view transcript after attempt
-- **Mock-mode behaviour**: Single playback only; no transcript
-- **Scoring components**: Content accuracy, pronunciation, fluency
-- **Feedback format**: Word-level accuracy, overall score, fluency metrics
-- **Content metadata**: Sentence text, audio duration, difficulty, source
-- **Validation requirements**: Audio file integrity, minimum duration
-- **Failure and recovery behaviour**: Audio load failure aborts task; recording failure retry
+- **Preparation behaviour**: Immediate
+- **Response behaviour**: 15 seconds
+- **Playback limit**: 1
+- **Recording limit**: 1
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: Content, Pronunciation, Oral fluency
+- **Official human-reviewed traits**: None — AI-scored only
+- **Platform estimated-scoring rule**: Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson's private scoring engine)
+- **Platform estimated-scoring evidence**: Word-level alignment against expected sentence, Pronunciation (phonetic accuracy, stress, intelligibility), Oral fluency (speech rate, pause frequency)
+- **Feedback format**: Word-level accuracy, overall estimated score, fluency metrics
+- **Content metadata**: Sentence text, audio duration, difficulty, source, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":true,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay, transcript after attempt, slow playback, repeat attempt
+- **Mock mode**: single playback, 15-second answer period, one recording, no transcript before submission
+- **Official reference IDs**: source-1, source-2, source-6
+- **Last verified date**: 2026-07-10
 
 ### Describe Image
 
-- **Task purpose**: Assess ability to describe visual information
-- **Student interface**: Image display, recording button, preparation and response timers
-- **Input media**: Static image (graph, chart, map, process, picture)
+- **Canonical ID**: describe_image
+- **Current official status**: Current official task
+- **Section**: Speaking and Writing
+- **Task purpose**: Assess ability to describe an image orally
+- **Official skills assessed**: Speaking
+- **Score contributions**: Speaking
+- **Prompt type**: Image
+- **Prompt length**: Not applicable (1 image stored as separate interface requirement)
+- **Student interface**: Image displayed with preparation countdown and recording status box. The microphone opens automatically after the tone.
+- **Input media**: Static image on screen
 - **Answer format**: Audio recording
-- **Preparation behaviour**: Fixed preparation time (25 seconds) with visible image
-- **Response behaviour**: Fixed response time (40 seconds)
-- **Practice-mode behaviour**: Extended preparation, replay recording, sample answer
-- **Mock-mode behaviour**: Exact official timing
-- **Scoring components**: Content, pronunciation, fluency
-- **Feedback format**: Content coverage score, key point detection, fluency metrics
-- **Content metadata**: Image file, image type, key points, difficulty, source
-- **Validation requirements**: Image renders correctly, recording quality check
-- **Failure and recovery behaviour**: Image load failure shows error; recording failure retry
+- **Preparation behaviour**: 25 seconds preparation
+- **Response behaviour**: 40 seconds
+- **Playback limit**: No audio
+- **Recording limit**: 1
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: Content, Pronunciation, Oral fluency
+- **Official human-reviewed traits**: Content
+- **Platform estimated-scoring rule**: Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson's private scoring engine)
+- **Platform estimated-scoring evidence**: Relevant content concepts, Organisation of spoken response, Pronunciation (phonetic accuracy, stress patterns, intelligibility), Oral fluency (speech rate, pause frequency)
+- **Feedback format**: Component scores, overall estimated score, model response comparison, fluency metrics
+- **Content metadata**: Image file, description, difficulty, source, canonical ID
+- **Image requirement**: One image displayed as part of the student interface (not part of official prompt-length measurement)
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":true,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: extended preparation, configurable replay, transcript, model response, hints on key features
+- **Mock mode**: 25-second preparation, 40-second response, one recording, no replay, no hints
+- **Official reference IDs**: source-1, source-2, source-6
+- **Last verified date**: 2026-07-10
 
 ### Retell Lecture
 
-- **Task purpose**: Assess listening comprehension and summarisation
-- **Student interface**: Audio playback with optional image, recording button after playback
-- **Input media**: Audio lecture with optional accompanying image
+- **Canonical ID**: retell_lecture
+- **Current official status**: Current official task
+- **Section**: Speaking and Writing
+- **Task purpose**: Assess listening comprehension and oral summarisation
+- **Official skills assessed**: Listening, Speaking
+- **Score contributions**: Listening, Speaking
+- **Prompt type**: Audio Or Video
+- **Prompt length**: Audio up to 90 seconds
+- **Student interface**: Audio or video playback with an optional related image, preparation countdown and recording status box. The microphone opens automatically after the tone.
+- **Input media**: Audio or audiovisual recording, optional related image may be displayed
 - **Answer format**: Audio recording
-- **Preparation behaviour**: Audio plays automatically; image displayed if available
-- **Response behaviour**: Fixed response time (40 seconds) after playback ends
-- **Practice-mode behaviour**: Replay lecture limited times; view transcript after attempt
-- **Mock-mode behaviour**: Single playback only
-- **Scoring components**: Content, pronunciation, fluency
-- **Feedback format**: Content coverage score, key points detected, fluency metrics
-- **Content metadata**: Lecture audio, transcript, key points, difficulty, source
-- **Validation requirements**: Audio file integrity, lecture duration
-- **Failure and recovery behaviour**: Audio load failure aborts task; recording failure retry
+- **Preparation behaviour**: 10 seconds preparation
+- **Response behaviour**: 40 seconds
+- **Playback limit**: 1
+- **Recording limit**: 1
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: Content, Pronunciation, Oral fluency
+- **Official human-reviewed traits**: Content
+- **Platform estimated-scoring rule**: Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson's private scoring engine)
+- **Platform estimated-scoring evidence**: Key content points from lecture, Coverage of main ideas, Organisation of spoken response, Pronunciation (phonetic accuracy, stress patterns, intelligibility), Oral fluency (speech rate, pause frequency)
+- **Feedback format**: Component scores, overall estimated score, key points covered, fluency metrics
+- **Content metadata**: Audio or audiovisual file, transcript, difficulty, source, duration, canonical ID
+- **Audiovisual support**: Supports audio or audiovisual input; optional related image may be displayed
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":true,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay, transcript after attempt, hints on key points, model response
+- **Mock mode**: single playback only, 10-second preparation, 40-second response, one recording, no transcript before submission
+- **Official reference IDs**: source-1, source-2, source-6
+- **Last verified date**: 2026-07-10
 
 ### Answer Short Question
 
-- **Task purpose**: Assess ability to understand and respond concisely
-- **Student interface**: Audio or text question, recording or text input
-- **Input media**: Audio question (with optional text)
-- **Answer format**: Short audio recording or single word/phrase text
-- **Preparation behaviour**: Question plays once
-- **Response behaviour**: Fixed response time (10 seconds)
-- **Practice-mode behaviour**: Replay question, view correct answer after attempt
-- **Mock-mode behaviour**: Single playback only
-- **Scoring components**: Correct/incorrect answer
-- **Feedback format**: Correct or incorrect with correct answer shown
-- **Content metadata**: Question, answer, difficulty, topic, source
-- **Validation requirements**: Answer matching against accepted answers list
-- **Failure and recovery behaviour**: Audio load failure shows text fallback
+- **Canonical ID**: answer_short_question
+- **Current official status**: Current official task
+- **Section**: Speaking and Writing
+- **Task purpose**: Assess listening comprehension and concise spoken response
+- **Official skills assessed**: Listening
+- **Score contributions**: Listening
+- **Prompt type**: Audio
+- **Prompt length**: Audio 3 to 9 seconds
+- **Student interface**: Audio question plays automatically, optional accompanying image may be displayed, recording activates after playback
+- **Input media**: Audio question, optional accompanying image may be displayed
+- **Answer format**: Audio recording
+- **Preparation behaviour**: Immediate
+- **Response behaviour**: 10 seconds
+- **Playback limit**: 1
+- **Recording limit**: 1
+- **Official scoring type**: Correct/Incorrect
+- **Official rubric traits**: Vocabulary
+- **Official human-reviewed traits**: None — objective scoring
+- **Platform estimated-scoring rule**: Correct/Incorrect: +1 correct, 0 incorrect, minimum 0 (platform produces estimated training score)
+- **Platform estimated-scoring evidence**: Vocabulary-based matching against acceptable answers
+- **Feedback format**: Correct answer shown, vocabulary match score, overall estimated score
+- **Content metadata**: Question text, audio file, acceptable answers, difficulty, canonical ID
+- **Optional image**: Audio question is required; an accompanying image is optional
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":true,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay, correct answer after submission, hints
+- **Mock mode**: single playback, 10-second answer period, one microphone recording, no text-response fallback, no answer reveal before submission
+- **Official reference IDs**: source-1, source-2, source-6
+- **Last verified date**: 2026-07-10
 
 ### Summarize Group Discussion
 
-- **Task purpose**: Assess ability to summarise a conversation (not yet official, included for future readiness)
-- **Student interface**: Audio recording of group discussion, recording button
-- **Input media**: Multi-speaker audio
+- **Canonical ID**: summarize_group_discussion
+- **Current official status**: Current official task
+- **Section**: Speaking and Writing
+- **Task purpose**: Assess multi-speaker listening comprehension and oral summary
+- **Official skills assessed**: Listening, Speaking
+- **Score contributions**: Listening, Speaking
+- **Prompt type**: Audio
+- **Prompt length**: Audio up to 180 seconds
+- **Student interface**: Audio playback of group discussion with preparation countdown and recording status box. The microphone opens automatically after the tone.
+- **Input media**: Audio recording of group discussion
 - **Answer format**: Audio recording
-- **Preparation behaviour**: Audio plays once
-- **Response behaviour**: Fixed response time
-- **Scoring components**: Content, pronunciation, fluency
-- **Feedback format**: Content coverage, key point accuracy
-- **Content metadata**: Discussion audio, transcript, key points
-- **Validation requirements**: Multi-speaker audio clarity
-- **Failure and recovery behaviour**: Audio load failure; recording retry
+- **Preparation behaviour**: 10 seconds preparation
+- **Response behaviour**: 2 minutes
+- **Playback limit**: 1
+- **Recording limit**: 1
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: Content, Pronunciation, Oral fluency
+- **Official human-reviewed traits**: Content
+- **Platform estimated-scoring rule**: Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson's private scoring engine)
+- **Platform estimated-scoring evidence**: Coverage of different speaker viewpoints, Key content points, Organisation of spoken summary, Pronunciation, Oral fluency
+- **Feedback format**: Component scores, overall estimated score, speaker coverage, fluency metrics
+- **Content metadata**: Audio file, speaker count, transcript, difficulty, duration, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":true,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay, transcript after attempt, hints on summarisation strategy, model response
+- **Mock mode**: single playback, 10-second preparation, 2-minute response, one recording, no transcript before submission
+- **Official reference IDs**: source-1, source-2, source-5, source-6
+- **Last verified date**: 2026-07-10
 
 ### Respond to a Situation
 
-- **Task purpose**: Assess ability to respond appropriately in a scenario (future task)
-- **Student interface**: Written scenario, recording button
-- **Input media**: Text scenario
+- **Canonical ID**: respond_to_situation
+- **Current official status**: Current official task
+- **Section**: Speaking and Writing
+- **Task purpose**: Assess ability to respond appropriately to a written and spoken scenario
+- **Official skills assessed**: Speaking
+- **Score contributions**: Speaking
+- **Prompt type**: Text And Audio
+- **Prompt length**: Text up to 60 words
+- **Student interface**: Text and audio prompt with preparation countdown and recording status box. The microphone opens automatically after the tone.
+- **Input media**: Text prompt and audio recording
 - **Answer format**: Audio recording
-- **Scoring components**: Appropriateness, pronunciation, fluency
-- **Feedback format**: Content score, language use
-- **Content metadata**: Scenario text, appropriate response, difficulty
-- **Failure and recovery behaviour**: Recording failure retry
+- **Preparation behaviour**: 10 seconds preparation
+- **Response behaviour**: 40 seconds
+- **Playback limit**: 1
+- **Recording limit**: 1
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: Content, Pronunciation, Oral fluency
+- **Official human-reviewed traits**: Content
+- **Platform estimated-scoring rule**: Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson's private scoring engine)
+- **Platform estimated-scoring evidence**: Situational goal completion, Appropriateness of response, Organisation, Pronunciation, Oral fluency
+- **Feedback format**: Component scores, overall estimated score, goal completion, fluency metrics
+- **Content metadata**: Scenario text, audio file, difficulty, source, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":true,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay, transcript after attempt, model response, hints on situational goal
+- **Mock mode**: text and audio both required, single playback, 10-second preparation, 40-second spoken response, one recording, no hints
+- **Official reference IDs**: source-1, source-2, source-5, source-6
+- **Last verified date**: 2026-07-10
 
 ### Summarize Written Text
 
-- **Task purpose**: Assess reading comprehension and summarisation
-- **Student interface**: Reading passage, text input area, word count
-- **Input media**: Text passage
-- **Answer format**: Written text (single sentence, 5-75 words)
-- **Preparation behaviour**: Reading time before response
-- **Response behaviour**: Fixed response time (10 minutes)
-- **Practice-mode behaviour**: Extended time, hints, multiple attempts
-- **Mock-mode behaviour**: Exact official timing
-- **Scoring components**: Content, form, grammar, vocabulary
-- **Feedback format**: Score per component, word count, sentence structure feedback
-- **Content metadata**: Passage text, sample summary, difficulty, source
-- **Validation requirements**: Word count within range, single sentence validation
-- **Failure and recovery behaviour**: Autosave every 5 seconds; restore on reload
+- **Canonical ID**: summarize_written_text
+- **Current official status**: Current official task
+- **Section**: Speaking and Writing
+- **Task purpose**: Assess reading comprehension and written summarisation
+- **Official skills assessed**: Reading, Writing
+- **Score contributions**: Reading, Writing
+- **Prompt type**: Text
+- **Prompt length**: Text up to 300 words
+- **Student interface**: Text passage displayed, text input area, response timer
+- **Input media**: Text passage on screen
+- **Answer format**: Text response (single sentence)
+- **Preparation behaviour**: Immediate
+- **Response behaviour**: 10 minutes
+- **Playback limit**: No audio
+- **Recording limit**: No audio
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: Content, Form, Grammar, Vocabulary
+- **Official human-reviewed traits**: Content
+- **Platform estimated-scoring rule**: Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson's private scoring engine)
+- **Platform estimated-scoring evidence**: Content relevance and task completion, Form adherence, Grammatical accuracy and range, Vocabulary range and appropriateness
+- **Feedback format**: Component scores, overall estimated score, model answer comparison
+- **Content metadata**: Passage text, source, difficulty, word count, reading time, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: extended time, outline tool, model response, multiple attempts
+- **Mock mode**: 10-minute timer, single sentence, 5-75 word limit, autosave, no hints, no spell check
+- **Official reference IDs**: source-1, source-2, source-6
+- **Last verified date**: 2026-07-10
 
 ### Write Essay
 
-- **Task purpose**: Assess writing ability
-- **Student interface**: Essay prompt, text editor with word count, formatting
-- **Input media**: Text prompt
-- **Answer format**: Written essay (200-300 words)
-- **Preparation behaviour**: Reading prompt
-- **Response behaviour**: Fixed response time (20 minutes)
-- **Practice-mode behaviour**: Extended time, outline tool, spell check
-- **Mock-mode behaviour**: Exact official timing
-- **Scoring components**: Content, form, structure, coherence, grammar, vocabulary, linguistic range, spelling
-- **Feedback format**: Component scores, overall score, specific suggestions
-- **Content metadata**: Essay prompt, sample essay, difficulty, topic, source
-- **Validation requirements**: Word count within range, autosave check
-- **Failure and recovery behaviour**: Autosave every 5 seconds; restore on reload; word count preserved
+- **Canonical ID**: write_essay
+- **Current official status**: Current official task
+- **Section**: Speaking and Writing
+- **Task purpose**: Assess written composition skills
+- **Official skills assessed**: Writing
+- **Score contributions**: Writing
+- **Prompt type**: Text
+- **Prompt length**: Text 2 to 3 sentences
+- **Student interface**: Essay prompt displayed, text input area with word count, response timer
+- **Input media**: Text prompt on screen
+- **Answer format**: Text response (200-300 words)
+- **Preparation behaviour**: Immediate
+- **Response behaviour**: 20 minutes
+- **Playback limit**: No audio
+- **Recording limit**: No audio
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: Content, Form, Development, Structure and Coherence, Grammar, General Linguistic Range, Vocabulary Range, Spelling
+- **Official human-reviewed traits**: Content, Development, Structure and Coherence, General Linguistic Range
+- **Platform estimated-scoring rule**: Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson's private scoring engine)
+- **Platform estimated-scoring evidence**: Content relevance, Form adherence, Development, Structure and Coherence, Grammatical accuracy and range, General Linguistic Range, Vocabulary Range, Spelling
+- **Feedback format**: Component scores, overall estimated score, model answer, specific improvement suggestions
+- **Content metadata**: Prompt text, source, difficulty, word count guidelines, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: extended time option, outline tool, spell check, model response, multiple attempts
+- **Mock mode**: 20-minute response, 200-300 words, autosave, no spell check, no outlines
+- **Official reference IDs**: source-1, source-2, source-6
+- **Last verified date**: 2026-07-10
 
 ## Reading
 
 ### Reading and Writing: Fill in the Blanks
 
-- **Task purpose**: Assess reading comprehension and vocabulary
-- **Student interface**: Reading passage with dropdown menus in blanks
-- **Input media**: Text passage
-- **Answer format**: Selected words per blank from dropdown list
-- **Preparation behaviour**: Read passage
-- **Response behaviour**: No per-question timer; section timer applies
-- **Practice-mode behaviour**: Show correct answers after submission
-- **Mock-mode behaviour**: Section-level timing only
-- **Scoring components**: Correct/incorrect per blank
-- **Feedback format**: Correct blanks highlighted, incorrect shown with correct answer
-- **Content metadata**: Passage, blank positions, answer options, correct answers, difficulty, source
-- **Validation requirements**: All blanks must have a selection before submission
-- **Failure and recovery behaviour**: Autosave selections; restore on reload
+- **Canonical ID**: reading_writing_fill_blanks
+- **Current official status**: Current official task
+- **Section**: Reading
+- **Task purpose**: Assess reading comprehension and vocabulary in context
+- **Official skills assessed**: Reading
+- **Score contributions**: Reading
+- **Prompt type**: Text
+- **Prompt length**: Text up to 300 words
+- **Student interface**: Text passage with dropdown menus at each blank, section-level timer
+- **Input media**: Text passage with dropdown menus
+- **Answer format**: Dropdown selections
+- **Preparation behaviour**: Immediate
+- **Response behaviour**: Section-level timer
+- **Playback limit**: No audio
+- **Recording limit**: No audio
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: None — objective scoring
+- **Official human-reviewed traits**: None — objective scoring
+- **Platform estimated-scoring rule**: Per-correct-blank: +1 correct, 0 incorrect, minimum 0 (platform produces estimated training score)
+- **Platform estimated-scoring evidence**: Per-blank exact match: +1 correct, 0 incorrect, minimum 0 per item
+- **Feedback format**: Per-blank correct/incorrect indication, overall estimated score
+- **Content metadata**: Passage text, blank positions, dropdown options, difficulty, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: show correct answers after submission, hints for each blank, explanation of vocabulary
+- **Mock mode**: section-level timer, no hints, no answer reveal until section ends, no partial feedback
+- **Official reference IDs**: source-1, source-3, source-6
+- **Last verified date**: 2026-07-10
 
-### Multiple Choice, Multiple Answers
+### Multiple Choice, Multiple Answers (Reading)
 
-- **Task purpose**: Assess reading comprehension with multiple correct options
-- **Student interface**: Reading passage, checkbox list of options
-- **Input media**: Text passage
-- **Answer format**: Selected checkboxes
-- **Scoring components**: Partial credit per correct selection; penalty for incorrect selections
-- **Feedback format**: Score with partial credit breakdown
-- **Content metadata**: Passage, options, correct answers, scoring rule, difficulty, source
-- **Validation requirements**: At least one selection accepted
-- **Failure and recovery behaviour**: Autosave selections
+- **Canonical ID**: reading_multiple_answers
+- **Current official status**: Current official task
+- **Section**: Reading
+- **Task purpose**: Assess reading comprehension with multiple correct answers
+- **Official skills assessed**: Reading
+- **Score contributions**: Reading
+- **Prompt type**: Text
+- **Prompt length**: Text up to 350 words
+- **Student interface**: Text passage with checkbox options, section-level timer
+- **Input media**: Text passage with checkbox options
+- **Answer format**: Checkbox selections
+- **Preparation behaviour**: Immediate
+- **Response behaviour**: Section-level timer
+- **Playback limit**: No audio
+- **Recording limit**: No audio
+- **Official scoring type**: Partial credit (negative marking)
+- **Official rubric traits**: None — objective scoring
+- **Official human-reviewed traits**: None — objective scoring
+- **Platform estimated-scoring rule**: Selection with negative marking: +1 correct, -1 incorrect, minimum 0 (platform produces estimated training score)
+- **Platform estimated-scoring evidence**: Selection with negative marking: +1 correct, -1 incorrect, minimum 0 per item
+- **Feedback format**: Per-selection correct/incorrect indication, overall estimated score
+- **Content metadata**: Passage text, options, correct answer set, difficulty, source, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: show correct answers after submission, explanation, partial credit explanation
+- **Mock mode**: section-level timer, no hints, no answer reveal until section ends
+- **Official reference IDs**: source-1, source-3, source-6
+- **Last verified date**: 2026-07-10
 
 ### Reorder Paragraph
 
-- **Task purpose**: Assess ability to understand logical text flow
-- **Student interface**: Scrambled text boxes, drag-and-drop ordering area
-- **Input media**: Text paragraphs
-- **Answer format**: Ordered sequence of paragraph identifiers
-- **Scoring components**: Correct adjacent pairs scoring
-- **Feedback format**: Score per correct adjacent pair, correct order shown
-- **Content metadata**: Paragraphs, correct order, difficulty, source
-- **Validation requirements**: All paragraphs must be placed in order
-- **Failure and recovery behaviour**: Autosave ordering state; drag state preserved
+- **Canonical ID**: reorder_paragraph
+- **Current official status**: Current official task
+- **Section**: Reading
+- **Task purpose**: Assess ability to understand logical text organisation
+- **Official skills assessed**: Reading
+- **Score contributions**: Reading
+- **Prompt type**: Text
+- **Prompt length**: Text up to 150 words
+- **Student interface**: Draggable text boxes, section-level timer
+- **Input media**: Draggable text boxes
+- **Answer format**: Drag-and-drop ordering
+- **Preparation behaviour**: Immediate
+- **Response behaviour**: Section-level timer
+- **Playback limit**: No audio
+- **Recording limit**: No audio
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: None — objective scoring
+- **Official human-reviewed traits**: None — objective scoring
+- **Platform estimated-scoring rule**: Adjacent pair order: +1 correct pair, 0 incorrect, minimum 0 (platform produces estimated training score)
+- **Platform estimated-scoring evidence**: Adjacent-pair ordering: +1 per correct adjacent pair, 0 per incorrect pair, minimum 0 per item
+- **Feedback format**: Correct order shown after submission, logical flow explanation
+- **Content metadata**: Paragraph texts, correct order, difficulty, source, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: correct order shown after submission, logical flow explanation, hints on connectors
+- **Mock mode**: section-level timer, no hints, no answer reveal until section ends
+- **Official reference IDs**: source-1, source-3, source-6
+- **Last verified date**: 2026-07-10
 
 ### Reading: Fill in the Blanks
 
-- **Task purpose**: Assess reading and vocabulary
-- **Student interface**: Reading passage with blank spaces, drag words from list
-- **Input media**: Text passage
-- **Answer format**: Words assigned to blanks
-- **Scoring components**: Correct/incorrect per blank
-- **Feedback format**: Correct words highlighted, incorrect shown with correct answer
-- **Content metadata**: Passage, blank positions, word bank, correct answers, difficulty, source
-- **Validation requirements**: All blanks filled before submission
-- **Failure and recovery behaviour**: Autosave word placements
+- **Canonical ID**: reading_fill_blanks
+- **Current official status**: Current official task
+- **Section**: Reading
+- **Task purpose**: Assess reading comprehension and vocabulary
+- **Official skills assessed**: Reading
+- **Score contributions**: Reading
+- **Prompt type**: Text
+- **Prompt length**: Text up to 80 words
+- **Student interface**: Text passage with blank spaces and draggable word bank, section-level timer
+- **Input media**: Text passage with blank spaces and word bank
+- **Answer format**: Drag-words-to-blanks placements
+- **Preparation behaviour**: Immediate
+- **Response behaviour**: Section-level timer
+- **Playback limit**: No audio
+- **Recording limit**: No audio
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: None — objective scoring
+- **Official human-reviewed traits**: None — objective scoring
+- **Platform estimated-scoring rule**: Per-correct-word: +1 correct, 0 incorrect, minimum 0 (platform produces estimated training score)
+- **Platform estimated-scoring evidence**: Per-correct-word placement: +1 correct, 0 incorrect, minimum 0 per item
+- **Feedback format**: Per-blank correct words shown after submission, overall estimated score
+- **Content metadata**: Passage text, blank positions, word bank, difficulty, source, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: show correct words after submission, hints available per blank
+- **Mock mode**: section-level timer, no hints, no answer reveal until section ends
+- **Official reference IDs**: source-1, source-3, source-6
+- **Last verified date**: 2026-07-10
 
-### Multiple Choice, Single Answer
+### Multiple Choice, Single Answer (Reading)
 
-- **Task purpose**: Assess reading comprehension
-- **Student interface**: Reading passage, radio button list of options
-- **Input media**: Text passage
-- **Answer format**: Single selected option
-- **Scoring components**: Correct/incorrect
-- **Feedback format**: Correct or incorrect with correct answer shown
-- **Content metadata**: Passage, options, correct answer, difficulty, source
-- **Validation requirements**: Exactly one selection
-- **Failure and recovery behaviour**: Autosave selection
+- **Canonical ID**: reading_single_answer
+- **Current official status**: Current official task
+- **Section**: Reading
+- **Task purpose**: Assess reading comprehension with single correct answer
+- **Official skills assessed**: Reading
+- **Score contributions**: Reading
+- **Prompt type**: Text
+- **Prompt length**: Text up to 300 words
+- **Student interface**: Text passage with radio-button options, section-level timer
+- **Input media**: Text passage with radio-button options
+- **Answer format**: Radio-button selection
+- **Preparation behaviour**: Immediate
+- **Response behaviour**: Section-level timer
+- **Playback limit**: No audio
+- **Recording limit**: No audio
+- **Official scoring type**: Correct/Incorrect
+- **Official rubric traits**: None — objective scoring
+- **Official human-reviewed traits**: None — objective scoring
+- **Platform estimated-scoring rule**: Correct/Incorrect: +1 correct, 0 incorrect, minimum 0 (platform produces estimated training score)
+- **Platform estimated-scoring evidence**: Correct/Incorrect: +1 correct, 0 incorrect, minimum 0 per item
+- **Feedback format**: Correct answer shown with explanation, overall estimated score
+- **Content metadata**: Passage text, options, correct answer, difficulty, source, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: correct answer and explanation after submission
+- **Mock mode**: section-level timer, no hints, no answer reveal until section ends
+- **Official reference IDs**: source-1, source-3, source-6
+- **Last verified date**: 2026-07-10
 
 ## Listening
 
 ### Summarize Spoken Text
 
-- **Task purpose**: Assess listening comprehension and writing
-- **Student interface**: Audio playback, text input area, word count
-- **Input media**: Audio lecture
-- **Answer format**: Written text (50-70 words)
-- **Preparation behaviour**: Audio plays automatically
-- **Response behaviour**: Fixed response time (10 minutes from audio end)
-- **Practice-mode behaviour**: Replay audio, extended time
-- **Mock-mode behaviour**: Single playback, exact timing
-- **Scoring components**: Content, form, grammar, vocabulary
-- **Feedback format**: Component scores, word count, content coverage
-- **Content metadata**: Audio file, transcript, sample summary, difficulty, source
-- **Validation requirements**: Word count 50-70
-- **Failure and recovery behaviour**: Autosave text; restore on reload
+- **Canonical ID**: summarize_spoken_text
+- **Current official status**: Current official task
+- **Section**: Listening
+- **Task purpose**: Assess listening comprehension and written summarisation
+- **Official skills assessed**: Listening, Writing
+- **Score contributions**: Listening, Writing
+- **Prompt type**: Audio
+- **Prompt length**: Audio 60 to 90 seconds
+- **Student interface**: Audio playback, text input area, total task timer includes listening and writing
+- **Input media**: Audio recording
+- **Answer format**: Text response (50-70 words)
+- **Preparation behaviour**: Immediate
+- **Response behaviour**: Ten minutes total includes listening and writing
+- **Playback limit**: 1
+- **Recording limit**: No audio
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: Content, Form, Grammar, Vocabulary, Spelling
+- **Official human-reviewed traits**: Content
+- **Platform estimated-scoring rule**: Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson's private scoring engine)
+- **Platform estimated-scoring evidence**: Content relevance and key points, Form adherence, Grammatical accuracy and range, Vocabulary range and appropriateness, Spelling accuracy
+- **Feedback format**: Component scores, overall estimated score, model answer comparison
+- **Content metadata**: Audio file, transcript, difficulty, duration, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay, transcript after attempt, extended time option
+- **Mock mode**: single playback, 10 minutes total to listen and write, 50-70 word response, no transcript before submission
+- **Official reference IDs**: source-1, source-4, source-6
+- **Last verified date**: 2026-07-10
 
 ### Multiple Choice, Multiple Answers (Listening)
 
-- **Task purpose**: Assess listening comprehension
-- **Student interface**: Audio playback, checkbox list of options
+- **Canonical ID**: listening_multiple_answers
+- **Current official status**: Current official task
+- **Section**: Listening
+- **Task purpose**: Assess listening comprehension with multiple correct answers
+- **Official skills assessed**: Listening
+- **Score contributions**: Listening
+- **Prompt type**: Audio
+- **Prompt length**: Audio 80 to 120 seconds
+- **Student interface**: Audio playback, checkbox options, section-level timer
 - **Input media**: Audio recording
-- **Answer format**: Selected checkboxes
-- **Scoring components**: Partial credit per correct selection; penalty for incorrect
-- **Feedback format**: Score with partial credit breakdown
-- **Content metadata**: Audio, options, correct answers, transcript, difficulty, source
-- **Validation requirements**: Audio plays fully; at least one selection accepted
-- **Failure and recovery behaviour**: Autosave selections
+- **Answer format**: Checkbox selections
+- **Preparation behaviour**: 7 seconds preparation
+- **Response behaviour**: Section-level timer
+- **Playback limit**: 1
+- **Recording limit**: No audio
+- **Official scoring type**: Partial credit (negative marking)
+- **Official rubric traits**: None — objective scoring
+- **Official human-reviewed traits**: None — objective scoring
+- **Platform estimated-scoring rule**: Selection with negative marking: +1 correct, -1 incorrect, minimum 0 (platform produces estimated training score)
+- **Platform estimated-scoring evidence**: Selection with negative marking: +1 correct, -1 incorrect, minimum 0 per item
+- **Feedback format**: Per-selection correct/incorrect indication, overall estimated score
+- **Content metadata**: Audio file, options, correct answer set, difficulty, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay, transcript after submission, correct answers highlighted, explanation
+- **Mock mode**: single playback, section-level timer, no transcript before submission, no answer reveal before submission
+- **Official reference IDs**: source-1, source-4, source-6
+- **Last verified date**: 2026-07-10
 
 ### Fill in the Blanks (Listening)
 
-- **Task purpose**: Assess listening and spelling
-- **Student interface**: Audio playback, transcript with blank text inputs
-- **Input media**: Audio recording
-- **Answer format**: Typed words in blank text inputs
-- **Scoring components**: Correct/incorrect spelling per blank
-- **Feedback format**: Correct and incorrect blanks highlighted
-- **Content metadata**: Audio, transcript, blank positions, correct words, difficulty, source
-- **Validation requirements**: Exact spelling match for correct answer
-- **Failure and recovery behaviour**: Autosave typed words
+- **Canonical ID**: listening_fill_blanks
+- **Current official status**: Current official task
+- **Section**: Listening
+- **Task purpose**: Assess listening comprehension and accurate spelling
+- **Official skills assessed**: Listening
+- **Score contributions**: Listening, Writing
+- **Prompt type**: Audio
+- **Prompt length**: Audio 30 to 60 seconds
+- **Student interface**: Audio playback, incomplete transcript with blanks displayed before and during playback, text input per blank, section-level timer
+- **Input media**: Audio recording with partially displayed transcript
+- **Answer format**: Text input per blank
+- **Preparation behaviour**: 7 seconds preparation
+- **Response behaviour**: Section-level timer
+- **Playback limit**: 1
+- **Recording limit**: No audio
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: None — objective scoring
+- **Official human-reviewed traits**: None — objective scoring
+- **Platform estimated-scoring rule**: Per-correct-word: +1 correct, 0 incorrect, minimum 0, requires correct spelling (platform produces estimated training score)
+- **Platform estimated-scoring evidence**: Per-correct-word: +1 correct, 0 incorrect, requires correct spelling, minimum 0 per item
+- **Feedback format**: Correct words shown after submission, overall estimated score
+- **Content metadata**: Audio file, transcript with blanks, correct words, difficulty, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay, transcript after submission, correct words shown
+- **Mock mode**: single playback, section-level timer, the incomplete transcript with blanks is displayed before and during playback because it is part of the official prompt, no answer reveal before submission
+- **Official reference IDs**: source-1, source-4, source-6
+- **Last verified date**: 2026-07-10
 
 ### Highlight Correct Summary
 
-- **Task purpose**: Assess listening comprehension
-- **Student interface**: Audio playback, multiple text summaries as options
+- **Canonical ID**: highlight_correct_summary
+- **Current official status**: Current official task
+- **Section**: Listening
+- **Task purpose**: Assess listening comprehension and ability to identify correct summary
+- **Official skills assessed**: Listening, Reading
+- **Score contributions**: Listening, Reading
+- **Prompt type**: Audio
+- **Prompt length**: Audio 30 to 90 seconds
+- **Student interface**: Audio playback, radio-button summary options, section-level timer
 - **Input media**: Audio recording
-- **Answer format**: Single selected summary
-- **Scoring components**: Correct/incorrect
-- **Feedback format**: Correct or incorrect with correct summary highlighted
-- **Content metadata**: Audio, transcript, summaries, correct summary, difficulty, source
-- **Validation requirements**: Audio plays fully
-- **Failure and recovery behaviour**: Autosave selection
+- **Answer format**: Radio-button selection
+- **Preparation behaviour**: Immediate
+- **Response behaviour**: Section-level timer
+- **Playback limit**: 1
+- **Recording limit**: No audio
+- **Official scoring type**: Correct/Incorrect
+- **Official rubric traits**: None — objective scoring
+- **Official human-reviewed traits**: None — objective scoring
+- **Platform estimated-scoring rule**: Correct/Incorrect: +1 correct, 0 incorrect, minimum 0 (platform produces estimated training score)
+- **Platform estimated-scoring evidence**: Correct/Incorrect: +1 correct, 0 incorrect, minimum 0 per item
+- **Feedback format**: Correct summary highlighted with explanation, overall estimated score
+- **Content metadata**: Audio file, summary options, correct summary, difficulty, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay, transcript after submission, correct summary highlighted with explanation
+- **Mock mode**: single playback, section-level timer, no transcript before submission, no answer reveal before submission
+- **Official reference IDs**: source-1, source-4, source-6
+- **Last verified date**: 2026-07-10
 
 ### Multiple Choice, Single Answer (Listening)
 
-- **Task purpose**: Assess listening comprehension
-- **Student interface**: Audio playback, radio button options
+- **Canonical ID**: listening_single_answer
+- **Current official status**: Current official task
+- **Section**: Listening
+- **Task purpose**: Assess listening comprehension with single correct answer
+- **Official skills assessed**: Listening
+- **Score contributions**: Listening
+- **Prompt type**: Audio
+- **Prompt length**: Audio 30 to 90 seconds
+- **Student interface**: Audio playback, radio-button options, section-level timer
 - **Input media**: Audio recording
-- **Answer format**: Single selected option
-- **Scoring components**: Correct/incorrect
-- **Feedback format**: Correct or incorrect with correct answer shown
-- **Content metadata**: Audio, options, correct answer, transcript, difficulty, source
-- **Validation requirements**: Audio plays fully; exactly one selection
-- **Failure and recovery behaviour**: Autosave selection
+- **Answer format**: Radio-button selection
+- **Preparation behaviour**: 5 seconds preparation
+- **Response behaviour**: Section-level timer
+- **Playback limit**: 1
+- **Recording limit**: No audio
+- **Official scoring type**: Correct/Incorrect
+- **Official rubric traits**: None — objective scoring
+- **Official human-reviewed traits**: None — objective scoring
+- **Platform estimated-scoring rule**: Correct/Incorrect: +1 correct, 0 incorrect, minimum 0 (platform produces estimated training score)
+- **Platform estimated-scoring evidence**: Correct/Incorrect: +1 correct, 0 incorrect, minimum 0 per item
+- **Feedback format**: Correct answer shown with explanation, overall estimated score
+- **Content metadata**: Audio file, options, correct answer, difficulty, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay, transcript after submission, correct answer shown with explanation
+- **Mock mode**: single playback, section-level timer, no transcript before submission, no answer reveal before submission
+- **Official reference IDs**: source-1, source-4, source-6
+- **Last verified date**: 2026-07-10
 
 ### Select Missing Word
 
-- **Task purpose**: Assess ability to predict missing word
-- **Student interface**: Audio playback with option list, last word replaced by beep
-- **Input media**: Audio recording
-- **Answer format**: Single selected option for missing word
-- **Scoring components**: Correct/incorrect
-- **Feedback format**: Correct or incorrect with correct word shown
-- **Content metadata**: Audio (with beep), options, correct word, transcript, difficulty, source
-- **Validation requirements**: Audio plays fully
-- **Failure and recovery behaviour**: Autosave selection
+- **Canonical ID**: select_missing_word
+- **Current official status**: Current official task
+- **Section**: Listening
+- **Task purpose**: Assess ability to predict missing word from context
+- **Official skills assessed**: Listening
+- **Score contributions**: Listening
+- **Prompt type**: Audio
+- **Prompt length**: Audio 20 to 70 seconds
+- **Student interface**: Audio playback, radio-button options for missing word, section-level timer
+- **Input media**: Audio recording with transcript ending before missing word
+- **Answer format**: Radio-button selection
+- **Preparation behaviour**: Immediate
+- **Response behaviour**: Section-level timer
+- **Playback limit**: 1
+- **Recording limit**: No audio
+- **Official scoring type**: Correct/Incorrect
+- **Official rubric traits**: None — objective scoring
+- **Official human-reviewed traits**: None — objective scoring
+- **Platform estimated-scoring rule**: Correct/Incorrect: +1 correct, 0 incorrect, minimum 0 (platform produces estimated training score)
+- **Platform estimated-scoring evidence**: Correct/Incorrect: +1 correct, 0 incorrect, minimum 0 per item
+- **Feedback format**: Correct word shown with context explanation, overall estimated score
+- **Content metadata**: Audio file, transcript with missing word marked, options, difficulty, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay, transcript after submission, correct word shown with context explanation
+- **Mock mode**: single playback, section-level timer, no transcript before submission, no answer reveal before submission
+- **Official reference IDs**: source-1, source-4, source-6
+- **Last verified date**: 2026-07-10
 
 ### Highlight Incorrect Words
 
-- **Task purpose**: Assess listening and reading accuracy
-- **Student interface**: Audio playback, displayed transcript with clickable words
-- **Input media**: Audio recording with transcript
-- **Answer format**: Selected words in transcript that differ from audio
-- **Scoring components**: Correct selections minus incorrect selections
-- **Feedback format**: Correct and incorrect selections highlighted
-- **Content metadata**: Audio, original transcript, modified transcript with errors, correct selections, difficulty, source
-- **Validation requirements**: Audio plays fully
-- **Failure and recovery behaviour**: Autosave word selections
+- **Canonical ID**: highlight_incorrect_words
+- **Current official status**: Current official task
+- **Section**: Listening
+- **Task purpose**: Assess listening accuracy and reading verification
+- **Official skills assessed**: Listening, Reading
+- **Score contributions**: Listening, Reading
+- **Prompt type**: Audio
+- **Prompt length**: Audio 15 to 50 seconds
+- **Student interface**: Audio playback, transcript with clickable words displayed, section-level timer
+- **Input media**: Audio recording with displayed transcript
+- **Answer format**: Clickable-text selections
+- **Preparation behaviour**: 10 seconds preparation
+- **Response behaviour**: Section-level timer
+- **Playback limit**: 1
+- **Recording limit**: No audio
+- **Official scoring type**: Partial credit (negative marking)
+- **Official rubric traits**: None — objective scoring
+- **Official human-reviewed traits**: None — objective scoring
+- **Platform estimated-scoring rule**: Selection with negative marking: +1 correct, -1 incorrect, minimum 0 (platform produces estimated training score)
+- **Platform estimated-scoring evidence**: Selection with negative marking: +1 correct, -1 incorrect, minimum 0 per item
+- **Feedback format**: Correct selections highlighted, score explanation, overall estimated score
+- **Content metadata**: Audio file, transcript with incorrect words marked, difficulty, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay, transcript after submission, correct selections highlighted, score explanation
+- **Mock mode**: single playback, section-level timer, no transcript highlighting before submission, no answer reveal before submission
+- **Official reference IDs**: source-1, source-4, source-6
+- **Last verified date**: 2026-07-10
 
 ### Write From Dictation
 
-- **Task purpose**: Assess listening and writing accuracy
+- **Canonical ID**: write_from_dictation
+- **Current official status**: Current official task
+- **Section**: Listening
+- **Task purpose**: Assess listening accuracy and written reproduction
+- **Official skills assessed**: Listening, Writing
+- **Score contributions**: Listening, Writing
+- **Prompt type**: Audio
+- **Prompt length**: Audio 3 to 5 seconds
 - **Student interface**: Audio playback, text input area
-- **Input media**: Audio sentence
-- **Answer format**: Typed sentence
-- **Preparation behaviour**: Audio plays automatically once
-- **Response behaviour**: Fixed response time
-- **Practice-mode behaviour**: Replay audio limited times
-- **Mock-mode behaviour**: Single playback only
-- **Scoring components**: Correct/incorrect per word
-- **Feedback format**: Word-level accuracy, correct sentence shown
-- **Content metadata**: Audio, correct sentence, difficulty, source
-- **Validation requirements**: Non-empty response
-- **Failure and recovery behaviour**: Autosave typed text
+- **Input media**: Audio recording
+- **Answer format**: Text input (sentence)
+- **Preparation behaviour**: Immediate
+- **Response behaviour**: Item-dependent (varies)
+- **Playback limit**: 1
+- **Recording limit**: No audio
+- **Official scoring type**: Partial credit
+- **Official rubric traits**: None — objective scoring
+- **Official human-reviewed traits**: None — objective scoring
+- **Platform estimated-scoring rule**: Per-correct-word: +1 correct, 0 incorrect, minimum 0, requires correct spelling (platform produces estimated training score)
+- **Platform estimated-scoring evidence**: Per-correct-word: +1 correct, 0 incorrect, requires correct spelling, minimum 0 per item
+- **Feedback format**: Correct sentence shown, word-level accuracy, overall estimated score
+- **Content metadata**: Audio file, correct sentence, difficulty, canonical ID
+- **Response validation**: {"allowedSubmissionStates":["complete","incomplete","empty"],"rejectCorruptPayload":true,"learningModeWarnBeforeSubmit":true,"timedModeForceAnswer":false,"noResponseScore":0}
+- **Failure and recovery behaviour**: {"autosaveRequired":true,"preserveLocalResponseUntilConfirmed":true,"resumableUploadRequired":false,"audioLoadFailureAction":"retry-or-block-with-actionable-error","duplicateSubmissionPrevention":true}
+- **Prompt transcript requirement**: Not required
+- **Post-attempt transcript availability**: Available
+- **Practice mode**: configurable replay, correct sentence after submission, word-level accuracy shown
+- **Mock mode**: single playback, 3 to 5 second prompt, no replay, no transcript before submission, word-level partial credit
+- **Official reference IDs**: source-1, source-4, source-6
+- **Last verified date**: 2026-07-10
