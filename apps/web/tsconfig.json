@@ -9,6 +9,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "preserve",
+    "allowImportingTsExtensions": true,
     "plugins": [
       {
         "name": "next"
