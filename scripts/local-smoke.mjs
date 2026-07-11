@@ -60,7 +60,9 @@ function spawnService(name, cwd, command, args) {
     cwd,
     stdio: 'pipe',
     env: { ...process.env, ...env },
+    detached: true,
   });
+  child.unref();
   children.push(child);
   child.on('error', () => {
     console.error(`  \u2717 ${name}: process error`);
@@ -101,12 +103,16 @@ async function checkUrl(url, label) {
 }
 
 async function stopAllChildren() {
-  // Phase 1: SIGTERM for graceful shutdown
+  // Phase 1: SIGTERM to process groups for graceful shutdown
   for (const child of children) {
     if (!isChildAlive(child)) continue;
     try {
-      child.kill('SIGTERM');
-    } catch {}
+      process.kill(-child.pid, 'SIGTERM');
+    } catch {
+      try {
+        child.kill('SIGTERM');
+      } catch {}
+    }
   }
 
   // Wait up to 5s for graceful exit
@@ -128,8 +134,12 @@ async function stopAllChildren() {
   for (const child of children) {
     if (!isChildAlive(child)) continue;
     try {
-      child.kill('SIGKILL');
-    } catch {}
+      process.kill(-child.pid, 'SIGKILL');
+    } catch {
+      try {
+        child.kill('SIGKILL');
+      } catch {}
+    }
     await new Promise((resolve) => {
       const timer = setTimeout(resolve, 2000);
       child.once('exit', () => {
