@@ -24,42 +24,10 @@ jobs:
       - run: node scripts/generate-pte-blueprints.mjs --validate
       - run: npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run validate:workspace
 
-      - name: Start local environment
-        run: |
-          npm run local:up &
-          UP_PID=$!
-          # Wait for all services to be ready (timeout 120s)
-          ready=false
-          for i in $(seq 1 60); do
-            if curl -s http://127.0.0.1:4000/health/live &>/dev/null && \
-               curl -s http://127.0.0.1:5000/health/live &>/dev/null && \
-               curl -s -o /dev/null http://127.0.0.1:3000 2>/dev/null; then
-              echo "All services ready after ${i}s"
-              ready=true
-              break
-            fi
-            sleep 2
-          done
-          if [ "$ready" != "true" ]; then
-            echo "FAILED: Services did not become ready"
-            kill $UP_PID 2>/dev/null || true
-            npm run local:down
-            exit 1
-          fi
-          # Verify all endpoints
-          echo "API live:   $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4000/health/live)"
-          echo "API ready:  $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4000/health/ready)"
-          echo "Score live: $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/health/live)"
-          echo "Score ready:$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5000/health/ready)"
-          echo "Web status: $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000)"
-          # Stop infrastructure
-          kill $UP_PID 2>/dev/null || true
-          npm run local:down
-
-      - name: Run standalone smoke test
+      - name: Standalone lifecycle smoke test
         run: npm run local:smoke
 
-      - name: Stop local environment (cleanup)
+      - name: Stop any leftover processes
         if: always()
         run: npm run local:down
 
@@ -78,6 +46,5 @@ jobs:
           git diff --check
           if [ -n "$(git status --porcelain)" ]; then
             echo "ERROR: tracked files changed"
-            git diff --stat
             exit 1
           fi
