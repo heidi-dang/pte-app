@@ -180,6 +180,60 @@ for (const f of expectedIntegration) {
   }
 }
 
+// 9. Worker readiness listener attached at spawn time (no preliminary polling loop)
+if (localUp.includes('workerStart') && localUp.match(/while.*workerStart/)) {
+  errors.push(
+    'local-up.mjs: must not have preliminary worker readiness polling loop - use createWorkerReadyPromise at spawn',
+  );
+}
+if (!localUp.includes('createWorkerReadyPromise')) {
+  errors.push('local-up.mjs: must use createWorkerReadyPromise attached during spawn');
+}
+
+// 10. Shutdown must await final exit after SIGKILL
+if (!localUp.includes("child.once('close'") && !localUp.includes("child.once('close'")) {
+  // Check for close listener in shutdown
+  const closeCheck = localUp.match(/on\(['"]close['"]/);
+  if (!closeCheck) {
+    errors.push('local-up.mjs: shutdown must await close/exit after SIGKILL');
+  }
+}
+
+// 11. Invalid-configuration test must assert non-zero
+const workerTestPath = 'services/worker/src/worker.integration.test.ts';
+if (existsSync(workerTestPath)) {
+  const wt = readFileSync(workerTestPath, 'utf-8');
+  const lines = wt.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].includes('invalid required configuration')) {
+      // Check that next assertion is notEqual
+      for (let j = i; j < Math.min(i + 5, lines.length); j++) {
+        if (lines[j].includes('assert.equal(code, 0)') && !lines[j].includes('assert.notEqual')) {
+          errors.push(`worker integration test:${j + 1} invalid config test must use assert.notEqual(code, 0)`);
+        }
+      }
+    }
+  }
+  if (wt.includes('worker_shutdown || exitCode === 0') || wt.includes("worker_shutdown' || code === 0")) {
+    errors.push('worker integration test: signal tests must require BOTH worker_shutdown AND exit code 0, not ||');
+  }
+}
+
+// 12. No readFileSync on .local-runtime directory
+if (localUp.includes("readFileSync('.local-runtime'") || localUp.includes('readFileSync(`.local-runtime')) {
+  errors.push('local-up.mjs: must use readdirSync, not readFileSync, to check .local-runtime directory');
+}
+
+// 13. SIGKILL confirmation in shutdown
+if (!localUp.includes('Final liveness')) {
+  errors.push('local-up.mjs: shutdown must have final liveness check after SIGKILL');
+}
+
+// 14. Port verification in shutdown
+if (!localUp.includes('isPortOpen') || !localUp.includes('API port')) {
+  errors.push('local-up.mjs: shutdown must verify API/scoring/web ports released');
+}
+
 if (errors.length === 0) {
   console.log('Workspace validation: All checks passed.');
 } else {

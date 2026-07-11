@@ -118,7 +118,6 @@ async function stopAllChildren() {
   await Promise.allSettled(exitPromises);
   await new Promise((r) => setTimeout(r, 500));
 
-  const unexited = childExits.length;
   const remaining = children.filter((c) => c.exitCode === null && !c.killed).length;
   if (remaining > 0) {
     console.error(`  \u2717 ${remaining} child process(es) could not be terminated`);

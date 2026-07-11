@@ -1,11 +1,23 @@
-import { describe, it } from 'node:test';
+import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, execSync } from 'child_process';
+import { spawn, type ChildProcess } from 'child_process';
 import { resolve } from 'path';
 
 const root = resolve(import.meta.dirname, '../../..');
 const tsxBin = resolve(root, 'node_modules', '.bin', 'tsx');
 const workerDir = resolve(root, 'services/worker');
+
+const spawned: ChildProcess[] = [];
+
+after(() => {
+  for (const child of spawned) {
+    if (!child.killed && child.exitCode === null) {
+      try {
+        child.kill('SIGKILL');
+      } catch {}
+    }
+  }
+});
 
 function runWorker(
   args: string[],
@@ -17,9 +29,10 @@ function runWorker(
     const binary = isTsFile ? tsxBin : 'node';
     const child = spawn(binary, args, {
       cwd: workerDir,
-      env: { ...process.env, LOG_LEVEL: 'info', ...extraEnv },
+      env: { ...process.env, LOG_LEVEL: 'info', APP_VERSION: '0.0.0', ...extraEnv },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
+    spawned.push(child);
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (d: Buffer) => {
@@ -39,6 +52,40 @@ function runWorker(
   });
 }
 
+function waitForReady(child: ChildProcess, timeoutMs = 8000): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let stdout = '';
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Timeout waiting for worker_ready'));
+    }, timeoutMs);
+
+    function onData(d: Buffer) {
+      stdout += d.toString();
+      if (stdout.includes('worker_ready')) {
+        cleanup();
+        resolve(stdout);
+      }
+    }
+
+    function onExit(code: number | null) {
+      cleanup();
+      reject(new Error(`Worker exited before ready with code ${code}`));
+    }
+
+    function cleanup() {
+      clearTimeout(timer);
+      child.stdout?.removeListener('data', onData);
+      child.stderr?.removeListener('data', onData);
+      child.removeListener('exit', onExit);
+    }
+
+    child.stdout?.on('data', onData);
+    child.stderr?.on('data', onData);
+    child.on('exit', onExit);
+  });
+}
+
 describe('Worker behavioural tests', () => {
   it('healthcheck exits zero', async () => {
     const { code, stdout } = await runWorker(['src/check.ts']);
@@ -48,7 +95,8 @@ describe('Worker behavioural tests', () => {
 
   it('invalid required configuration exits non-zero', async () => {
     const { code, stderr } = await runWorker(['src/check.ts'], 5000, { APP_VERSION: '' });
-    assert.equal(code, 0);
+    assert.notEqual(code, 0);
+    assert.ok(stderr.includes('APP_VERSION'), `stderr should name APP_VERSION: ${stderr}`);
   });
 
   it('test mode exits cleanly', async () => {
@@ -58,87 +106,104 @@ describe('Worker behavioural tests', () => {
     assert.ok(stdout.includes('worker_test_mode_exit'));
   });
 
-  it('long-running worker emits worker_ready', async () => {
-    const child = spawn(tsxBin, ['src/main.ts'], {
+  it('immediate worker_ready event is captured', async () => {
+    const child = spawn(tsxBin, ['src/main.ts', '--test'], {
       cwd: workerDir,
-      env: { ...process.env, LOG_LEVEL: 'info' },
+      env: { ...process.env, LOG_LEVEL: 'info', APP_VERSION: '0.0.0' },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
-    let stdout = '';
-    const ready = new Promise<void>((resolvePromise) => {
-      child.stdout.on('data', (d: Buffer) => {
-        stdout += d.toString();
-        if (stdout.includes('worker_ready')) {
-          child.kill('SIGTERM');
-          resolvePromise();
-        }
-      });
-    });
-    const timeout = new Promise<void>((_, reject) => {
-      setTimeout(() => {
-        child.kill('SIGKILL');
-        reject(new Error('Timeout'));
-      }, 8000);
-    });
-    await Promise.race([ready, timeout]);
+    spawned.push(child);
+    const stdout = await waitForReady(child, 5000);
     assert.ok(stdout.includes('worker_ready'));
-    const { exitCode } = await new Promise<{ exitCode: number | null }>((resolvePromise) => {
-      child.on('close', (code) => resolvePromise({ exitCode: code }));
+    // Verify clean exit
+    const { exitCode } = await new Promise<{ exitCode: number | null }>((resolve) => {
+      child.on('close', (code) => resolve({ exitCode: code }));
     });
     assert.equal(exitCode, 0);
   });
 
-  it('SIGINT exits cleanly', async () => {
+  it('long-running worker emits worker_ready', async () => {
     const child = spawn(tsxBin, ['src/main.ts'], {
       cwd: workerDir,
-      env: { ...process.env, LOG_LEVEL: 'info' },
+      env: { ...process.env, LOG_LEVEL: 'info', APP_VERSION: '0.0.0' },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
-    let stdout = '';
-    await new Promise<void>((resolvePromise) => {
-      child.stdout.on('data', (d: Buffer) => {
-        stdout += d.toString();
-        if (stdout.includes('worker_ready')) {
-          child.kill('SIGINT');
-          setTimeout(resolvePromise, 1000);
-        }
-      });
-    });
-    const { exitCode } = await new Promise<{ exitCode: number | null }>((resolvePromise) => {
-      child.on('close', (code) => resolvePromise({ exitCode: code }));
-      setTimeout(() => {
-        child.kill('SIGKILL');
-        resolvePromise({ exitCode: null });
-      }, 4000);
-    });
+    spawned.push(child);
+    const stdout = await waitForReady(child, 8000);
     assert.ok(stdout.includes('worker_ready'));
-    assert.ok(stdout.includes('worker_shutdown') || exitCode === 0);
+    child.kill('SIGTERM');
+    const { exitCode } = await new Promise<{ exitCode: number | null }>((resolve) => {
+      child.on('close', (code) => resolve({ exitCode: code }));
+    });
+    assert.equal(exitCode, 0);
   });
 
-  it('SIGTERM exits cleanly', async () => {
+  it('SIGINT emits worker_shutdown and exits zero', async () => {
     const child = spawn(tsxBin, ['src/main.ts'], {
       cwd: workerDir,
-      env: { ...process.env, LOG_LEVEL: 'info' },
+      env: { ...process.env, LOG_LEVEL: 'info', APP_VERSION: '0.0.0' },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
-    let stdout = '';
-    await new Promise<void>((resolvePromise) => {
-      child.stdout.on('data', (d: Buffer) => {
+    spawned.push(child);
+    // Wait for ready
+    await waitForReady(child, 8000);
+    // Clear stdout and send SIGINT
+    child.kill('SIGINT');
+    const { stdout, exitCode } = await new Promise<{ stdout: string; exitCode: number | null }>((resolve, reject) => {
+      let stdout = '';
+      const timer = setTimeout(() => {
+        child.kill('SIGKILL');
+        reject(new Error('SIGINT timeout'));
+      }, 4000);
+      child.stdout?.on('data', (d: Buffer) => {
         stdout += d.toString();
-        if (stdout.includes('worker_ready')) {
-          child.kill('SIGTERM');
-          setTimeout(resolvePromise, 1000);
-        }
+      });
+      child.on('close', (code) => {
+        clearTimeout(timer);
+        resolve({ stdout, exitCode: code });
       });
     });
-    const { exitCode } = await new Promise<{ exitCode: number | null }>((resolvePromise) => {
-      child.on('close', (code) => resolvePromise({ exitCode: code }));
-      setTimeout(() => {
-        child.kill('SIGKILL');
-        resolvePromise({ exitCode: null });
-      }, 4000);
+    assert.ok(stdout.includes('worker_shutdown'), `stdout should contain worker_shutdown: ${stdout}`);
+    assert.equal(exitCode, 0);
+    // Confirm child is no longer alive
+    try {
+      process.kill(child.pid!, 0);
+      assert.fail('Child should not be alive after SIGINT');
+    } catch {
+      // Expected - process is gone
+    }
+  });
+
+  it('SIGTERM emits worker_shutdown and exits zero', async () => {
+    const child = spawn(tsxBin, ['src/main.ts'], {
+      cwd: workerDir,
+      env: { ...process.env, LOG_LEVEL: 'info', APP_VERSION: '0.0.0' },
+      stdio: ['pipe', 'pipe', 'pipe'],
     });
-    assert.ok(stdout.includes('worker_ready'));
-    assert.ok(stdout.includes('worker_shutdown') || exitCode === 0);
+    spawned.push(child);
+    await waitForReady(child, 8000);
+    child.kill('SIGTERM');
+    const { stdout, exitCode } = await new Promise<{ stdout: string; exitCode: number | null }>((resolve, reject) => {
+      let stdout = '';
+      const timer = setTimeout(() => {
+        child.kill('SIGKILL');
+        reject(new Error('SIGTERM timeout'));
+      }, 4000);
+      child.stdout?.on('data', (d: Buffer) => {
+        stdout += d.toString();
+      });
+      child.on('close', (code) => {
+        clearTimeout(timer);
+        resolve({ stdout, exitCode: code });
+      });
+    });
+    assert.ok(stdout.includes('worker_shutdown'), `stdout should contain worker_shutdown: ${stdout}`);
+    assert.equal(exitCode, 0);
+    try {
+      process.kill(child.pid!, 0);
+      assert.fail('Child should not be alive after SIGTERM');
+    } catch {
+      // Expected
+    }
   });
 });

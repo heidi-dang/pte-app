@@ -4,8 +4,6 @@ import { existsSync, writeFileSync, mkdirSync, rmSync, readFileSync } from 'node
 import { join } from 'node:path';
 
 const root = join(import.meta.dirname, '../..');
-const pidsPath = join(root, '.local-runtime/pids.json');
-const runtimeDir = join(root, '.local-runtime');
 const downScript = join(root, 'scripts/local-down.mjs');
 const downContent = readFileSync(downScript, 'utf-8');
 
@@ -24,6 +22,10 @@ describe('local-down script structure', () => {
 
   it('has SIGKILL fallback', () => {
     assert.ok(downContent.includes('SIGKILL'));
+  });
+
+  it('confirms SIGKILL with liveness check', () => {
+    assert.ok(downContent.includes('SIGKILL') && downContent.includes('still alive'));
   });
 
   it('removes PID state', () => {
@@ -45,5 +47,17 @@ describe('local-down script structure', () => {
 
   it('prints destructive reset command', () => {
     assert.ok(downContent.includes('docker compose') && downContent.includes('-v'));
+  });
+
+  it('verifies process identity via /proc/cmdline on Linux', () => {
+    assert.ok(downContent.includes('/proc') || downContent.includes('cmdline'));
+  });
+
+  it('handles reused/mismatched PID', () => {
+    assert.ok(downContent.includes('reused') || downContent.includes('different identity'));
+  });
+
+  it('handles enhanced PID format (object with pid, service, commandMarker)', () => {
+    assert.ok(downContent.includes('commandMarker') || downContent.includes('entry.pid'));
   });
 });

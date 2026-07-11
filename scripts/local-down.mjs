@@ -7,7 +7,33 @@ const env = loadEnvLocal();
 const pidsPath = '.local-runtime/pids.json';
 let failures = 0;
 
-async function stopProcess(pid, name) {
+async function readCmdline(pid) {
+  try {
+    return readFileSync(`/proc/${pid}/cmdline`, 'utf-8').split('\0').filter(Boolean).join(' ');
+  } catch {
+    return null;
+  }
+}
+
+function matchesMarker(cmdline, marker) {
+  if (!cmdline) return null; // cannot verify
+  return cmdline.includes(marker);
+}
+
+async function stopProcess(entry, name_) {
+  // Support both legacy {name: pid} and enhanced {pid, service, commandMarker} formats
+  let pid, service, commandMarker;
+  if (typeof entry === 'object' && entry !== null) {
+    pid = entry.pid;
+    service = entry.service || name_;
+    commandMarker = entry.commandMarker || `@pte-app/${entry.service || name_}`;
+  } else {
+    pid = entry;
+    service = name_;
+    commandMarker = `@pte-app/${name_}`;
+  }
+
+  const name = service;
   const num = parseInt(pid, 10);
   if (isNaN(num) || num <= 0) {
     console.error(`  \u2717 Invalid PID for ${name}: ${pid}`);
@@ -15,11 +41,31 @@ async function stopProcess(pid, name) {
     return;
   }
 
+  // Check if PID exists
+  let pidAlive = false;
   try {
     process.kill(num, 0);
+    pidAlive = true;
   } catch {
     console.log(`  \u2014 ${name} (PID ${num}) not running`);
     return;
+  }
+
+  // Verify process identity
+  if (process.platform === 'linux') {
+    const cmdline = await readCmdline(num);
+    const match = matchesMarker(cmdline, commandMarker);
+    if (match === false) {
+      console.error(`  \u2717 PID ${num} for ${name} has different identity (reused). cmdline: ${cmdline}`);
+      console.log(`  \u2014 Removing stale state for ${name}`);
+      failures++;
+      return;
+    }
+    if (match === null) {
+      console.log(`  \u26a0 ${name} (PID ${num}) - could not read cmdline, continuing with caution`);
+    }
+  } else {
+    console.log(`  \u26a0 ${name} (PID ${num}) - cmdline verification only on Linux`);
   }
 
   try {
@@ -37,8 +83,23 @@ async function stopProcess(pid, name) {
     if (alive) {
       try {
         process.kill(num, 'SIGKILL');
-        await new Promise((r) => setTimeout(r, 500));
       } catch {}
+      // Wait after SIGKILL and confirm
+      const killStart = Date.now();
+      let killed = false;
+      while (Date.now() - killStart < 2000 && !killed) {
+        await new Promise((r) => setTimeout(r, 200));
+        try {
+          process.kill(num, 0);
+        } catch {
+          killed = true;
+        }
+      }
+      if (!killed) {
+        console.error(`  \u2717 ${name} (PID ${num}) still alive after SIGKILL`);
+        failures++;
+        return;
+      }
     }
     console.log(`  \u2713 ${name} (PID ${num}) stopped`);
   } catch (e) {
@@ -60,8 +121,8 @@ async function main() {
       pids = {};
     }
 
-    for (const [name, pid] of Object.entries(pids)) {
-      await stopProcess(pid, name);
+    for (const [name, entry] of Object.entries(pids)) {
+      await stopProcess(entry, name);
     }
 
     try {
@@ -84,10 +145,8 @@ async function main() {
         console.log('  \u2713 Runtime directory removed');
       }
     } catch (e) {
-      if (e.code !== 'ENOENT') {
-        console.error(`  \u2717 Failed to check runtime directory: ${e.message}`);
-        failures++;
-      }
+      console.error(`  \u2717 Failed to check runtime directory: ${e.message}`);
+      failures++;
     }
   }
 
