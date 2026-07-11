@@ -10,7 +10,8 @@ This is an independent PTE Academic preparation platform. It is not affiliated w
 
 ## Current Project Status
 
-Phase A — Product Contract (under audit correction). No application code has been written yet.
+Phase A — Product Contract (accepted at 98/100).
+Phase B — Monorepo, tooling and local environment foundation.
 
 ## Supported PTE Product
 
@@ -44,34 +45,34 @@ Phase A — Product Contract (under audit correction). No application code has b
 
 ## Development Phases
 
-| Phase | Description |
-|-------|-------------|
-| A | Product contract |
-| B | Monorepo, tooling and local environment |
-| C | Shared contracts and configuration |
-| D | Database and domain model |
-| E | Authentication, profiles and permissions |
-| F | Design system and application shell |
-| G | Content provenance and licence register |
-| H | Course and lesson engine |
-| I | Universal question engine |
-| J | Reading task types |
-| K | Listening task types |
-| L | Speaking recorder and speaking tasks |
-| M | Writing task types |
-| N | Objective scoring engine |
-| O | Speech and writing evaluation |
-| P | Diagnostic test and personalised study plan |
-| Q | Mock-exam engine |
-| R | Dashboard, reports and skill mastery |
-| S | Teacher and administration portals |
-| T | Payments, subscriptions and entitlements |
-| U | Content-production factory |
-| V | Calibration and educational validation |
-| W | Notifications, support and operations |
-| X | Complete QA and performance gate |
-| Y | Production deployment |
-| Z | Pilot, launch and continuous improvement |
+| Phase | Description                                 |
+| ----- | ------------------------------------------- |
+| A     | Product contract                            |
+| B     | Monorepo, tooling and local environment     |
+| C     | Shared contracts and configuration          |
+| D     | Database and domain model                   |
+| E     | Authentication, profiles and permissions    |
+| F     | Design system and application shell         |
+| G     | Content provenance and licence register     |
+| H     | Course and lesson engine                    |
+| I     | Universal question engine                   |
+| J     | Reading task types                          |
+| K     | Listening task types                        |
+| L     | Speaking recorder and speaking tasks        |
+| M     | Writing task types                          |
+| N     | Objective scoring engine                    |
+| O     | Speech and writing evaluation               |
+| P     | Diagnostic test and personalised study plan |
+| Q     | Mock-exam engine                            |
+| R     | Dashboard, reports and skill mastery        |
+| S     | Teacher and administration portals          |
+| T     | Payments, subscriptions and entitlements    |
+| U     | Content-production factory                  |
+| V     | Calibration and educational validation      |
+| W     | Notifications, support and operations       |
+| X     | Complete QA and performance gate            |
+| Y     | Production deployment                       |
+| Z     | Pilot, launch and continuous improvement    |
 
 ## Repository Structure
 
@@ -134,6 +135,23 @@ pte-app/
 - Historical results cannot silently change after a scoring update.
 - New scoring profiles require regression testing and calibration.
 
+## Local Development
+
+```bash
+npm ci               # Install dependencies
+npm run setup:local  # Prepare local environment
+npm run doctor       # Verify environment
+npm run local:up     # Start all services
+```
+
+- Web: http://localhost:${WEB_PORT:-3000}
+- API: http://localhost:${API_PORT:-4000}
+- Scoring: http://localhost:${SCORING_PORT:-5000}
+
+See `docs/operations/local-development.md` for detailed setup and troubleshooting.
+
+The current UI is a Phase B environment page, not the finished product.
+
 ## Definition of Done
 
 - Feature implemented according to specification.
@@ -145,7 +163,7 @@ pte-app/
 
 ## Current Active Phase
 
-**Phase A** — Product Contract. Establishing the product, architecture, content, scoring and quality contracts that every following phase must follow. This phase is under audit correction.
+**Phase B** — Monorepo, tooling and local environment. Building the local development foundation.
 
 ## Contribution Workflow
 

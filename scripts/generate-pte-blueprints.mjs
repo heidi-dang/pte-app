@@ -15,7 +15,10 @@ function sectionLabel(s) {
 
 function capitalizeWords(s) {
   if (s === 'audio-or-video') return 'Audio Or Video';
-  return s.split(/[-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  return s
+    .split(/[-_]/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 }
 
 function formatPromptLength(pl) {
@@ -43,7 +46,7 @@ function formatScoringType(t) {
 function formatPlatformScoringRule(sr) {
   if (!sr) return 'Not specified';
   if (sr.type === 'rubric-estimate') {
-    return 'Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson\'s private scoring engine)';
+    return "Rubric-based estimate (platform produces estimated training feedback; does not reproduce Pearson's private scoring engine)";
   }
   if (sr.type === 'per-correct-blank') {
     return `Per-correct-blank: +${sr.correctPoints} correct, ${sr.incorrectPoints} incorrect, minimum ${sr.minimumItemScore} (platform produces estimated training score)`;
@@ -122,7 +125,9 @@ function generateBlueprint(manifest) {
     lines.push(`### ${task.displayName}`);
     lines.push('');
     lines.push(`- **Canonical ID**: ${task.canonicalId}`);
-    lines.push(`- **Current official status**: ${task.currentOfficialTask ? 'Current official task' : 'Not current official task'}`);
+    lines.push(
+      `- **Current official status**: ${task.currentOfficialTask ? 'Current official task' : 'Not current official task'}`,
+    );
     lines.push(`- **Section**: ${task.section}`);
     lines.push(`- **Task purpose**: ${task.taskPurpose || 'Not specified'}`);
     lines.push(`- **Official skills assessed**: ${(task.officialSkillsAssessed || []).join(', ')}`);
@@ -139,14 +144,14 @@ function generateBlueprint(manifest) {
     lines.push(`- **Recording limit**: ${task.recordingLimit === 0 ? 'No audio' : String(task.recordingLimit)}`);
     lines.push(`- **Official scoring type**: ${formatScoringType(task.officialScoringType)}`);
 
-    const rubricTraits = (task.officialRubricTraits || []);
+    const rubricTraits = task.officialRubricTraits || [];
     if (rubricTraits.length === 0) {
       lines.push('- **Official rubric traits**: None — objective scoring');
     } else {
       lines.push(`- **Official rubric traits**: ${rubricTraits.join(', ')}`);
     }
 
-    const humanTraits = (task.officialHumanReviewTraits || []);
+    const humanTraits = task.officialHumanReviewTraits || [];
     if (humanTraits.length > 0) {
       lines.push(`- **Official human-reviewed traits**: ${humanTraits.join(', ')}`);
     } else if (task.platformEstimatedScoringRule && task.platformEstimatedScoringRule.type === 'rubric-estimate') {
@@ -155,26 +160,36 @@ function generateBlueprint(manifest) {
       lines.push('- **Official human-reviewed traits**: None — objective scoring');
     }
 
-    lines.push(`- **Platform estimated-scoring rule**: ${formatPlatformScoringRule(task.platformEstimatedScoringRule)}`);
-    lines.push(`- **Platform estimated-scoring evidence**: ${task.platformEstimatedScoringEvidence || 'Not specified'}`);
+    lines.push(
+      `- **Platform estimated-scoring rule**: ${formatPlatformScoringRule(task.platformEstimatedScoringRule)}`,
+    );
+    lines.push(
+      `- **Platform estimated-scoring evidence**: ${task.platformEstimatedScoringEvidence || 'Not specified'}`,
+    );
     lines.push(`- **Feedback format**: ${task.feedbackFormat || 'Not specified'}`);
     lines.push(`- **Content metadata**: ${task.contentMetadata || 'Not specified'}`);
 
     // Prompt-specific notes
     if (task.supportsAudiovisualInput) {
-      lines.push(`- **Audiovisual support**: Supports audio or audiovisual input; optional related image may be displayed`);
+      lines.push(
+        `- **Audiovisual support**: Supports audio or audiovisual input; optional related image may be displayed`,
+      );
     }
     if (task.optionalAccompanyingImage) {
       lines.push(`- **Optional image**: Audio question is required; an accompanying image is optional`);
     }
     if (task.oneImageRequired) {
-      lines.push(`- **Image requirement**: One image displayed as part of the student interface (not part of official prompt-length measurement)`);
+      lines.push(
+        `- **Image requirement**: One image displayed as part of the student interface (not part of official prompt-length measurement)`,
+      );
     }
 
     lines.push(`- **Response validation**: ${formatResponseValidation(task.responseValidation)}`);
     lines.push(`- **Failure and recovery behaviour**: ${formatFailureRecovery(task.failureRecoveryBehavior)}`);
     lines.push(`- **Prompt transcript requirement**: ${task.promptTranscriptRequired ? 'Required' : 'Not required'}`);
-    lines.push(`- **Post-attempt transcript availability**: ${task.postAttemptTranscriptAvailable ? 'Available' : 'Not available'}`);
+    lines.push(
+      `- **Post-attempt transcript availability**: ${task.postAttemptTranscriptAvailable ? 'Available' : 'Not available'}`,
+    );
     lines.push(`- **Practice mode**: ${task.practiceMode || 'Not specified'}`);
     lines.push(`- **Mock mode**: ${task.mockMode || 'Not specified'}`);
     lines.push(`- **Official reference IDs**: ${(task.referenceIds || []).join(', ')}`);
@@ -198,12 +213,16 @@ function main() {
 
   if (isValidate) {
     if (!existsSync(blueprintPath)) {
-      console.log('docs/content/pte-task-blueprints.md is not synchronized with the manifest. Run npm run generate:pte-blueprints.');
+      console.log(
+        'docs/content/pte-task-blueprints.md is not synchronized with the manifest. Run npm run generate:pte-blueprints.',
+      );
       process.exit(1);
     }
     const current = readFileSync(blueprintPath, 'utf-8');
     if (generated !== current) {
-      console.log('docs/content/pte-task-blueprints.md is not synchronized with the manifest. Run npm run generate:pte-blueprints.');
+      console.log(
+        'docs/content/pte-task-blueprints.md is not synchronized with the manifest. Run npm run generate:pte-blueprints.',
+      );
       process.exit(1);
     }
     process.exit(0);

@@ -1,0 +1,28 @@
+{
+  "name": "@pte-app/web",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port ${WEB_PORT:-3000}",
+    "build": "next build",
+    "start": "next start --port ${WEB_PORT:-3000}",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "node --test src/**/*.unit.test.ts",
+    "test:integration": "node --test src/**/*.integration.test.ts"
+  },
+  "dependencies": {
+    "next": "^15.3.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^5.8.0",
+    "@pte-app/typescript-config": "*",
+    "@pte-app/eslint-config": "*"
+  }
+}
