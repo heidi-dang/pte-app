@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, writeFileSync, rmSync, readFileSync } from 'fs';
+import { existsSync, writeFileSync, rmSync, readFileSync, mkdirSync } from 'node:fs';
 import { spawn, execSync } from 'child_process';
 import { loadEnvLocal, validateConfig } from './lib/local-env.mjs';
 
@@ -119,7 +119,7 @@ for (const ws of workspaces) {
 }
 
 // Write PIDs
-if (!existsSync('.local-runtime')) require('fs').mkdirSync('.local-runtime');
+if (!existsSync('.local-runtime')) mkdirSync('.local-runtime');
 writeFileSync('.local-runtime/pids.json', JSON.stringify(pids, null, 2));
 
 console.log('[5/5] Waiting for service health...');
