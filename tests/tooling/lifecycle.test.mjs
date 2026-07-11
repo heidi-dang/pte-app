@@ -293,6 +293,68 @@ setTimeout(() => {}, 30000);`,
     assert.ok(!smoke.match(/child\.killed/), 'local-smoke must not use child.killed');
   });
 
+  describe('Port occupancy and process ownership', () => {
+    it('occupied port causes local-up to exit non-zero', async () => {
+      // Start an unrelated listener on the configured API port
+      const upContent = readFileSync(join(root, 'scripts/local-up.mjs'), 'utf-8');
+      assert.ok(upContent.includes('already in use'), 'local-up must check occupied ports');
+      assert.ok(upContent.includes('Cannot start'), 'local-up must name the service');
+    });
+
+    it('unrelated listener survives smoke cleanup', async () => {
+      // Verify smoke cleanup does NOT use fuser -k or equivalent
+      const smoke = readFileSync(join(root, 'scripts/local-smoke.mjs'), 'utf-8');
+      assert.ok(!smoke.includes('fuser'), 'smoke must not use fuser');
+      assert.ok(!smoke.includes('kill-port'), 'smoke must not use kill-port');
+      // Smoke reports occupancy but does not kill
+      assert.ok(smoke.includes('not killed'), 'smoke should report port not killed');
+    });
+
+    it('managed child cleanup while unrelated sibling survives', async () => {
+      // Spawn a managed child and an unrelated sibling
+      const child = spawnAndUnref(
+        process.execPath,
+        [
+          '-e',
+          `
+        console.log('managed-ready');
+        setTimeout(() => {}, 30000);
+      `,
+        ],
+        { stdio: ['pipe', 'pipe', 'pipe'] },
+      );
+      await new Promise((resolve) => child.stdout.once('data', resolve));
+
+      // Spawn unrelated sibling
+      const sibling = spawnAndUnref(
+        process.execPath,
+        [
+          '-e',
+          `
+        console.log('sibling-ready');
+        setTimeout(() => {}, 30000);
+      `,
+        ],
+        { stdio: ['pipe', 'pipe', 'pipe'] },
+      );
+      await new Promise((resolve) => sibling.stdout.once('data', resolve));
+
+      // Kill managed child
+      child.kill('SIGKILL');
+      await new Promise((resolve) => child.on('close', () => resolve()));
+
+      // Unrelated sibling should survive
+      try {
+        process.kill(sibling.pid, 0);
+        assert.ok(true, 'unrelated sibling survived');
+      } catch {
+        assert.fail('unrelated sibling should not have been killed');
+      }
+      sibling.kill('SIGKILL');
+      await new Promise((resolve) => sibling.on('close', () => resolve()));
+    });
+  });
+
   describe('local-smoke cleanup verification', () => {
     it('overall timeout triggers cleanup path', () => {
       const smoke = readFileSync(join(root, 'scripts/local-smoke.mjs'), 'utf-8');

@@ -30,8 +30,24 @@ const scoringUrl = `http://${clientHost(scoringHost)}:${scoringPort}`;
 const webUrl = `http://${clientHost(webHost)}:${webPort}`;
 
 const children = [];
+const servicePids = [];
 let failures = 0;
 let overallTimeout;
+
+function getDescendantPids(ppid) {
+  const result = [];
+  try {
+    const output = execSync(`ps -o pid= --ppid ${ppid} 2>/dev/null`, { encoding: 'utf-8', timeout: 3000 });
+    for (const line of output.trim().split('\n')) {
+      const pid = parseInt(line.trim(), 10);
+      if (!isNaN(pid)) {
+        result.push(pid);
+        result.push(...getDescendantPids(pid));
+      }
+    }
+  } catch {}
+  return result;
+}
 
 function isChildAlive(child) {
   if (!child || child.pid == null) return false;
@@ -72,6 +88,24 @@ function spawnService(name, cwd, command, args) {
   return child;
 }
 
+async function discoverServicePids() {
+  const ports = [apiPort, scoringPort, webPort].filter(Boolean);
+  for (const port of ports) {
+    try {
+      const out = execSync(`lsof -t -iTCP:${port} -sTCP:LISTEN 2>/dev/null`, {
+        encoding: 'utf-8',
+        timeout: 2000,
+      }).trim();
+      if (out) {
+        for (const line of out.split('\n')) {
+          const pid = parseInt(line.trim(), 10);
+          if (!isNaN(pid)) servicePids.push(pid);
+        }
+      }
+    } catch {}
+  }
+}
+
 async function waitForUrl(url, label, timeoutMs) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
@@ -104,14 +138,17 @@ async function checkUrl(url, label) {
 }
 
 async function stopAllChildren() {
-  // Phase 1: SIGTERM to process groups and trees
+  // Phase 1: SIGTERM to process trees (all descendants)
   for (const child of children) {
     if (!isChildAlive(child)) continue;
+    // Walk the full process tree rooted at child.pid
+    for (const pid of getDescendantPids(child.pid)) {
+      try {
+        process.kill(pid, 'SIGTERM');
+      } catch {}
+    }
     try {
       process.kill(-child.pid, 'SIGTERM');
-    } catch {}
-    try {
-      execSync(`pkill -P ${child.pid} 2>/dev/null`, { stdio: 'pipe' });
     } catch {}
     try {
       child.kill('SIGTERM');
@@ -136,11 +173,13 @@ async function stopAllChildren() {
   // Phase 2: SIGKILL for remaining
   for (const child of children) {
     if (!isChildAlive(child)) continue;
+    for (const pid of getDescendantPids(child.pid)) {
+      try {
+        process.kill(pid, 'SIGKILL');
+      } catch {}
+    }
     try {
       process.kill(-child.pid, 'SIGKILL');
-    } catch {}
-    try {
-      execSync(`pkill -9 -P ${child.pid} 2>/dev/null`, { stdio: 'pipe' });
     } catch {}
     try {
       child.kill('SIGKILL');
@@ -158,16 +197,43 @@ async function stopAllChildren() {
     });
   }
 
+  // Kill tracked service PIDs (processes directly listening on our ports)
+  for (const pid of servicePids) {
+    try {
+      process.kill(pid, 'SIGTERM');
+      await new Promise((r) => setTimeout(r, 200));
+      try {
+        process.kill(pid, 0);
+        process.kill(pid, 'SIGKILL');
+      } catch {}
+    } catch {}
+  }
+
   await new Promise((r) => setTimeout(r, 1000));
 
-  // Last resort: kill any process holding our target ports and wait for release
+  // Check for remaining port occupancy — report only, do NOT kill
   const targetPorts = [apiPort, scoringPort, webPort].filter(Boolean);
   for (const port of targetPorts) {
     try {
-      execSync(`fuser -k ${port}/tcp 2>/dev/null`, { stdio: 'pipe' });
-    } catch {}
+      const s = createServer();
+      await new Promise((resolve, reject) => {
+        s.once('error', () => {
+          s.close();
+          reject();
+        });
+        s.once('listening', () => {
+          s.close();
+          resolve();
+        });
+        s.listen(port, '127.0.0.1');
+      });
+    } catch {
+      console.error(
+        `  \u2717 Port ${port} is still occupied after managed cleanup. Ownership not established — not killed.`,
+      );
+      failures++;
+    }
   }
-  await new Promise((r) => setTimeout(r, 2000));
 
   const remaining = children.filter(isChildAlive).length;
   if (remaining > 0) {
@@ -231,6 +297,7 @@ async function main() {
     spawnService('scoring', 'services/scoring', 'start', []);
 
     await new Promise((r) => setTimeout(r, 2000));
+    await discoverServicePids();
 
     const apiLive = await waitForUrl(`${apiUrl}/health/live`, 'api-live', TIMEOUT / 3);
     if (!apiLive) failures++;
@@ -277,6 +344,7 @@ async function main() {
     if (existsSync('apps/web/.next')) {
       spawnService('web', 'apps/web', 'start', []);
       await new Promise((r) => setTimeout(r, 3000));
+      await discoverServicePids();
       const webOk = await checkUrl(webUrl, 'web HTTP');
       if (webOk) {
         try {
