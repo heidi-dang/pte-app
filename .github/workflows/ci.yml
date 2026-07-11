@@ -16,6 +16,9 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - run: node --check scripts/local-up.mjs
+      - run: node --check scripts/local-down.mjs
+      - run: node --check scripts/local-smoke.mjs
       - run: cp .env.example .env.local
       - run: npm run generate:pte-blueprints
       - run: node scripts/generate-pte-blueprints.mjs --validate

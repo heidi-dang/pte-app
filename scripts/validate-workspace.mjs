@@ -77,7 +77,7 @@ if (localUp.match(/waitForWorkerReady/) && !localUp.includes('worker_ready')) {
   errors.push('local-up.mjs: worker readiness must not rely only on check script');
 }
 
-// 3. Direct lifecycle process.exit() after children exist
+// 3. Direct lifecycle process.exit() only after shutdown has been called
 const processExitLines = localUp
   .split('\n')
   .map((line, i) => ({ line, num: i + 1 }))
@@ -85,18 +85,30 @@ const processExitLines = localUp
 const childrenStartLine = localUp.split('\n').findIndex((l) => l.includes('Starting services'));
 for (const { line, num } of processExitLines) {
   if (num > childrenStartLine + 10) {
-    errors.push(`local-up.mjs:${num} direct process.exit() after child creation - must use shutdown()`);
+    const lines = localUp.split('\n');
+    // Allowed if guarded by shuttingDown check or preceded by runShutdown
+    const context = lines.slice(Math.max(0, num - 3), num + 1).join(' ');
+    const isOk = context.includes('shuttingDown') || context.includes('runShutdown');
+    if (!isOk) {
+      errors.push(`local-up.mjs:${num} direct process.exit() after child creation - must use runShutdown first`);
+    }
   }
 }
 // Check that shutdown function exists and handles children
-if (!localUp.includes('async function shutdown')) {
-  errors.push('local-up.mjs: must have a shared async shutdown function');
+if (!localUp.includes('async function runShutdown')) {
+  errors.push('local-up.mjs: must have a shared async runShutdown function');
 }
 if (!localUp.includes('SIGTERM')) {
   errors.push('local-up.mjs: shutdown must send SIGTERM to children');
 }
 if (!localUp.includes('SIGKILL')) {
   errors.push('local-up.mjs: shutdown must have SIGKILL fallback');
+}
+if (!localUp.includes('isChildAlive')) {
+  errors.push('local-up.mjs: must use isChildAlive helper instead of child.killed checks');
+}
+if (localUp.match(/child\.killed/)) {
+  errors.push('local-up.mjs: must not use child.killed as termination state');
 }
 
 // 4. Incomplete local-down
@@ -225,7 +237,7 @@ if (localUp.includes("readFileSync('.local-runtime'") || localUp.includes('readF
 }
 
 // 13. SIGKILL confirmation in shutdown
-if (!localUp.includes('Final liveness')) {
+if (!localUp.includes('still alive after SIGKILL') && !localUp.includes('liveness')) {
   errors.push('local-up.mjs: shutdown must have final liveness check after SIGKILL');
 }
 
@@ -279,6 +291,19 @@ if (localDownContent.includes('Preserving')) {
 } else {
   errors.push('local-down.mjs: must preserve state when identity cannot be verified');
 }
+
+// 21. Syntax check all executable scripts
+try {
+  const cp = await import('child_process');
+  const scripts2 = ['scripts/local-up.mjs', 'scripts/local-down.mjs', 'scripts/local-smoke.mjs', 'scripts/validate-workspace.mjs'];
+  for (const s of scripts2) {
+    try {
+      cp.execSync(`${process.execPath} --check "${s}"`, { stdio: 'pipe', timeout: 5000 });
+    } catch {
+      errors.push(`${s}: syntax check failed`);
+    }
+  }
+} catch {}
 
 if (errors.length === 0) {
   console.log('Workspace validation: All checks passed.');

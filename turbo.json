@@ -7,7 +7,7 @@
     "lint": {},
     "typecheck": {},
     "test:unit": {},
-    "test:integration": {},
+    "test:integration": { "dependsOn": ["build"] },
     "start": { "dependsOn": ["build"], "persistent": true }
   }
 }

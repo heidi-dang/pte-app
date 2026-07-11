@@ -1,29 +1,28 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, execSync, type ChildProcess } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { createServer, type AddressInfo } from 'node:net';
+import { createServer } from 'node:net';
 
-const root = resolve(import.meta.dirname, '../../..');
+const root = resolve(import.meta.dirname, '../../../..');
 const webDir = resolve(root, 'apps/web');
 
-function isPortOpen(port: number, host = '127.0.0.1'): Promise<boolean> {
+function getAvailablePort(): Promise<number> {
   return new Promise((resolve) => {
-    const server = createServer();
-    server.once('error', () => resolve(true));
-    server.once('listening', () => {
-      server.close();
-      resolve(false);
+    const s = createServer();
+    s.listen(0, '127.0.0.1', () => {
+      const addr = s.address();
+      const port = addr && typeof addr === 'object' ? addr.port : 0;
+      s.close(() => resolve(port));
     });
-    server.listen(port, host);
   });
 }
 
 describe('Web integration', () => {
   if (!existsSync(resolve(webDir, '.next'))) {
-    it('skipped - web not built', () => {
-      console.log('Web not built, skipping integration test');
+    it('build web workspace first via turbo', () => {
+      assert.fail('Web not built. Run `npm run build` ensures build runs first via turbo dependency.');
     });
     return;
   }
@@ -33,55 +32,72 @@ describe('Web integration', () => {
   let port: number;
 
   before(async () => {
-    port = 0;
+    port = await getAvailablePort();
     child = spawn(npmCmd, ['run', 'start'], {
       cwd: webDir,
       stdio: 'pipe',
       env: { ...process.env, WEB_PORT: String(port) },
+      detached: true,
     });
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('Timeout waiting for web')), 15000);
-      child.stdout!.on('data', (data: Buffer) => {
+      const onData = (data: Buffer) => {
         const text = data.toString();
         if (text.includes('started') || text.includes('listening') || text.includes('localhost')) {
           clearTimeout(timeout);
+          child.stdout?.removeListener('data', onData);
+          child.stderr?.removeListener('data', onData);
           resolve();
         }
-      });
-      child.stderr!.on('data', (data: Buffer) => {
-        const text = data.toString();
-        if (text.includes('started') || text.includes('listening') || text.includes('localhost')) {
-          clearTimeout(timeout);
-          resolve();
-        }
-      });
-      child.on('error', (err) => {
+      };
+      child.stdout?.on('data', onData);
+      child.stderr?.on('data', onData);
+      child.on('error', (err: Error) => {
         clearTimeout(timeout);
         reject(err);
       });
-      child.on('exit', (code) => {
+      child.on('exit', (code: number | null) => {
         clearTimeout(timeout);
         reject(new Error(`Web exited with code ${code}`));
       });
     });
   });
 
-  after(async () => {
-    if (child && !child.killed) {
-      child.kill('SIGTERM');
+  async function killChild() {
+    if (!child || child.killed || child.exitCode !== null) return;
+    try { process.kill(-child.pid, 'SIGTERM'); } catch {}
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, 5000);
+      child.on('close', () => { clearTimeout(timer); resolve(); });
+    });
+    if (child.exitCode === null && !child.killed) {
+      try { process.kill(-child.pid, 'SIGKILL'); } catch {}
       await new Promise<void>((resolve) => {
-        const timer = setTimeout(() => {
-          try {
-            child.kill('SIGKILL');
-          } catch {}
-          resolve();
-        }, 3000);
-        child.on('close', () => {
-          clearTimeout(timer);
-          resolve();
-        });
+        const timer = setTimeout(resolve, 2000);
+        child.on('close', () => { clearTimeout(timer); resolve(); });
       });
     }
+  }
+
+  async function waitPortReleased(maxWait = 10000) {
+    const start = Date.now();
+    while (Date.now() - start < maxWait) {
+      const released = await new Promise<boolean>((resolve) => {
+        const s = createServer();
+        s.once('error', () => resolve(false));
+        s.once('listening', () => { s.close(); resolve(true); });
+        s.listen(port, '127.0.0.1');
+      });
+      if (released) return true;
+      await new Promise((r) => setTimeout(r, 300));
+    }
+    return false;
+  }
+
+  after(async () => {
+    await killChild();
+    const released = await waitPortReleased();
+    assert.ok(released, `Port ${port} should be released after close`);
   });
 
   it('returns HTTP 200', async () => {

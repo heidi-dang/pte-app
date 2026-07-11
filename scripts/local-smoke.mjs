@@ -143,13 +143,6 @@ async function stopAllChildren() {
     });
   }
 
-  // Phase 3: Port-level kill for remaining
-  for (const port of [apiPort, scoringPort, webPort].filter(Boolean)) {
-    try {
-      execSync(`fuser -k -n tcp ${port} 2>/dev/null`, { stdio: 'pipe' });
-    } catch {}
-  }
-
   await new Promise((r) => setTimeout(r, 1000));
 
   const remaining = children.filter(isChildAlive).length;

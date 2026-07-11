@@ -28,12 +28,17 @@ describe('local-down script structure', () => {
     assert.ok(downContent.includes('SIGKILL') && downContent.includes('still alive'));
   });
 
-  it('removes PID state', () => {
-    assert.ok(downContent.includes('rmSync') || downContent.includes('unlink'));
+  it('removes PID state when resolved', () => {
+    assert.ok(downContent.includes('rmSync'));
   });
 
-  it('removes empty runtime directory', () => {
-    assert.ok(downContent.includes('.local-runtime'));
+  it('preserves pids.json when unresolved entries exist', () => {
+    assert.ok(downContent.includes('unresolvedEntries'));
+    assert.ok(downContent.includes('preserved in pids.json'));
+  });
+
+  it('does not remove runtime directory when pids.json remains', () => {
+    assert.ok(downContent.includes('!existsSync(pidsPath) && existsSync'));
   });
 
   it('runs docker compose down', () => {
@@ -49,15 +54,24 @@ describe('local-down script structure', () => {
     assert.ok(downContent.includes('docker compose') && downContent.includes('-v'));
   });
 
-  it('verifies process identity via /proc/cmdline on Linux', () => {
-    assert.ok(downContent.includes('/proc') || downContent.includes('cmdline'));
+  it('verifies process identity via cmdline', () => {
+    assert.ok(downContent.includes('getActualCommandLine') || downContent.includes('cmdline'));
   });
 
   it('handles reused/mismatched PID', () => {
     assert.ok(downContent.includes('reused') || downContent.includes('different identity'));
   });
 
-  it('handles enhanced PID format (object with pid, service, commandMarker)', () => {
+  it('handles unverifiable PID on unsupported platforms', () => {
+    assert.ok(downContent.includes('cannot verify process identity'));
+  });
+
+  it('handles enhanced PID format', () => {
     assert.ok(downContent.includes('commandMarker') || downContent.includes('entry.pid'));
+  });
+
+  it('is async main function with catch', () => {
+    assert.ok(downContent.includes('async function main'));
+    assert.ok(downContent.includes('main().catch'));
   });
 });

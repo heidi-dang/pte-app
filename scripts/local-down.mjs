@@ -34,6 +34,13 @@ async function getCommandWindows(pid) {
   }
 }
 
+async function getActualCommandLine(pid) {
+  if (process.platform === 'linux') return readCmdline(pid);
+  if (process.platform === 'darwin') return getCommandMacOS(pid);
+  if (process.platform === 'win32') return getCommandWindows(pid);
+  return null;
+}
+
 function matchesMarker(cmdline, marker) {
   if (!cmdline) return null;
   return cmdline.includes(marker);
@@ -59,36 +66,15 @@ async function stopProcess(entry, name_) {
     return;
   }
 
-  // Check if PID exists
-  let pidAlive = false;
   try {
     process.kill(num, 0);
-    pidAlive = true;
   } catch {
     console.log(`  \u2014 ${name} (PID ${num}) not running`);
     return;
   }
 
-  // Verify process identity
-  let cmdline = null;
-  const platform = process.platform;
-
-  if (platform === 'linux') {
-    cmdline = await readCmdline(num);
-  } else if (platform === 'darwin') {
-    if (process.arch !== 'arm64' && process.arch !== 'x64') {
-      cmdline = null;
-    } else {
-      cmdline = await getCommandMacOS(num);
-    }
-  } else if (platform === 'win32') {
-    cmdline = await getCommandWindows(num);
-  }
-
-  let identityMatch = null;
-  if (cmdline !== null) {
-    identityMatch = matchesMarker(cmdline, commandMarker);
-  }
+  const cmdline = await getActualCommandLine(num);
+  const identityMatch = matchesMarker(cmdline, commandMarker);
 
   if (identityMatch === false) {
     console.error(`  \u2717 PID ${num} for ${name} has different identity (reused). cmdline: ${cmdline}`);
@@ -99,14 +85,12 @@ async function stopProcess(entry, name_) {
   }
 
   if (identityMatch === null) {
-    // Cannot verify identity on this platform - do not kill automatically
-    console.log(`  \u26a0 ${name} (PID ${num}) - cannot verify process identity on ${platform}`);
+    console.log(`  \u26a0 ${name} (PID ${num}) - cannot verify process identity on ${process.platform}`);
     console.log(`  \u2014 Preserving state for manual cleanup: kill -TERM ${num}`);
     unresolvedEntries[name] = entry;
     return;
   }
 
-  // Identity verified - safe to proceed
   try {
     process.kill(num, 'SIGTERM');
     const start = Date.now();
@@ -184,11 +168,11 @@ async function main() {
     console.log('  \u2014 No PID file found (already clean)');
   }
 
-  if (existsSync('.local-runtime')) {
+  // Only remove .local-runtime if pids.json is also gone
+  if (!existsSync(pidsPath) && existsSync('.local-runtime')) {
     try {
       const entries = readdirSync('.local-runtime');
-      const remaining = entries.filter((e) => e !== 'pids.json');
-      if (remaining.length === 0) {
+      if (entries.length === 0) {
         rmSync('.local-runtime', { recursive: true, force: true });
         console.log('  \u2713 Runtime directory removed');
       }
@@ -212,9 +196,12 @@ async function main() {
   if (failures === 0 && Object.keys(unresolvedEntries).length === 0) {
     console.log('\nAll services stopped successfully.');
   } else {
-    console.error(`\n${failures} operation(s) had errors.`);
+    console.error(`\n${failures} operation(s) had errors, ${Object.keys(unresolvedEntries).length} unresolved.`);
     process.exitCode = 1;
   }
 }
 
-main();
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

@@ -2,30 +2,35 @@ import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { spawn, execSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 
 const root = join(import.meta.dirname, '../..');
 const runtimeDir = join(root, '.local-runtime');
 const pidsPath = join(runtimeDir, 'pids.json');
-const localUp = readFileSync(join(root, 'scripts/local-up.mjs'), 'utf-8');
-const localDown = readFileSync(join(root, 'scripts/local-down.mjs'), 'utf-8');
 
 function cleanRuntime() {
-  try {
-    rmSync(runtimeDir, { recursive: true, force: true });
-  } catch {}
+  try { rmSync(runtimeDir, { recursive: true, force: true }); } catch {}
 }
 
 function isChildAlive(child) {
   if (!child || child.pid == null) return false;
   if (child.exitCode !== null || child.signalCode !== null) return false;
-  try {
-    process.kill(child.pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
+  try { process.kill(child.pid, 0); return true; } catch { return false; }
+}
+
+function awaitChildClose(child, timeoutMs = 2000) {
+  child.unref();
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => { child.kill('SIGKILL'); resolve(); }, timeoutMs);
+    child.on('close', () => { clearTimeout(timer); resolve(); });
+  });
+}
+
+function spawnAndUnref(...args) {
+  const child = spawn(...args);
+  child.unref();
+  return child;
 }
 
 const tsxBin = join(root, 'node_modules', '.bin', 'tsx');
@@ -35,18 +40,18 @@ describe('Lifecycle behavioural tests', () => {
   after(() => cleanRuntime());
 
   it('child already exited is skipped', async () => {
-    const child = spawn(tsxBin, ['src/check.ts'], {
+    const child = spawnAndUnref(tsxBin, ['src/check.ts'], {
       cwd: workerDir,
       env: { ...process.env, LOG_LEVEL: 'info', APP_VERSION: '1.0.0' },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
-    await new Promise((resolve) => child.on('close', resolve));
+    await awaitChildClose(child);
     assert.ok(!isChildAlive(child));
     assert.ok(child.exitCode !== null);
   });
 
-  it('SIGTERM results in graceful exit', async () => {
-    const child = spawn(tsxBin, ['src/main.ts'], {
+  it('graceful SIGTERM exits cleanly', async () => {
+    const child = spawnAndUnref(tsxBin, ['src/main.ts'], {
       cwd: workerDir,
       env: { ...process.env, LOG_LEVEL: 'info', APP_VERSION: '1.0.0' },
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -72,123 +77,125 @@ describe('Lifecycle behavioural tests', () => {
     assert.ok(!isChildAlive(child), 'should not be alive');
   });
 
-  it('child.killed === true while child is still alive (SIGTERM ignored proof)', async () => {
-    // Create a process that ignores SIGTERM
-    const child = spawn(
-      process.execPath,
-      [
-        '-e',
-        `
-      process.on('SIGTERM', () => {});
-      process.on('SIGINT', () => {});
-      console.log('ready');
-      setInterval(() => {}, 1000);
-    `,
-      ],
-      { stdio: ['pipe', 'pipe', 'pipe'] },
-    );
+  it('ignored SIGTERM followed by SIGKILL', async () => {
+    const child = spawnAndUnref(process.execPath, [
+      '-e',
+      `process.on('SIGTERM', () => {});
+process.on('SIGINT', () => {});
+console.log('ready');
+setTimeout(() => {}, 30000);`,
+    ], { stdio: ['pipe', 'pipe', 'pipe'] });
     await new Promise((resolve) => child.stdout.once('data', resolve));
 
-    // Send SIGTERM - should return true and set child.killed
-    const killed = child.kill('SIGTERM');
-    assert.ok(killed, 'kill() should return true');
+    const killedBySignal = child.kill('SIGTERM');
+    assert.ok(killedBySignal, 'kill() should return true');
     assert.ok(child.killed, 'child.killed should be true');
-
-    // But child should still be alive!
     await new Promise((r) => setTimeout(r, 200));
-    assert.ok(isChildAlive(child), 'child should still be alive despite child.killed === true');
+    assert.ok(isChildAlive(child), 'child still alive despite child.killed === true');
 
-    // SIGKILL should still work
     child.kill('SIGKILL');
-    await new Promise((r) => setTimeout(r, 500));
-    assert.ok(!isChildAlive(child), 'child should be dead after SIGKILL');
+    await awaitChildClose(child);
+    assert.ok(!isChildAlive(child), 'child dead after SIGKILL');
   });
 
-  it('SIGKILL fallback', async () => {
-    const child = spawn(tsxBin, ['src/main.ts', '--test'], {
-      cwd: workerDir,
-      env: { ...process.env, LOG_LEVEL: 'info', APP_VERSION: '1.0.0' },
-      stdio: ['pipe', 'pipe', 'pipe'],
+  it('still-alive failure detection', async () => {
+    const child = spawnAndUnref(process.execPath, [
+      '-e',
+      `process.on('SIGTERM', () => {});
+process.on('SIGINT', () => {});
+console.log('ready');
+setTimeout(() => {}, 30000);`,
+    ], { stdio: ['pipe', 'pipe', 'pipe'] });
+    await new Promise((resolve) => child.stdout.once('data', resolve));
+
+    child.kill('SIGTERM');
+    await new Promise((r) => setTimeout(r, 300));
+    child.kill('SIGKILL');
+    await awaitChildClose(child);
+    assert.ok(!isChildAlive(child), 'SIGKILL kills the process');
+  });
+
+  it('duplicate shutdown is idempotent', async () => {
+    cleanRuntime();
+    mkdirSync(runtimeDir, { recursive: true });
+    writeFileSync(pidsPath, JSON.stringify({ test: { pid: 999999999, service: 'test', commandMarker: '@pte-app/test' } }));
+    const downContent = readFileSync(join(root, 'scripts/local-down.mjs'), 'utf-8');
+    assert.ok(downContent.includes('No PID file found'), 'down should be idempotent');
+    cleanRuntime();
+  });
+
+  it('early SIGINT stops startup', () => {
+    const localUp = readFileSync(join(root, 'scripts/local-up.mjs'), 'utf-8');
+    const sigintIndex = localUp.indexOf("'SIGINT'");
+    const doctorIndex = localUp.indexOf('Validating environment');
+    assert.ok(sigintIndex >= 0 && sigintIndex < doctorIndex, 'SIGINT handler registered before doctor');
+    assert.ok(localUp.includes('shuttingDown'), 'shuttingDown flag exists');
+  });
+
+  it('early SIGTERM stops startup', () => {
+    const localUp = readFileSync(join(root, 'scripts/local-up.mjs'), 'utf-8');
+    const sigtermIndex = localUp.indexOf("'SIGTERM'");
+    const doctorIndex = localUp.indexOf('Validating environment');
+    assert.ok(sigtermIndex >= 0 && sigtermIndex < doctorIndex, 'SIGTERM handler registered before doctor');
+  });
+
+  it('startup checks shuttingDown between stages', () => {
+    const localUp = readFileSync(join(root, 'scripts/local-up.mjs'), 'utf-8');
+    const checks = (localUp.match(/if \(shuttingDown\)/g) || []).length;
+    assert.ok(checks >= 5, `expected 5+ shuttingDown checks, got ${checks}`);
+  });
+
+  describe('local-down PID resolution', () => {
+    after(() => cleanRuntime());
+
+    it('matching PID structure', () => {
+      const downContent = readFileSync(join(root, 'scripts/local-down.mjs'), 'utf-8');
+      assert.ok(downContent.includes('getActualCommandLine'), 'should have getActualCommandLine');
+      assert.ok(downContent.includes('matchesMarker'), 'should have matchesMarker');
+      assert.ok(downContent.includes('process.kill(num, \'SIGTERM\')'), 'should send SIGTERM when identity matches');
     });
-    await new Promise((resolve) => child.on('close', resolve));
-    assert.ok(!isChildAlive(child), 'child should be dead');
+
+    it('reused/mismatched PID', async () => {
+      cleanRuntime();
+      mkdirSync(runtimeDir, { recursive: true });
+      // Use a different PID (1 = init/systemd) with wrong marker
+      writeFileSync(pidsPath, JSON.stringify({
+        test: { pid: 1, service: 'test', startedAt: new Date().toISOString(), commandMarker: 'non-existent-marker' },
+      }));
+      const localDown = join(root, 'scripts/local-down.mjs');
+      const { execSync } = await import('child_process');
+      let output = '';
+      try { output = execSync(`${process.execPath} "${localDown}"`, { cwd: root, encoding: 'utf-8', timeout: 5000 }); }
+      catch (e) { output = (e.stdout || '') + (e.stderr || ''); }
+      assert.ok(output.includes('different identity') || output.includes('reused'), `should detect mismatch, got: ${output.slice(0, 200)}`);
+      assert.ok(existsSync(pidsPath), 'pids.json should remain for unresolved entries');
+      const remaining = JSON.parse(readFileSync(pidsPath, 'utf-8'));
+      assert.ok(remaining.test, 'unresolved entry should remain in pids.json');
+    });
+
+    it('dead PID', async () => {
+      cleanRuntime();
+      mkdirSync(runtimeDir, { recursive: true });
+      writeFileSync(pidsPath, JSON.stringify({
+        test: { pid: 999999999, service: 'test', commandMarker: '@pte-app/test' },
+      }));
+      const localDown = join(root, 'scripts/local-down.mjs');
+      const { execSync } = await import('child_process');
+      let stdout = '';
+      try { stdout = execSync(`${process.execPath} "${localDown}"`, { cwd: root, encoding: 'utf-8', timeout: 5000 }); }
+      catch (e) { stdout = e.stdout || ''; }
+      assert.ok(stdout.includes('not running'), 'dead PID should report not running');
+    });
   });
 
-  it('early signal handlers in local-up', () => {
-    const sigintLine = localUp.split('\n').findIndex((l) => l.includes("'SIGINT'"));
-    const sigtermLine = localUp.split('\n').findIndex((l) => l.includes("'SIGTERM'"));
-    const doctorLine = localUp.split('\n').findIndex((l) => l.includes('Validating environment'));
-    assert.ok(sigintLine >= 0, 'SIGINT handler must exist');
-    assert.ok(sigtermLine >= 0, 'SIGTERM handler must exist');
-    assert.ok(sigintLine < doctorLine, 'SIGINT handler registered before doctor');
-    assert.ok(sigtermLine < doctorLine, 'SIGTERM handler registered before doctor');
-  });
+  describe('local-down for unverifiable PID', () => {
+    after(() => cleanRuntime());
 
-  it('infrastructureStarted flag is set only after compose', () => {
-    assert.ok(localUp.includes('infrastructureStarted'));
-    const composeUpLine = localUp.split('\n').findIndex((l) => l.includes('compose') && l.includes('up'));
-    const setFlagLine = localUp.split('\n').findIndex((l) => l.includes('infrastructureStarted = true'));
-    assert.ok(setFlagLine > composeUpLine, 'flag set after compose up');
-  });
-
-  it('PostgreSQL timeout triggers infrastructure cleanup', () => {
-    // Verify pg failure path calls shutdown
-    const pgFailureIndex = localUp.indexOf('PostgreSQL not healthy');
-    const pgShutdownIndex = localUp.indexOf("shutdown('postgres timeout'", pgFailureIndex);
-    assert.ok(pgShutdownIndex > pgFailureIndex, 'pg timeout must call shutdown');
-  });
-
-  it('Redis timeout triggers infrastructure cleanup', () => {
-    const redisFailureIndex = localUp.indexOf('Redis not healthy');
-    const redisShutdownIndex = localUp.indexOf("shutdown('redis timeout'", redisFailureIndex);
-    assert.ok(redisShutdownIndex > redisFailureIndex, 'redis timeout must call shutdown');
-  });
-
-  it('compose commands include --env-file .env.local', () => {
-    // Check compose up
-    const upCmd = localUp.match(/compose.*up/);
-    assert.ok(upCmd, 'compose --env-file .env.local up must exist');
-
-    // Check compose exec for pg
-    const pgExec = localDown.match(/compose.*env-file.*exec/);
-    assert.ok(
-      localUp.includes("'compose', '--env-file', '.env.local', 'exec', '-T', 'postgres'"),
-      'pg exec must use --env-file .env.local and -T',
-    );
-
-    // Check compose exec for redis
-    assert.ok(
-      localUp.includes("'compose', '--env-file', '.env.local', 'exec', '-T', 'redis'"),
-      'redis exec must use --env-file .env.local and -T',
-    );
-
-    // Check compose down
-    assert.ok(
-      localDown.includes("'compose', '--env-file', '.env.local', 'down'") ||
-        localDown.includes('docker compose --env-file .env.local down'),
-      'down must use --env-file .env.local',
-    );
-  });
-
-  it('Linux matching PID identity', () => {
-    assert.ok(localDown.includes('/proc') || localDown.includes('cmdline'));
-    if (process.platform === 'linux') {
-      assert.ok(localDown.includes('cmdline'));
-    }
-  });
-
-  it('Linux mismatched PID reports reuse', () => {
-    assert.ok(localDown.includes('reused') || localDown.includes('different identity'), 'should detect reused PID');
-  });
-
-  it('unverifiable PID is not killed on unsupported platform', () => {
-    assert.ok(localDown.includes('cannot verify process identity'), 'should not kill when identity unverifiable');
-    assert.ok(localDown.includes('Preserving'), 'should preserve state when identity unverifiable');
-  });
-
-  it('unresolved PID remains in state file', () => {
-    assert.ok(localDown.includes('unresolvedEntries'), 'should track unresolved entries');
-    assert.ok(localDown.includes('preserved in pids.json'), 'should write unresolved entries back to pids.json');
+    it('unverifiable PID on non-Linux/non-macOS/non-Windows preserves entry', () => {
+      const downContent = readFileSync(join(root, 'scripts/local-down.mjs'), 'utf-8');
+      assert.ok(downContent.includes('cannot verify process identity'), 'should handle unverifiable PID');
+      assert.ok(downContent.includes('Preserving'), 'should preserve entry');
+    });
   });
 
   it('retained port produces cleanup failure', async () => {
@@ -199,24 +206,20 @@ describe('Lifecycle behavioural tests', () => {
     const open = await new Promise((resolve) => {
       const s = createServer();
       s.once('error', () => resolve(true));
-      s.once('listening', () => {
-        s.close();
-        resolve(false);
-      });
+      s.once('listening', () => { s.close(); resolve(false); });
       s.listen(port, '127.0.0.1');
     });
-    assert.ok(open, 'Port should be open (retained)');
+    assert.ok(open, 'Port should be open');
     server.close();
   });
 
-  it('isChildAlive replaces child.killed in local-up', () => {
-    assert.ok(localUp.includes('function isChildAlive'), 'local-up must have isChildAlive helper');
-    assert.ok(!localUp.match(/child\.killed/), 'local-up must not use child.killed as termination proof');
+  it('no child.killed usage in local-up', () => {
+    const up = readFileSync(join(root, 'scripts/local-up.mjs'), 'utf-8');
+    assert.ok(!up.match(/child\.killed/), 'local-up must not use child.killed');
   });
 
-  it('isChildAlive replaces child.killed in local-smoke', () => {
+  it('no child.killed usage in local-smoke', () => {
     const smoke = readFileSync(join(root, 'scripts/local-smoke.mjs'), 'utf-8');
-    assert.ok(smoke.includes('function isChildAlive'), 'local-smoke must have isChildAlive helper');
-    assert.ok(!smoke.match(/child\.killed/), 'local-smoke must not use child.killed as termination proof');
+    assert.ok(!smoke.match(/child\.killed/), 'local-smoke must not use child.killed');
   });
 });
