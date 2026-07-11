@@ -45,6 +45,12 @@ function spawnService(name, cwd, command, args) {
   children.push(child);
   // Capture grandchild PIDs at spawn time while ancestry is still intact
   const grandchildPids = [];
+  // Initial capture after a brief delay for grandchild to start
+  setTimeout(() => {
+    for (const pid of getDescendantPids(child.pid)) {
+      if (!grandchildPids.includes(pid)) grandchildPids.push(pid);
+    }
+  }, 300);
   const discoverInterval = setInterval(() => {
     for (const pid of getDescendantPids(child.pid)) {
       if (!grandchildPids.includes(pid)) {
@@ -54,6 +60,10 @@ function spawnService(name, cwd, command, args) {
   }, 200);
   child.on('exit', () => {
     clearInterval(discoverInterval);
+    // Final capture — grandchildren still visible right after npm exits
+    for (const pid of getDescendantPids(child.pid)) {
+      if (!grandchildPids.includes(pid)) grandchildPids.push(pid);
+    }
   });
   managed.push({ name, child, rootPid: child.pid, grandchildPids });
   child.on('error', () => {
