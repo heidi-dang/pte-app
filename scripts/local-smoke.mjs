@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { existsSync } from 'fs';
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync, execFileSync } from 'child_process';
 import { createServer } from 'net';
 import { loadEnvLocal } from './lib/local-env.mjs';
 
@@ -64,7 +64,6 @@ function spawnService(name, cwd, command, args) {
     env: { ...process.env, ...env },
     detached: true,
   });
-  child.unref();
   children.push(child);
   child.on('error', () => {
     console.error(`  \u2717 ${name}: process error`);
@@ -105,16 +104,18 @@ async function checkUrl(url, label) {
 }
 
 async function stopAllChildren() {
-  // Phase 1: SIGTERM to process groups for graceful shutdown
+  // Phase 1: SIGTERM to process groups and trees
   for (const child of children) {
     if (!isChildAlive(child)) continue;
     try {
       process.kill(-child.pid, 'SIGTERM');
-    } catch {
-      try {
-        child.kill('SIGTERM');
-      } catch {}
-    }
+    } catch {}
+    try {
+      execSync(`pkill -P ${child.pid} 2>/dev/null`, { stdio: 'pipe' });
+    } catch {}
+    try {
+      child.kill('SIGTERM');
+    } catch {}
   }
 
   // Wait up to 5s for graceful exit
@@ -137,11 +138,13 @@ async function stopAllChildren() {
     if (!isChildAlive(child)) continue;
     try {
       process.kill(-child.pid, 'SIGKILL');
-    } catch {
-      try {
-        child.kill('SIGKILL');
-      } catch {}
-    }
+    } catch {}
+    try {
+      execSync(`pkill -9 -P ${child.pid} 2>/dev/null`, { stdio: 'pipe' });
+    } catch {}
+    try {
+      child.kill('SIGKILL');
+    } catch {}
     await new Promise((resolve) => {
       const timer = setTimeout(resolve, 2000);
       child.once('exit', () => {
@@ -156,6 +159,15 @@ async function stopAllChildren() {
   }
 
   await new Promise((r) => setTimeout(r, 1000));
+
+  // Last resort: kill any process holding our target ports and wait for release
+  const targetPorts = [apiPort, scoringPort, webPort].filter(Boolean);
+  for (const port of targetPorts) {
+    try {
+      execSync(`fuser -k ${port}/tcp 2>/dev/null`, { stdio: 'pipe' });
+    } catch {}
+  }
+  await new Promise((r) => setTimeout(r, 2000));
 
   const remaining = children.filter(isChildAlive).length;
   if (remaining > 0) {

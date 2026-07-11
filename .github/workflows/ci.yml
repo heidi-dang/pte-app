@@ -23,44 +23,35 @@ jobs:
       - run: npm run generate:pte-blueprints
       - run: node scripts/generate-pte-blueprints.mjs --validate
       - run: npm run ci
-      - name: Docker lifecycle verification
-        run: |
-          # Wait for compose services to be available
-          docker compose --env-file .env.local up -d
-          for i in $(seq 1 15); do
-            if docker compose --env-file .env.local exec -T postgres pg_isready &>/dev/null; then
-              echo "PostgreSQL ready after ${i}s"
-              break
-            fi
-            sleep 2
-          done
-          for i in $(seq 1 15); do
-            if docker compose --env-file .env.local exec -T redis redis-cli ping &>/dev/null; then
-              echo "Redis ready after ${i}s"
-              break
-            fi
-            sleep 2
-          done
-          # Start node services and verify
-          npx tsx services/api/src/main.ts &
-          npx tsx services/scoring/src/main.ts &
-          for i in $(seq 1 15); do
-            if curl -s http://127.0.0.1:4000/health/live &>/dev/null; then
-              echo "API ready after ${i}s"
-              break
-            fi
-            sleep 2
-          done
-          curl -s http://127.0.0.1:4000/health/live
-          curl -s http://127.0.0.1:4000/health/ready
-          curl -s http://127.0.0.1:5000/health/live
-          curl -s http://127.0.0.1:5000/health/ready
-          # Cleanup
-          kill %1 %2 2>/dev/null || true
-          docker compose --env-file .env.local down
+
+      - name: Start local environment
+        run: npm run local:up
+      - name: Run local smoke test
+        run: npm run local:smoke
+      - name: Stop local environment
         if: always()
-      - run: git diff --check
+        run: npm run local:down
+
+      - name: Verify cleanup
+        if: always()
+        run: |
+          if docker compose --env-file .env.local ps -q | grep -q .; then
+            echo "ERROR: containers remain"
+            docker compose --env-file .env.local ps
+            exit 1
+          fi
+          if test -f .local-runtime/pids.json; then
+            echo "ERROR: PID state remains"
+            exit 1
+          fi
+          git diff --check
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "ERROR: tracked files changed"
+            git diff --stat
+            exit 1
+          fi
       - name: Fail on tracked file changes
+        if: always()
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             echo "ERROR: Tests or generation modified tracked files"
