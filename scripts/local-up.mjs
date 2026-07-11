@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { existsSync, writeFileSync, rmSync, readFileSync, mkdirSync } from 'node:fs';
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync, execFileSync } from 'child_process';
 import { loadEnvLocal, validateConfig } from './lib/local-env.mjs';
 
 const env = loadEnvLocal();
@@ -18,7 +18,8 @@ const webPort = env.WEB_PORT;
 const apiHost = env.API_HOST;
 const scoringHost = env.SCORING_HOST;
 const webHost = env.WEB_HOST;
-const timeout = parseInt(env.LOCAL_STARTUP_TIMEOUT_MS || '30000', 10);
+const timeout = parseInt(env.LOCAL_STARTUP_TIMEOUT_MS, 10);
+if (Number.isNaN(timeout)) throw new Error('LOCAL_STARTUP_TIMEOUT_MS must be set in .env.local');
 
 const children = [];
 const pids = {};
@@ -65,7 +66,7 @@ const pgStart = Date.now();
 let pgHealthy = false;
 while (Date.now() - pgStart < timeout && !pgHealthy) {
   try {
-    execSync(`docker compose exec postgres pg_isready -U ${pgUser} -d ${pgDb}`, { stdio: 'pipe' });
+    execFileSync('docker', ['compose', 'exec', 'postgres', 'pg_isready', '-U', pgUser, '-d', pgDb], { stdio: 'pipe' });
     pgHealthy = true;
     console.log('  ✓ PostgreSQL healthy');
   } catch {
@@ -81,7 +82,7 @@ const redisStart = Date.now();
 let redisHealthy = false;
 while (Date.now() - redisStart < timeout && !redisHealthy) {
   try {
-    execSync('docker compose exec redis redis-cli ping', { stdio: 'pipe' });
+    execFileSync('docker', ['compose', 'exec', 'redis', 'redis-cli', 'ping'], { stdio: 'pipe' });
     redisHealthy = true;
     console.log('  ✓ Redis healthy');
   } catch {
@@ -128,7 +129,23 @@ const apiReady = await waitForUrl(`http://${apiHost}:${apiPort}/health/ready`, '
 const scLive = await waitForUrl(`http://${scoringHost}:${scoringPort}/health/live`, 'Scoring live', timeout);
 const scReady = await waitForUrl(`http://${scoringHost}:${scoringPort}/health/ready`, 'Scoring ready', timeout);
 const webOk = await waitForUrl(`http://${webHost}:${webPort}`, 'Web', timeout);
-const workerOk = await waitForUrl(`http://${apiHost}:${apiPort}/health/live`, 'Worker', 5000);
+// Worker readiness via check command
+const workerOk = await waitForWorkerReady(timeout / 2);
+
+async function waitForWorkerReady(timeoutMs) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      execSync('node services/worker/dist/check.js', { stdio: 'pipe', cwd: '.' });
+      console.log('  ✓ Worker ready');
+      return true;
+    } catch {
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+  console.error('  ✗ Worker not ready');
+  return false;
+}
 
 const allOk = apiLive && apiReady && scLive && scReady && webOk;
 if (allOk) {
