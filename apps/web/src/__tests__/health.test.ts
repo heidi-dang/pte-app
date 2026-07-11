@@ -1,6 +1,6 @@
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { getHealthConfig, checkService, getHealthUrl } from '../lib/health';
+import { getHealthConfig, checkService, getHealthUrl } from '../lib/health.ts';
 
 describe('Health configuration', () => {
   it('Missing API URL returns configMissing', () => {
