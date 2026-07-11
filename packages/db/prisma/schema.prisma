@@ -1,0 +1,823 @@
+// PTE-App — Prisma Schema
+// Phase C: Database Schema and Data-Access Layer
+//
+// Design principles enforced here:
+//   - QuestionVersion is append-only; published versions are never mutated.
+//   - AttemptResponse has a unique constraint on (attemptId, questionId) — idempotency.
+//   - MockAttempt.serverDeadline / SectionAttempt.serverDeadline are absolute UTC timestamps.
+//   - ScoringResult stores the exact scoringProfileVersion used at scoring time.
+//   - Webhook.externalId is unique — prevents duplicate webhook processing.
+//   - Free Students share routes with Paid Students; entitlements control feature access.
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+
+enum RoleName {
+  GUEST
+  FREE_STUDENT
+  PAID_STUDENT
+  TEACHER
+  CONTENT_WRITER
+  CONTENT_REVIEWER
+  ADMINISTRATOR
+  SUPER_ADMINISTRATOR
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  TRIALING
+  PAST_DUE
+}
+
+enum QuestionStatus {
+  DRAFT
+  SUBMITTED_FOR_REVIEW
+  REVISION_REQUESTED
+  APPROVED
+  PUBLISHED
+  RETIRED
+}
+
+enum ReviewOutcome {
+  APPROVED
+  REJECTED
+  REVISION_REQUESTED
+}
+
+enum AttemptType {
+  PRACTICE
+  DIAGNOSTIC
+  MOCK
+  SECTION
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+  EXPIRED
+  RESUMED
+}
+
+enum ScoringStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  QUEUED
+}
+
+enum ScoringMethod {
+  OBJECTIVE
+  AI_ESTIMATED
+  TEACHER_REVIEW
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  RETRYING
+}
+
+enum AuditAction {
+  USER_REGISTERED
+  USER_VERIFIED
+  USER_LOGIN
+  USER_LOGOUT
+  USER_LOCKED
+  SUBSCRIPTION_ACTIVATED
+  SUBSCRIPTION_CANCELLED
+  SUBSCRIPTION_RENEWED
+  CONTENT_SUBMITTED
+  CONTENT_REVIEWED
+  CONTENT_PUBLISHED
+  CONTENT_RETIRED
+  SCORING_COMPLETED
+  TEACHER_REVIEW_SUBMITTED
+  FEATURE_FLAG_CHANGED
+  SYSTEM_SETTING_CHANGED
+  PAYMENT_PROCESSED
+  WEBHOOK_RECEIVED
+  ATTEMPT_STARTED
+  ATTEMPT_COMPLETED
+}
+
+// ─── IDENTITY ─────────────────────────────────────────────────────────────────
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String
+  emailVerified     Boolean   @default(false)
+  emailVerifiedAt   DateTime?
+  lockedUntil       DateTime?
+  failedLoginCount  Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  profile               UserProfile?
+  roles                 UserRole[]
+  sessions              Session[]
+  emailVerifications    EmailVerification[]
+  loginAttempts         LoginAttempt[]
+  subscriptions         Subscription[]
+  practiceResponses     PracticeResponse[]
+  diagnosticAttempts    DiagnosticAttempt[]
+  mockAttempts          MockAttempt[]
+  sectionAttempts       SectionAttempt[]
+  studyPlans            StudyPlan[]
+  vocabularyEntries     VocabularyEntry[]
+  mistakeEntries        MistakeEntry[]
+  teacherAssignments    TeacherAssignment[]   @relation("TeacherAssignments")
+  studentAssignments    TeacherAssignment[]   @relation("StudentAssignments")
+  teacherReviews        TeacherReview[]       @relation("TeacherReviews")
+  authoredQuestions     QuestionVersion[]     @relation("QuestionAuthor")
+  reviewedContent       QuestionReview[]
+  auditLogs             AuditLog[]
+  paymentIntents        PaymentIntent[]
+
+  @@index([email])
+  @@index([lockedUntil])
+}
+
+model UserProfile {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  firstName           String
+  lastName            String
+  displayName         String?
+  targetOverallScore  Int?
+  targetSpeaking      Int?
+  targetWriting       Int?
+  targetReading       Int?
+  targetListening     Int?
+  examDate            DateTime?
+  proficiencyLevel    String?
+  studyHistoryMonths  Int?
+  country             String?
+  timezone            String?
+  microphoneChecked   Boolean   @default(false)
+  microphoneCheckAt   DateTime?
+  onboardingComplete  Boolean   @default(false)
+  onboardingStep      String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmailVerification {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+model Session {
+  id           String    @id @default(cuid())
+  userId       String
+  token        String    @unique
+  expiresAt    DateTime
+  invalidatedAt DateTime?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  succeeded Boolean
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ─── ROLES & ENTITLEMENTS ─────────────────────────────────────────────────────
+
+model Role {
+  id          String   @id @default(cuid())
+  name        RoleName @unique
+  description String
+  createdAt   DateTime @default(now())
+
+  userRoles   UserRole[]
+  entitlements Entitlement[]
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  grantedAt DateTime @default(now())
+  grantedBy String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId])
+  @@index([userId])
+}
+
+model SubscriptionPlan {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  stripePriceId String?
+  intervalDays Int
+  priceMinorUnits Int
+  currency     String   @default("AUD")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscriptions  Subscription[]
+  entitlements   Entitlement[]
+}
+
+model Entitlement {
+  id                 String   @id @default(cuid())
+  subscriptionPlanId String
+  roleId             String
+  feature            String
+  limitValue         Int?
+  createdAt          DateTime @default(now())
+
+  subscriptionPlan SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id])
+  role             Role             @relation(fields: [roleId], references: [id])
+
+  @@unique([subscriptionPlanId, roleId, feature])
+  @@index([subscriptionPlanId])
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String
+  subscriptionPlanId   String
+  status               SubscriptionStatus @default(ACTIVE)
+  stripeSubscriptionId String?            @unique
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelledAt          DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user             User             @relation(fields: [userId], references: [id])
+  subscriptionPlan SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id])
+  events           SubscriptionEvent[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([currentPeriodEnd])
+}
+
+// ─── CONTENT ──────────────────────────────────────────────────────────────────
+
+model Source {
+  id          String   @id @default(cuid())
+  name        String
+  type        String
+  url         String?
+  licence     String
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questionVersions QuestionVersion[]
+}
+
+model Asset {
+  id          String   @id @default(cuid())
+  filename    String
+  mimeType    String
+  sizeBytes   Int
+  storageKey  String   @unique
+  altText     String?
+  createdById String
+  createdAt   DateTime @default(now())
+}
+
+model Question {
+  id        String    @id @default(cuid())
+  taskType  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  versions  QuestionVersion[]
+}
+
+model QuestionVersion {
+  id               String        @id @default(cuid())
+  questionId       String
+  version          Int
+  status           QuestionStatus @default(DRAFT)
+  taskType         String
+  promptText       String?
+  promptAudioKey   String?
+  promptImageKey   String?
+  answerData       Json
+  metadata         Json
+  sourceId         String?
+  authorId         String
+  publishedAt      DateTime?
+  retiredAt        DateTime?
+  reviewScore      Int?
+  createdAt        DateTime      @default(now())
+
+  question  Question       @relation(fields: [questionId], references: [id])
+  source    Source?        @relation(fields: [sourceId], references: [id])
+  author    User           @relation("QuestionAuthor", fields: [authorId], references: [id])
+  reviews   QuestionReview[]
+  responses AttemptResponse[]
+
+  @@unique([questionId, version])
+  @@index([taskType, status])
+  @@index([questionId])
+}
+
+model QuestionReview {
+  id                String        @id @default(cuid())
+  questionVersionId String
+  reviewerId        String
+  outcome           ReviewOutcome
+  score             Int?
+  feedback          String?
+  createdAt         DateTime      @default(now())
+
+  questionVersion QuestionVersion @relation(fields: [questionVersionId], references: [id])
+  reviewer        User            @relation(fields: [reviewerId], references: [id])
+
+  @@index([questionVersionId])
+  @@index([reviewerId])
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  slug        String   @unique
+  isPublished Boolean  @default(false)
+  orderIndex  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lessons        Lesson[]
+  lessonProgress LessonProgress[]
+}
+
+model Lesson {
+  id             String   @id @default(cuid())
+  courseId       String
+  title          String
+  contentMd      String
+  orderIndex     Int
+  estimatedMins  Int
+  isPublished    Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  course         Course           @relation(fields: [courseId], references: [id])
+  lessonProgress LessonProgress[]
+
+  @@index([courseId, orderIndex])
+}
+
+model LessonProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  courseId    String
+  lessonId    String
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  course  Course  @relation(fields: [courseId], references: [id])
+  lesson  Lesson  @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
+  @@index([userId, courseId])
+}
+
+// ─── ATTEMPTS & RESPONSES ─────────────────────────────────────────────────────
+
+model PracticeSession {
+  id          String        @id @default(cuid())
+  userId      String
+  taskType    String
+  status      AttemptStatus @default(IN_PROGRESS)
+  startedAt   DateTime      @default(now())
+  completedAt DateTime?
+
+  responses PracticeResponse[]
+
+  @@index([userId, taskType])
+}
+
+model PracticeResponse {
+  id                  String    @id @default(cuid())
+  practiceSessionId   String
+  userId              String
+  questionVersionId   String
+  responseData        Json
+  audioKey            String?
+  submittedAt         DateTime  @default(now())
+  durationMs          Int?
+
+  session         PracticeSession @relation(fields: [practiceSessionId], references: [id])
+  user            User            @relation(fields: [userId], references: [id])
+  scoringResults  ScoringResult[]
+
+  @@index([practiceSessionId])
+  @@index([userId])
+}
+
+model DiagnosticAttempt {
+  id            String        @id @default(cuid())
+  userId        String
+  status        AttemptStatus @default(IN_PROGRESS)
+  startedAt     DateTime      @default(now())
+  completedAt   DateTime?
+  scoredAt      DateTime?
+
+  user      User              @relation(fields: [userId], references: [id])
+  responses AttemptResponse[]
+  results   ScoringResult[]
+
+  @@index([userId])
+}
+
+model MockAttempt {
+  id             String        @id @default(cuid())
+  userId         String
+  status         AttemptStatus @default(IN_PROGRESS)
+  serverDeadline DateTime
+  startedAt      DateTime      @default(now())
+  completedAt    DateTime?
+  scoredAt       DateTime?
+
+  user      User              @relation(fields: [userId], references: [id])
+  responses AttemptResponse[]
+  results   ScoringResult[]
+
+  @@index([userId])
+  @@index([serverDeadline])
+}
+
+model SectionAttempt {
+  id             String        @id @default(cuid())
+  userId         String
+  section        String
+  status         AttemptStatus @default(IN_PROGRESS)
+  serverDeadline DateTime
+  startedAt      DateTime      @default(now())
+  completedAt    DateTime?
+  scoredAt       DateTime?
+
+  user      User              @relation(fields: [userId], references: [id])
+  responses AttemptResponse[]
+  results   ScoringResult[]
+
+  @@index([userId])
+  @@index([serverDeadline])
+}
+
+model AttemptResponse {
+  id                  String   @id @default(cuid())
+  attemptType         AttemptType
+  diagnosticAttemptId String?
+  mockAttemptId       String?
+  sectionAttemptId    String?
+  questionVersionId   String
+  responseData        Json
+  audioKey            String?
+  audioPlaybackCount  Int      @default(0)
+  submittedAt         DateTime @default(now())
+  durationMs          Int?
+
+  diagnosticAttempt DiagnosticAttempt? @relation(fields: [diagnosticAttemptId], references: [id])
+  mockAttempt       MockAttempt?       @relation(fields: [mockAttemptId], references: [id])
+  sectionAttempt    SectionAttempt?    @relation(fields: [sectionAttemptId], references: [id])
+  questionVersion   QuestionVersion    @relation(fields: [questionVersionId], references: [id])
+  scoringResults    ScoringResult[]
+
+  // Idempotency: one response per question per attempt
+  @@unique([diagnosticAttemptId, questionVersionId])
+  @@unique([mockAttemptId, questionVersionId])
+  @@unique([sectionAttemptId, questionVersionId])
+  @@index([questionVersionId])
+}
+
+// ─── SCORING ──────────────────────────────────────────────────────────────────
+
+model ScoringProfile {
+  id               String   @id @default(cuid())
+  version          String   @unique
+  taskType         String
+  method           ScoringMethod
+  config           Json
+  isActive         Boolean  @default(false)
+  publishedAt      DateTime?
+  publishedBy      String?
+  createdAt        DateTime @default(now())
+
+  results ScoringResult[]
+
+  @@index([taskType, isActive])
+}
+
+model ScoringResult {
+  id                    String        @id @default(cuid())
+  scoringProfileId      String
+  scoringProfileVersion String
+  questionVersion       String
+  providerVersion       String?
+  scoringMethod         ScoringMethod
+  status                ScoringStatus @default(PENDING)
+
+  // Polymorphic — exactly one of these is set
+  practiceResponseId    String?
+  attemptResponseId     String?
+  diagnosticAttemptId   String?
+  mockAttemptId         String?
+  sectionAttemptId      String?
+
+  estimatedScore        Float?
+  confidenceLow         Float?
+  confidenceHigh        Float?
+  rawResponse           Json?
+  scoredAt              DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  scoringProfile    ScoringProfile    @relation(fields: [scoringProfileId], references: [id])
+  practiceResponse  PracticeResponse? @relation(fields: [practiceResponseId], references: [id])
+  attemptResponse   AttemptResponse?  @relation(fields: [attemptResponseId], references: [id])
+  diagnosticAttempt DiagnosticAttempt? @relation(fields: [diagnosticAttemptId], references: [id])
+  mockAttempt       MockAttempt?      @relation(fields: [mockAttemptId], references: [id])
+  sectionAttempt    SectionAttempt?   @relation(fields: [sectionAttemptId], references: [id])
+  components        ScoringResultComponent[]
+  teacherReview     TeacherReview?
+
+  @@index([status])
+  @@index([scoringProfileId])
+}
+
+model ScoringResultComponent {
+  id              String @id @default(cuid())
+  scoringResultId String
+  criterion       String
+  score           Float
+  evidence        Json
+  createdAt       DateTime @default(now())
+
+  scoringResult ScoringResult @relation(fields: [scoringResultId], references: [id], onDelete: Cascade)
+
+  @@index([scoringResultId])
+}
+
+// ─── STUDY PLAN ───────────────────────────────────────────────────────────────
+
+model StudyPlan {
+  id            String    @id @default(cuid())
+  userId        String
+  generatedAt   DateTime  @default(now())
+  basedOnDiagId String?
+  targetScore   Int?
+  examDate      DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id])
+  items    StudyPlanItem[]
+
+  @@index([userId, isActive])
+}
+
+model StudyPlanItem {
+  id          String    @id @default(cuid())
+  studyPlanId String
+  taskType    String?
+  activityType String
+  dueDate     DateTime
+  estimatedMins Int
+  priority    Int
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  studyPlan StudyPlan         @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
+  progress  StudyPlanProgress[]
+
+  @@index([studyPlanId, dueDate])
+}
+
+model StudyPlanProgress {
+  id              String   @id @default(cuid())
+  studyPlanItemId String
+  completedAt     DateTime @default(now())
+  notes           String?
+
+  studyPlanItem StudyPlanItem @relation(fields: [studyPlanItemId], references: [id], onDelete: Cascade)
+}
+
+// ─── VOCABULARY & MISTAKES ────────────────────────────────────────────────────
+
+model VocabularyEntry {
+  id          String    @id @default(cuid())
+  userId      String
+  word        String
+  definition  String?
+  context     String?
+  nextReviewAt DateTime?
+  interval    Int       @default(1)
+  easeFactor  Float     @default(2.5)
+  repetitions Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, word])
+  @@index([userId, nextReviewAt])
+}
+
+model MistakeEntry {
+  id                String    @id @default(cuid())
+  userId            String
+  questionVersionId String
+  taskType          String
+  notes             String?
+  reviewedAt        DateTime?
+  confidenceRating  Int?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionVersionId])
+  @@index([userId, taskType])
+}
+
+// ─── TEACHER ──────────────────────────────────────────────────────────────────
+
+model TeacherAssignment {
+  id          String   @id @default(cuid())
+  teacherId   String
+  studentId   String
+  assignedAt  DateTime @default(now())
+  revokedAt   DateTime?
+
+  teacher User @relation("TeacherAssignments", fields: [teacherId], references: [id])
+  student User @relation("StudentAssignments", fields: [studentId], references: [id])
+
+  @@unique([teacherId, studentId])
+  @@index([teacherId])
+  @@index([studentId])
+}
+
+model TeacherReview {
+  id              String    @id @default(cuid())
+  teacherId       String
+  scoringResultId String    @unique
+  scoreOverride   Float?
+  feedbackText    String?
+  feedbackAudioKey String?
+  submittedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  teacher       User          @relation("TeacherReviews", fields: [teacherId], references: [id])
+  scoringResult ScoringResult @relation(fields: [scoringResultId], references: [id])
+
+  @@index([teacherId])
+}
+
+// ─── PAYMENTS ─────────────────────────────────────────────────────────────────
+
+model PaymentIntent {
+  id                    String    @id @default(cuid())
+  userId                String
+  stripePaymentIntentId String    @unique
+  amountMinorUnits      Int
+  currency              String
+  status                String
+  confirmedAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model SubscriptionEvent {
+  id             String   @id @default(cuid())
+  subscriptionId String
+  eventType      String
+  payload        Json
+  createdAt      DateTime @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([subscriptionId])
+}
+
+model Webhook {
+  id           String    @id @default(cuid())
+  externalId   String    @unique
+  provider     String
+  eventType    String
+  payload      Json
+  processedAt  DateTime?
+  failureCount Int       @default(0)
+  lastError    String?
+  createdAt    DateTime  @default(now())
+
+  @@index([processedAt])
+}
+
+// ─── ADMIN & AUDIT ────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  userId     String?
+  action     AuditAction
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action, createdAt])
+  @@index([entityType, entityId])
+}
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  enabled     Boolean  @default(false)
+  description String
+  updatedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  type        String
+  status      JobStatus @default(PENDING)
+  payload     Json
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  lastError   String?
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, scheduledAt])
+  @@index([type, status])
+}

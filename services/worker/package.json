@@ -13,6 +13,9 @@
     "test:unit": "tsx --test src/**/*.unit.test.ts",
     "test:integration": "tsx --test src/**/*.integration.test.ts"
   },
+  "dependencies": {
+    "@pte-app/db": "*"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.8.0",

@@ -1,0 +1,36 @@
+{
+  "name": "@pte-app/db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Prisma client, schema and typed repository functions for PTE-App",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts",
+    "test:unit": "tsx --test src/**/*.unit.test.ts",
+    "test:integration": "tsx --test src/**/*.integration.test.ts",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.12.0"
+  },
+  "devDependencies": {
+    "@pte-app/eslint-config": "*",
+    "@pte-app/typescript-config": "*",
+    "prisma": "^6.12.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}

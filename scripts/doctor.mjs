@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { execSync } from 'child_process';
 
 let exitCode = 0;
@@ -33,6 +33,12 @@ check('npm available', () => {
 check('Workspace installed', () => existsSync('node_modules'));
 
 check('.env.local exists', () => existsSync('.env.local'));
+
+check('DATABASE_URL defined in .env.local', () => {
+  if (!existsSync('.env.local')) return false;
+  const content = readFileSync('.env.local', 'utf-8');
+  return content.includes('DATABASE_URL');
+});
 
 check('Docker available', () => {
   execSync('docker --version', { stdio: 'pipe' });
