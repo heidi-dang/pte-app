@@ -23,6 +23,21 @@ jobs:
       - run: npm run generate:pte-blueprints
       - run: node scripts/generate-pte-blueprints.mjs --validate
       - run: npm run ci
+      - name: Docker lifecycle verification
+        run: |
+          npm run local:up &
+          UP_PID=\$!
+          for i in \$(seq 1 30); do
+            if curl -s http://127.0.0.1:4000/health/live &>/dev/null; then
+              echo "API ready after \${i}s"
+              break
+            fi
+            sleep 2
+          done
+          curl -s http://127.0.0.1:5000/health/live
+          curl -s -o /dev/null -w "Web: HTTP %{http_code}\n" http://127.0.0.1:3000
+          npm run local:down
+        if: always()
       - run: git diff --check
       - name: Fail on tracked file changes
         run: |
