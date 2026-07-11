@@ -65,16 +65,26 @@ describe('Web integration', () => {
 
   async function killChild() {
     if (!child || child.killed || child.exitCode !== null) return;
-    try { process.kill(-child.pid, 'SIGTERM'); } catch {}
+    try {
+      process.kill(-child.pid, 'SIGTERM');
+    } catch {}
     await new Promise<void>((resolve) => {
       const timer = setTimeout(resolve, 5000);
-      child.on('close', () => { clearTimeout(timer); resolve(); });
+      child.on('close', () => {
+        clearTimeout(timer);
+        resolve();
+      });
     });
     if (child.exitCode === null && !child.killed) {
-      try { process.kill(-child.pid, 'SIGKILL'); } catch {}
+      try {
+        process.kill(-child.pid, 'SIGKILL');
+      } catch {}
       await new Promise<void>((resolve) => {
         const timer = setTimeout(resolve, 2000);
-        child.on('close', () => { clearTimeout(timer); resolve(); });
+        child.on('close', () => {
+          clearTimeout(timer);
+          resolve();
+        });
       });
     }
   }
@@ -85,7 +95,10 @@ describe('Web integration', () => {
       const released = await new Promise<boolean>((resolve) => {
         const s = createServer();
         s.once('error', () => resolve(false));
-        s.once('listening', () => { s.close(); resolve(true); });
+        s.once('listening', () => {
+          s.close();
+          resolve(true);
+        });
         s.listen(port, '127.0.0.1');
       });
       if (released) return true;

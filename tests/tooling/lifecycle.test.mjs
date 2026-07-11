@@ -10,20 +10,33 @@ const runtimeDir = join(root, '.local-runtime');
 const pidsPath = join(runtimeDir, 'pids.json');
 
 function cleanRuntime() {
-  try { rmSync(runtimeDir, { recursive: true, force: true }); } catch {}
+  try {
+    rmSync(runtimeDir, { recursive: true, force: true });
+  } catch {}
 }
 
 function isChildAlive(child) {
   if (!child || child.pid == null) return false;
   if (child.exitCode !== null || child.signalCode !== null) return false;
-  try { process.kill(child.pid, 0); return true; } catch { return false; }
+  try {
+    process.kill(child.pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function awaitChildClose(child, timeoutMs = 2000) {
   child.unref();
   return new Promise((resolve) => {
-    const timer = setTimeout(() => { child.kill('SIGKILL'); resolve(); }, timeoutMs);
-    child.on('close', () => { clearTimeout(timer); resolve(); });
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL');
+      resolve();
+    }, timeoutMs);
+    child.on('close', () => {
+      clearTimeout(timer);
+      resolve();
+    });
   });
 }
 
@@ -78,13 +91,17 @@ describe('Lifecycle behavioural tests', () => {
   });
 
   it('ignored SIGTERM followed by SIGKILL', async () => {
-    const child = spawnAndUnref(process.execPath, [
-      '-e',
-      `process.on('SIGTERM', () => {});
+    const child = spawnAndUnref(
+      process.execPath,
+      [
+        '-e',
+        `process.on('SIGTERM', () => {});
 process.on('SIGINT', () => {});
 console.log('ready');
 setTimeout(() => {}, 30000);`,
-    ], { stdio: ['pipe', 'pipe', 'pipe'] });
+      ],
+      { stdio: ['pipe', 'pipe', 'pipe'] },
+    );
     await new Promise((resolve) => child.stdout.once('data', resolve));
 
     const killedBySignal = child.kill('SIGTERM');
@@ -99,13 +116,17 @@ setTimeout(() => {}, 30000);`,
   });
 
   it('still-alive failure detection', async () => {
-    const child = spawnAndUnref(process.execPath, [
-      '-e',
-      `process.on('SIGTERM', () => {});
+    const child = spawnAndUnref(
+      process.execPath,
+      [
+        '-e',
+        `process.on('SIGTERM', () => {});
 process.on('SIGINT', () => {});
 console.log('ready');
 setTimeout(() => {}, 30000);`,
-    ], { stdio: ['pipe', 'pipe', 'pipe'] });
+      ],
+      { stdio: ['pipe', 'pipe', 'pipe'] },
+    );
     await new Promise((resolve) => child.stdout.once('data', resolve));
 
     child.kill('SIGTERM');
@@ -118,7 +139,10 @@ setTimeout(() => {}, 30000);`,
   it('duplicate shutdown is idempotent', async () => {
     cleanRuntime();
     mkdirSync(runtimeDir, { recursive: true });
-    writeFileSync(pidsPath, JSON.stringify({ test: { pid: 999999999, service: 'test', commandMarker: '@pte-app/test' } }));
+    writeFileSync(
+      pidsPath,
+      JSON.stringify({ test: { pid: 999999999, service: 'test', commandMarker: '@pte-app/test' } }),
+    );
     const downContent = readFileSync(join(root, 'scripts/local-down.mjs'), 'utf-8');
     assert.ok(downContent.includes('No PID file found'), 'down should be idempotent');
     cleanRuntime();
@@ -152,22 +176,31 @@ setTimeout(() => {}, 30000);`,
       const downContent = readFileSync(join(root, 'scripts/local-down.mjs'), 'utf-8');
       assert.ok(downContent.includes('getActualCommandLine'), 'should have getActualCommandLine');
       assert.ok(downContent.includes('matchesMarker'), 'should have matchesMarker');
-      assert.ok(downContent.includes('process.kill(num, \'SIGTERM\')'), 'should send SIGTERM when identity matches');
+      assert.ok(downContent.includes("process.kill(num, 'SIGTERM')"), 'should send SIGTERM when identity matches');
     });
 
     it('reused/mismatched PID', async () => {
       cleanRuntime();
       mkdirSync(runtimeDir, { recursive: true });
       // Use a different PID (1 = init/systemd) with wrong marker
-      writeFileSync(pidsPath, JSON.stringify({
-        test: { pid: 1, service: 'test', startedAt: new Date().toISOString(), commandMarker: 'non-existent-marker' },
-      }));
+      writeFileSync(
+        pidsPath,
+        JSON.stringify({
+          test: { pid: 1, service: 'test', startedAt: new Date().toISOString(), commandMarker: 'non-existent-marker' },
+        }),
+      );
       const localDown = join(root, 'scripts/local-down.mjs');
       const { execSync } = await import('child_process');
       let output = '';
-      try { output = execSync(`${process.execPath} "${localDown}"`, { cwd: root, encoding: 'utf-8', timeout: 5000 }); }
-      catch (e) { output = (e.stdout || '') + (e.stderr || ''); }
-      assert.ok(output.includes('different identity') || output.includes('reused'), `should detect mismatch, got: ${output.slice(0, 200)}`);
+      try {
+        output = execSync(`${process.execPath} "${localDown}"`, { cwd: root, encoding: 'utf-8', timeout: 5000 });
+      } catch (e) {
+        output = (e.stdout || '') + (e.stderr || '');
+      }
+      assert.ok(
+        output.includes('different identity') || output.includes('reused'),
+        `should detect mismatch, got: ${output.slice(0, 200)}`,
+      );
       assert.ok(existsSync(pidsPath), 'pids.json should remain for unresolved entries');
       const remaining = JSON.parse(readFileSync(pidsPath, 'utf-8'));
       assert.ok(remaining.test, 'unresolved entry should remain in pids.json');
@@ -176,14 +209,20 @@ setTimeout(() => {}, 30000);`,
     it('dead PID', async () => {
       cleanRuntime();
       mkdirSync(runtimeDir, { recursive: true });
-      writeFileSync(pidsPath, JSON.stringify({
-        test: { pid: 999999999, service: 'test', commandMarker: '@pte-app/test' },
-      }));
+      writeFileSync(
+        pidsPath,
+        JSON.stringify({
+          test: { pid: 999999999, service: 'test', commandMarker: '@pte-app/test' },
+        }),
+      );
       const localDown = join(root, 'scripts/local-down.mjs');
       const { execSync } = await import('child_process');
       let stdout = '';
-      try { stdout = execSync(`${process.execPath} "${localDown}"`, { cwd: root, encoding: 'utf-8', timeout: 5000 }); }
-      catch (e) { stdout = e.stdout || ''; }
+      try {
+        stdout = execSync(`${process.execPath} "${localDown}"`, { cwd: root, encoding: 'utf-8', timeout: 5000 });
+      } catch (e) {
+        stdout = e.stdout || '';
+      }
       assert.ok(stdout.includes('not running'), 'dead PID should report not running');
     });
   });
@@ -206,7 +245,10 @@ setTimeout(() => {}, 30000);`,
     const open = await new Promise((resolve) => {
       const s = createServer();
       s.once('error', () => resolve(true));
-      s.once('listening', () => { s.close(); resolve(false); });
+      s.once('listening', () => {
+        s.close();
+        resolve(false);
+      });
       s.listen(port, '127.0.0.1');
     });
     assert.ok(open, 'Port should be open');

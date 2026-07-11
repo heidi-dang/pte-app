@@ -295,7 +295,12 @@ if (localDownContent.includes('Preserving')) {
 // 21. Syntax check all executable scripts
 try {
   const cp = await import('child_process');
-  const scripts2 = ['scripts/local-up.mjs', 'scripts/local-down.mjs', 'scripts/local-smoke.mjs', 'scripts/validate-workspace.mjs'];
+  const scripts2 = [
+    'scripts/local-up.mjs',
+    'scripts/local-down.mjs',
+    'scripts/local-smoke.mjs',
+    'scripts/validate-workspace.mjs',
+  ];
   for (const s of scripts2) {
     try {
       cp.execSync(`${process.execPath} --check "${s}"`, { stdio: 'pipe', timeout: 5000 });
