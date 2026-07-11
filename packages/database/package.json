@@ -1,0 +1,40 @@
+{
+  "name": "@pte-app/database",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./connection": {
+      "types": "./dist/connection.d.ts",
+      "default": "./dist/connection.js"
+    },
+    "./migrate": {
+      "types": "./dist/migrate.d.ts",
+      "default": "./dist/migrate.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "tsx --test src/**/*.unit.test.ts",
+    "migrate": "tsx src/migrate.ts"
+  },
+  "dependencies": {
+    "postgres": "^3.4.0"
+  },
+  "devDependencies": {
+    "@pte-app/contracts": "*",
+    "@pte-app/domain": "*",
+    "@pte-app/typescript-config": "*",
+    "@pte-app/eslint-config": "*",
+    "typescript": "^5.8.0",
+    "tsx": "^4.19.0"
+  }
+}

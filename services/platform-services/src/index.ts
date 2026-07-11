@@ -1,0 +1,10 @@
+export { DiagnosticService } from './diagnostic/diagnostic.js';
+export type { DiagnosticResult } from './diagnostic/diagnostic.js';
+export { MockExamEngine } from './mock/mock-engine.js';
+export type { MockBlueprint, MockSection } from './mock/mock-engine.js';
+export { DashboardService } from './dashboard/dashboard.js';
+export type { StudentDashboard, ActivityItem, SkillMastery } from './dashboard/dashboard.js';
+export { PaymentService } from './payments/payments.js';
+export type { Plan, Subscription, PaymentEvent } from './payments/payments.js';
+export { NotificationService } from './notifications/notifications.js';
+export type { Notification, NotificationChannel } from './notifications/notifications.js';

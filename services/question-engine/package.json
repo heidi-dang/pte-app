@@ -1,0 +1,19 @@
+{
+  "name": "@pte-app/question-engine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "tsx --test src/**/*.unit.test.ts"
+  },
+  "devDependencies": {
+    "@pte-app/contracts": "*",
+    "@pte-app/domain": "*",
+    "@pte-app/typescript-config": "*",
+    "typescript": "^5.8.0",
+    "tsx": "^4.19.0"
+  }
+}

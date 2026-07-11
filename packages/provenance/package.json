@@ -1,0 +1,33 @@
+{
+  "name": "@pte-app/provenance",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./service": {
+      "types": "./dist/service.d.ts",
+      "default": "./dist/service.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "tsx --test src/**/*.unit.test.ts"
+  },
+  "devDependencies": {
+    "@pte-app/contracts": "*",
+    "@pte-app/typescript-config": "*",
+    "typescript": "^5.8.0",
+    "tsx": "^4.19.0"
+  }
+}
