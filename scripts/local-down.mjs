@@ -183,12 +183,16 @@ async function main() {
   }
 
   console.log('Stopping Docker Compose services...');
-  try {
-    execFileSync('docker', ['compose', '--env-file', '.env.local', 'down'], { stdio: 'inherit' });
-    console.log('  \u2713 Docker Compose services stopped (volumes preserved)');
-  } catch (e) {
-    console.error(`  \u2717 Docker Compose down failed: ${e.message}`);
-    failures++;
+  if (!existsSync('.env.local')) {
+    console.log('  \u2014 Docker Compose teardown skipped (no .env.local)');
+  } else {
+    try {
+      execFileSync('docker', ['compose', '--env-file', '.env.local', 'down'], { stdio: 'inherit' });
+      console.log('  \u2713 Docker Compose services stopped (volumes preserved)');
+    } catch (e) {
+      console.error(`  \u2717 Docker Compose down failed: ${e.message}`);
+      failures++;
+    }
   }
 
   console.log('\nTo reset completely (destructive): docker compose --env-file .env.local down -v && rm -f .env.local');

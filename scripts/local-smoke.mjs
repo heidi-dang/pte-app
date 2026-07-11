@@ -169,8 +169,13 @@ async function checkPortReleased(port, host, label) {
 
 async function main() {
   console.log('Smoke test starting...');
-  overallTimeout = setTimeout(() => {
+  overallTimeout = setTimeout(async () => {
     console.error('FATAL: Overall smoke test timeout');
+    failures++;
+    await stopAllChildren();
+    await checkPortReleased(apiPort, apiHost, 'API');
+    await checkPortReleased(scoringPort, scoringHost, 'Scoring');
+    await checkPortReleased(webPort, webHost, 'Web');
     process.exit(1);
   }, TIMEOUT + 30000);
 
@@ -281,21 +286,23 @@ async function main() {
   }
 }
 
-function cleanup() {
+let cleaningUp = false;
+async function cleanup() {
+  if (cleaningUp) return;
+  cleaningUp = true;
   if (overallTimeout) {
     clearTimeout(overallTimeout);
     overallTimeout = undefined;
   }
-  for (const child of children) {
-    if (!isChildAlive(child)) continue;
-    try {
-      child.kill('SIGTERM');
-    } catch {}
-  }
+  await stopAllChildren();
+  await checkPortReleased(apiPort, apiHost, 'API');
+  await checkPortReleased(scoringPort, scoringHost, 'Scoring');
+  await checkPortReleased(webPort, webHost, 'Web');
+  process.exit(failures === 0 ? 0 : 1);
 }
 
-process.on('SIGINT', cleanup);
-process.on('SIGTERM', cleanup);
+process.on('SIGINT', () => cleanup());
+process.on('SIGTERM', () => cleanup());
 
 main().catch((e) => {
   console.error(e);

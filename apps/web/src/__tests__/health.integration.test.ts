@@ -64,7 +64,7 @@ describe('Web integration', () => {
   });
 
   async function killChild() {
-    if (!child || child.killed || child.exitCode !== null) return;
+    if (!child || child.killed || child.exitCode !== null || child.pid == null) return;
     try {
       process.kill(-child.pid, 'SIGTERM');
     } catch {}
@@ -75,7 +75,7 @@ describe('Web integration', () => {
         resolve();
       });
     });
-    if (child.exitCode === null && !child.killed) {
+    if (child.exitCode === null && !child.killed && child.pid != null) {
       try {
         process.kill(-child.pid, 'SIGKILL');
       } catch {}

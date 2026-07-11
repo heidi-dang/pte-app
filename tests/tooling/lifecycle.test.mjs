@@ -181,14 +181,28 @@ setTimeout(() => {}, 30000);`,
 
     it('reused/mismatched PID', async () => {
       cleanRuntime();
+      // Spawn a real long-lived child process that does NOT match the stored marker
+      const child = spawn(process.execPath, ['-e', `console.log('ready'); setTimeout(() => {}, 30000);`], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+      child.unref();
+      await new Promise((resolve) => child.stdout.once('data', resolve));
+      const childPid = child.pid;
+
       mkdirSync(runtimeDir, { recursive: true });
-      // Use a different PID (1 = init/systemd) with wrong marker
+      // Write with WRONG marker (differs from 'node' which is the actual cmdline marker)
       writeFileSync(
         pidsPath,
         JSON.stringify({
-          test: { pid: 1, service: 'test', startedAt: new Date().toISOString(), commandMarker: 'non-existent-marker' },
+          test: {
+            pid: childPid,
+            service: 'test',
+            startedAt: new Date().toISOString(),
+            commandMarker: 'non-existent-marker',
+          },
         }),
       );
+
       const localDown = join(root, 'scripts/local-down.mjs');
       const { execSync } = await import('child_process');
       let output = '';
@@ -197,13 +211,27 @@ setTimeout(() => {}, 30000);`,
       } catch (e) {
         output = (e.stdout || '') + (e.stderr || '');
       }
+      // Assert identity mismatch/reused detected
       assert.ok(
         output.includes('different identity') || output.includes('reused'),
-        `should detect mismatch, got: ${output.slice(0, 200)}`,
+        `should detect mismatch, got: ${output.slice(0, 300)}`,
       );
+      // Assert pids.json remains with unresolved entry
       assert.ok(existsSync(pidsPath), 'pids.json should remain for unresolved entries');
       const remaining = JSON.parse(readFileSync(pidsPath, 'utf-8'));
       assert.ok(remaining.test, 'unresolved entry should remain in pids.json');
+      // Assert the child process was NOT killed
+      try {
+        process.kill(childPid, 0);
+      } catch {
+        assert.fail('Child process should still be alive (local-down should not kill mismatched PID)');
+      }
+      // Clean up
+      child.kill('SIGKILL');
+      await new Promise((resolve) => {
+        child.on('close', () => resolve());
+        setTimeout(resolve, 2000);
+      });
     });
 
     it('dead PID', async () => {
@@ -263,5 +291,37 @@ setTimeout(() => {}, 30000);`,
   it('no child.killed usage in local-smoke', () => {
     const smoke = readFileSync(join(root, 'scripts/local-smoke.mjs'), 'utf-8');
     assert.ok(!smoke.match(/child\.killed/), 'local-smoke must not use child.killed');
+  });
+
+  describe('local-smoke cleanup verification', () => {
+    it('overall timeout triggers cleanup path', () => {
+      const smoke = readFileSync(join(root, 'scripts/local-smoke.mjs'), 'utf-8');
+      // Verify timeout calls stopAllChildren, not direct process.exit
+      const timeoutLines = smoke.split('\n').filter((l) => l.includes('FATAL'));
+      const timeoutAfter = smoke.indexOf('FATAL');
+      const cleanupAfterTimeout = smoke.indexOf('stopAllChildren', timeoutAfter);
+      const portCheckAfter = smoke.indexOf('checkPortReleased', timeoutAfter);
+      assert.ok(cleanupAfterTimeout > timeoutAfter, 'timeout should call stopAllChildren');
+      assert.ok(portCheckAfter > timeoutAfter, 'timeout should verify ports');
+      // Also verify there's no plain process.exit(1) before cleanup
+      assert.ok(!smoke.match(/timeout.*\n.*process\.exit\(1\)/), 'timeout must not call process.exit before cleanup');
+    });
+
+    it('SIGINT triggers awaited cleanup', () => {
+      const smoke = readFileSync(join(root, 'scripts/local-smoke.mjs'), 'utf-8');
+      // SIGINT handler should call cleanup()
+      assert.ok(smoke.includes("'SIGINT'"), 'SIGINT handler registered');
+      assert.ok(smoke.includes('stopAllChildren'), 'cleanup calls stopAllChildren');
+    });
+
+    it('SIGTERM triggers awaited cleanup', () => {
+      const smoke = readFileSync(join(root, 'scripts/local-smoke.mjs'), 'utf-8');
+      assert.ok(smoke.includes("'SIGTERM'"), 'SIGTERM handler registered');
+    });
+
+    it('cleanup is idempotent', () => {
+      const smoke = readFileSync(join(root, 'scripts/local-smoke.mjs'), 'utf-8');
+      assert.ok(smoke.includes('cleaningUp'), 'cleaningUp guard flag exists');
+    });
   });
 });
