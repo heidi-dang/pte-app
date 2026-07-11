@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { existsSync } from 'fs';
 import { spawn, execSync } from 'child_process';
-import { createServer } from 'net';
 import { loadEnvLocal } from './lib/local-env.mjs';
+import { isChildAlive, getDescendantPids, terminateManagedTree, isPortOpen } from './lib/process-lifecycle.mjs';
 
 const env = loadEnvLocal();
 const isCI = process.argv.includes('--ci');
@@ -23,36 +23,16 @@ if (!scoringHost || !scoringPort) throw new Error('SCORING_HOST and SCORING_PORT
 if (!webHost || !webPort) throw new Error('WEB_HOST and WEB_PORT must be set');
 if (!webOrigin) throw new Error('WEB_ORIGIN must be set');
 
-const apiUrl = `http://${apiHost}:${apiPort}`;
-const scoringUrl = `http://${scoringHost}:${scoringPort}`;
-const webUrl = `http://${webHost}:${webPort}`;
+// Resolve 0.0.0.0 to 127.0.0.1 for client connections
+const clientHost = (h) => (h === '0.0.0.0' ? '127.0.0.1' : h);
+const apiUrl = `http://${clientHost(apiHost)}:${apiPort}`;
+const scoringUrl = `http://${clientHost(scoringHost)}:${scoringPort}`;
+const webUrl = `http://${clientHost(webHost)}:${webPort}`;
 
 const children = [];
+const managed = [];
 let failures = 0;
 let overallTimeout;
-
-function isChildAlive(child) {
-  if (!child || child.pid == null) return false;
-  if (child.exitCode !== null || child.signalCode !== null) return false;
-  try {
-    process.kill(child.pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function isPortOpen(port, host) {
-  return new Promise((resolve) => {
-    const server = createServer();
-    server.once('error', () => resolve(true));
-    server.once('listening', () => {
-      server.close();
-      resolve(false);
-    });
-    server.listen(port, host);
-  });
-}
 
 function spawnService(name, cwd, command, args) {
   const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
@@ -62,8 +42,30 @@ function spawnService(name, cwd, command, args) {
     env: { ...process.env, ...env },
     detached: true,
   });
-  child.unref();
   children.push(child);
+  // Capture grandchild PIDs at spawn time while ancestry is still intact
+  const grandchildPids = [];
+  // Initial capture after a brief delay for grandchild to start
+  setTimeout(() => {
+    for (const pid of getDescendantPids(child.pid)) {
+      if (!grandchildPids.includes(pid)) grandchildPids.push(pid);
+    }
+  }, 300);
+  const discoverInterval = setInterval(() => {
+    for (const pid of getDescendantPids(child.pid)) {
+      if (!grandchildPids.includes(pid)) {
+        grandchildPids.push(pid);
+      }
+    }
+  }, 200);
+  child.on('exit', () => {
+    clearInterval(discoverInterval);
+    // Final capture — grandchildren still visible right after npm exits
+    for (const pid of getDescendantPids(child.pid)) {
+      if (!grandchildPids.includes(pid)) grandchildPids.push(pid);
+    }
+  });
+  managed.push({ name, child, rootPid: child.pid, grandchildPids });
   child.on('error', () => {
     console.error(`  \u2717 ${name}: process error`);
     failures++;
@@ -103,57 +105,57 @@ async function checkUrl(url, label) {
 }
 
 async function stopAllChildren() {
-  // Phase 1: SIGTERM to process groups for graceful shutdown
-  for (const child of children) {
-    if (!isChildAlive(child)) continue;
-    try {
-      process.kill(-child.pid, 'SIGTERM');
-    } catch {
+  // Terminate each managed process tree using shared helper
+  for (const entry of managed) {
+    // Kill tracked grandchild PIDs first (they may become orphaned)
+    for (const pid of entry.grandchildPids || []) {
       try {
-        child.kill('SIGTERM');
+        process.kill(pid, 'SIGTERM');
       } catch {}
     }
-  }
-
-  // Wait up to 5s for graceful exit
-  await Promise.allSettled(
-    children.map(
-      (child) =>
-        new Promise((resolve) => {
-          if (!isChildAlive(child)) return resolve();
-          const timer = setTimeout(resolve, 5000);
-          child.once('exit', () => {
-            clearTimeout(timer);
-            resolve();
-          });
-        }),
-    ),
-  );
-
-  // Phase 2: SIGKILL for remaining
-  for (const child of children) {
-    if (!isChildAlive(child)) continue;
-    try {
-      process.kill(-child.pid, 'SIGKILL');
-    } catch {
+    if (!isChildAlive(entry.child)) continue;
+    const result = await terminateManagedTree(entry);
+    // Final kill on tracked grandchildren
+    for (const pid of entry.grandchildPids || []) {
       try {
-        child.kill('SIGKILL');
+        process.kill(pid, 'SIGKILL');
       } catch {}
     }
-    await new Promise((resolve) => {
-      const timer = setTimeout(resolve, 2000);
-      child.once('exit', () => {
-        clearTimeout(timer);
-        resolve();
+    if (!result.stopped) {
+      // Check if grandchildren were the actual target
+      const anyAlive = (entry.grandchildPids || []).some((p) => {
+        try {
+          process.kill(p, 0);
+          return true;
+        } catch {
+          return false;
+        }
       });
-      child.once('close', () => {
-        clearTimeout(timer);
-        resolve();
-      });
-    });
+      if (!anyAlive && !isChildAlive(entry.child)) {
+        continue; // grandchildren already handled
+      }
+      console.error(`  \u2717 ${entry.name} could not be terminated`);
+      failures++;
+    }
   }
 
   await new Promise((r) => setTimeout(r, 1000));
+
+  // Check for remaining port occupancy with retry — report only, do NOT kill
+  const targetPorts = [apiPort, scoringPort, webPort].filter(Boolean);
+  for (const port of targetPorts) {
+    let occupied = true;
+    for (let attempt = 0; attempt < 8 && occupied; attempt++) {
+      await new Promise((r) => setTimeout(r, 500));
+      occupied = await isPortOpen(port, '127.0.0.1');
+    }
+    if (occupied) {
+      console.error(
+        `  \u2717 Port ${port} is still occupied after managed cleanup. Ownership not established — not killed.`,
+      );
+      failures++;
+    }
+  }
 
   const remaining = children.filter(isChildAlive).length;
   if (remaining > 0) {

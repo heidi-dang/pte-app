@@ -22,12 +22,29 @@ jobs:
       - run: cp .env.example .env.local
       - run: npm run generate:pte-blueprints
       - run: node scripts/generate-pte-blueprints.mjs --validate
-      - run: npm run ci
-      - run: git diff --check
-      - name: Fail on tracked file changes
+      - run: npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run validate:workspace
+
+      - name: Standalone lifecycle smoke test
+        run: npm run local:smoke
+
+      - name: Stop any leftover processes
+        if: always()
+        run: npm run local:down
+
+      - name: Verify cleanup
+        if: always()
         run: |
+          if docker compose --env-file .env.local ps -q | grep -q .; then
+            echo "ERROR: containers remain"
+            docker compose --env-file .env.local ps
+            exit 1
+          fi
+          if test -f .local-runtime/pids.json; then
+            echo "ERROR: PID state remains"
+            exit 1
+          fi
+          git diff --check
           if [ -n "$(git status --porcelain)" ]; then
-            echo "ERROR: Tests or generation modified tracked files"
-            git diff --stat
+            echo "ERROR: tracked files changed"
             exit 1
           fi

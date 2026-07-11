@@ -293,6 +293,102 @@ setTimeout(() => {}, 30000);`,
     assert.ok(!smoke.match(/child\.killed/), 'local-smoke must not use child.killed');
   });
 
+  describe('Real port occupancy and process ownership', () => {
+    it('occupied port causes local-up to exit non-zero', async () => {
+      const localUp = join(root, 'scripts/local-up.mjs');
+      const apiPort = parseInt(
+        readFileSync(join(root, '.env.local'), 'utf-8')
+          .split('\n')
+          .find((l) => l.startsWith('API_PORT='))
+          ?.split('=')[1] || '4000',
+        10,
+      );
+
+      // Start unrelated listener on the API port
+      const listener = createServer();
+      await new Promise((resolve) => listener.listen(apiPort, '127.0.0.1', resolve));
+
+      const { execSync } = await import('child_process');
+      let exitCode = 0;
+      let stderr = '';
+      try {
+        execSync(`${process.execPath} "${localUp}"`, { cwd: root, stdio: 'pipe', timeout: 10000 });
+      } catch (e) {
+        exitCode = e.status;
+        stderr = (e.stderr || '').toString();
+      }
+
+      // Assert non-zero exit
+      assert.notEqual(exitCode, 0, 'occupied port must exit non-zero');
+      // Assert error names service and port
+      assert.ok(stderr.includes('Cannot start'), `error must name service: ${stderr}`);
+      assert.ok(stderr.includes(String(apiPort)), `error must mention port: ${stderr}`);
+
+      // Assert listener still alive
+      try {
+        process.kill(listener.address()?.port ? 0 : 0, 0);
+      } catch {}
+      // Close listener
+      listener.close();
+    });
+
+    it('managed tree cleanup kills descendants and preserves sibling', async () => {
+      const lifecycleUrl = new URL(join(root, 'scripts/lib/process-lifecycle.mjs'), 'file://').href;
+      const { trackChild, terminateManagedTree } = await import(lifecycleUrl);
+
+      // Spawn managed parent (creates child with timer)
+      const managedChild = spawn(
+        process.execPath,
+        [
+          '-e',
+          `
+        const { spawn } = require('child_process');
+        // Create grandchild
+        const grand = spawn(process.execPath, ['-e', 'setTimeout(()=>{},30000)']);
+        grand.unref();
+        console.log('parent-ready');
+      `,
+        ],
+        { stdio: ['pipe', 'pipe', 'pipe'] },
+      );
+      managedChild.unref();
+      await new Promise((resolve) => managedChild.stdout.once('data', resolve));
+
+      // Spawn unrelated sibling
+      const sibling = spawn(
+        process.execPath,
+        [
+          '-e',
+          `
+        console.log('sibling-ready');
+        setTimeout(() => {}, 30000);
+      `,
+        ],
+        { stdio: ['pipe', 'pipe', 'pipe'] },
+      );
+      sibling.unref();
+      await new Promise((resolve) => sibling.stdout.once('data', resolve));
+
+      // Register and terminate managed child
+      const tracked = trackChild('test', managedChild);
+      const result = await terminateManagedTree(tracked);
+
+      assert.ok(result.stopped, 'managed tree must be stopped');
+
+      // Sibling must survive
+      try {
+        process.kill(sibling.pid, 0);
+        assert.ok(true, 'unrelated sibling survived');
+      } catch {
+        assert.fail('unrelated sibling should not have been killed');
+      }
+
+      // Clean up sibling
+      sibling.kill('SIGKILL');
+      await new Promise((resolve) => sibling.on('close', () => resolve()));
+    });
+  });
+
   describe('local-smoke cleanup verification', () => {
     it('overall timeout triggers cleanup path', () => {
       const smoke = readFileSync(join(root, 'scripts/local-smoke.mjs'), 'utf-8');

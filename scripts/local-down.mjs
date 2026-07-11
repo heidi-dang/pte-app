@@ -74,7 +74,10 @@ async function stopProcess(entry, name_) {
   }
 
   const cmdline = await getActualCommandLine(num);
-  const identityMatch = matchesMarker(cmdline, commandMarker);
+  // Accept the workspace marker, "npm", or "tsx" as valid identities
+  const managedBinaries = ['npm', 'tsx'];
+  const identityMatch =
+    matchesMarker(cmdline, commandMarker) || managedBinaries.some((bin) => matchesMarker(cmdline, bin));
 
   if (identityMatch === false) {
     console.error(`  \u2717 PID ${num} for ${name} has different identity (reused). cmdline: ${cmdline}`);

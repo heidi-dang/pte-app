@@ -269,6 +269,23 @@ async function main() {
   }
   console.log('OK');
 
+  // Check configured ports are free before starting any infrastructure
+  const portCheckServices = [
+    { name: 'API', port: apiPort },
+    { name: 'Scoring', port: scoringPort },
+    { name: 'Web', port: webPort },
+  ];
+  for (const svc of portCheckServices) {
+    const p = parseInt(svc.port, 10);
+    if (Number.isNaN(p)) continue;
+    const open = await isPortOpen(p, '0.0.0.0');
+    if (open) {
+      console.error(`ERROR: Cannot start ${svc.name}. Configured port ${p} is already in use.`);
+      console.error(`The occupying process was not terminated because it is not managed by this repository.`);
+      process.exit(1);
+    }
+  }
+
   console.log('[2/5] Starting infrastructure...');
   try {
     execFileSync('docker', ['compose', '--env-file', '.env.local', 'up', '-d'], { stdio: 'inherit' });
@@ -370,6 +387,7 @@ async function main() {
       service: ws.name,
       startedAt: new Date().toISOString(),
       commandMarker: ws.ws,
+      // cmdline of spawned process is "npm run dev" (npm is the binary)
     };
     child.stdout.on('data', (d) => process.stdout.write(`[${ws.name}] ${d}`));
     child.stderr.on('data', (d) => process.stderr.write(`[${ws.name}] ${d}`));
