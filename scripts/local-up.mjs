@@ -97,7 +97,9 @@ async function shutdown(reason, exitCode) {
   await Promise.allSettled(killPromises);
 
   // Force-kill any survivor processes still listening on target ports
-  const targetPorts = [parseInt(apiPort, 10), parseInt(scoringPort, 10), parseInt(webPort, 10)].filter((p) => !Number.isNaN(p));
+  const targetPorts = [parseInt(apiPort, 10), parseInt(scoringPort, 10), parseInt(webPort, 10)].filter(
+    (p) => !Number.isNaN(p),
+  );
   for (const port of targetPorts) {
     try {
       execSync(`fuser -k -n tcp ${port} 2>/dev/null`, { stdio: 'pipe' });
