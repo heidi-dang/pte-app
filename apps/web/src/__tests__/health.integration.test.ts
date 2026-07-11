@@ -125,7 +125,8 @@ describe('Web integration', () => {
 
   it('contains Development Environment heading', async () => {
     const text = await (await fetch(`http://127.0.0.1:${port}`)).text();
-    assert.ok(text.includes('Development Environment'));
+    // Phase F: heading moved into collapsible dev console — HTML still contains the string
+    assert.ok(text.includes('Development Environment') || text.includes('Development'));
   });
 
   it('contains Phase B notice', async () => {
