@@ -23,9 +23,11 @@ if (!scoringHost || !scoringPort) throw new Error('SCORING_HOST and SCORING_PORT
 if (!webHost || !webPort) throw new Error('WEB_HOST and WEB_PORT must be set');
 if (!webOrigin) throw new Error('WEB_ORIGIN must be set');
 
-const apiUrl = `http://${apiHost}:${apiPort}`;
-const scoringUrl = `http://${scoringHost}:${scoringPort}`;
-const webUrl = `http://${webHost}:${webPort}`;
+// Resolve 0.0.0.0 to 127.0.0.1 for client connections
+const clientHost = (h) => (h === '0.0.0.0' ? '127.0.0.1' : h);
+const apiUrl = `http://${clientHost(apiHost)}:${apiPort}`;
+const scoringUrl = `http://${clientHost(scoringHost)}:${scoringPort}`;
+const webUrl = `http://${clientHost(webHost)}:${webPort}`;
 
 const children = [];
 let failures = 0;

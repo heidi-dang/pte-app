@@ -370,6 +370,7 @@ async function main() {
       service: ws.name,
       startedAt: new Date().toISOString(),
       commandMarker: ws.ws,
+      // cmdline of spawned process is "npm run dev" (npm is the binary)
     };
     child.stdout.on('data', (d) => process.stdout.write(`[${ws.name}] ${d}`));
     child.stderr.on('data', (d) => process.stderr.write(`[${ws.name}] ${d}`));
