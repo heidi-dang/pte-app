@@ -2,6 +2,8 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { Config } from './env.js';
 
+export type App = FastifyInstance;
+
 export async function buildApp(config: Config): Promise<FastifyInstance> {
   const app = Fastify({ logger: { level: config.logLevel } });
 

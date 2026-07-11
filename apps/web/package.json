@@ -1,6 +1,7 @@
 {
   "name": "@pte-app/web",
   "version": "0.0.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "next dev --port ${WEB_PORT:-3000}",
@@ -8,8 +9,8 @@
     "start": "next start --port ${WEB_PORT:-3000}",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "test:unit": "node --test src/**/*.test.ts",
-    "test:integration": "node --test src/__tests__/*.test.ts"
+    "test:unit": "node --test src/**/*.unit.test.ts",
+    "test:integration": "node --test src/**/*.integration.test.ts"
   },
   "dependencies": {
     "next": "^15.3.0",

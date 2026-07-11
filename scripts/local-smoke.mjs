@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 import { existsSync } from 'fs';
 import { spawn, execSync } from 'child_process';
+import { createServer } from 'net';
 import { loadEnvLocal } from './lib/local-env.mjs';
 
 const env = loadEnvLocal();
 const isCI = process.argv.includes('--ci');
 
-// --- Read all required values from env (no fallbacks) ---
 const TIMEOUT = parseInt(env.LOCAL_SMOKE_TIMEOUT_MS, 10);
 if (Number.isNaN(TIMEOUT)) throw new Error('LOCAL_SMOKE_TIMEOUT_MS must be set in .env.local');
 
 const apiHost = env.API_HOST;
-const apiPort = env.API_PORT;
+const apiPort = parseInt(env.API_PORT, 10);
 const scoringHost = env.SCORING_HOST;
-const scoringPort = env.SCORING_PORT;
+const scoringPort = parseInt(env.SCORING_PORT, 10);
 const webHost = env.WEB_HOST;
-const webPort = env.WEB_PORT;
+const webPort = parseInt(env.WEB_PORT, 10);
 const webOrigin = env.WEB_ORIGIN;
 
 if (!apiHost || !apiPort) throw new Error('API_HOST and API_PORT must be set');
@@ -27,12 +27,23 @@ const apiUrl = `http://${apiHost}:${apiPort}`;
 const scoringUrl = `http://${scoringHost}:${scoringPort}`;
 const webUrl = `http://${webHost}:${webPort}`;
 
-// --- State ---
 const children = [];
+const childExits = [];
 let failures = 0;
 let overallTimeout;
 
-// --- Helpers ---
+function isPortOpen(port, host) {
+  return new Promise((resolve) => {
+    const server = createServer();
+    server.once('error', () => resolve(true));
+    server.once('listening', () => {
+      server.close();
+      resolve(false);
+    });
+    server.listen(port, host);
+  });
+}
+
 function spawnService(name, cwd, command, args) {
   const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
   const child = spawn(npmCmd, ['run', command, ...(args || [])], {
@@ -41,8 +52,11 @@ function spawnService(name, cwd, command, args) {
     env: { ...process.env, ...env },
   });
   children.push(child);
+  child.on('exit', (code) => {
+    childExits.push({ name, code });
+  });
   child.on('error', () => {
-    console.error(`  ✗ ${name}: process error`);
+    console.error(`  \u2717 ${name}: process error`);
     failures++;
   });
   return child;
@@ -54,13 +68,13 @@ async function waitForUrl(url, label, timeoutMs) {
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
       if (res.ok) {
-        console.log(`  ✓ ${label} ready at ${url}`);
+        console.log(`  \u2713 ${label} ready at ${url}`);
         return true;
       }
     } catch {}
     await new Promise((r) => setTimeout(r, 500));
   }
-  console.error(`  ✗ ${label} not ready at ${url} after ${timeoutMs}ms`);
+  console.error(`  \u2717 ${label} not ready at ${url} after ${timeoutMs}ms`);
   return false;
 }
 
@@ -68,19 +82,18 @@ async function checkUrl(url, label) {
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (res.ok) {
-      console.log(`  ✓ ${label}`);
+      console.log(`  \u2713 ${label}`);
       return true;
     }
-    console.error(`  ✗ ${label} — HTTP ${res.status}`);
+    console.error(`  \u2717 ${label} \u2014 HTTP ${res.status}`);
     return false;
   } catch (e) {
-    console.error(`  ✗ ${label} — ${e.message}`);
+    console.error(`  \u2717 ${label} \u2014 ${e.message}`);
     return false;
   }
 }
 
 async function stopAllChildren() {
-  // SIGTERM every child and await exits
   const exitPromises = children.map(
     (child) =>
       new Promise((resolve) => {
@@ -103,15 +116,31 @@ async function stopAllChildren() {
   );
 
   await Promise.allSettled(exitPromises);
+  await new Promise((r) => setTimeout(r, 500));
 
-  // Clear any remaining timers
+  const unexited = childExits.length;
+  const remaining = children.filter((c) => c.exitCode === null && !c.killed).length;
+  if (remaining > 0) {
+    console.error(`  \u2717 ${remaining} child process(es) could not be terminated`);
+    failures++;
+  }
+
   if (overallTimeout) {
     clearTimeout(overallTimeout);
     overallTimeout = undefined;
   }
 }
 
-// --- Main ---
+async function checkPortReleased(port, host, label) {
+  const open = await isPortOpen(port, host);
+  if (open) {
+    console.error(`  \u2717 ${label} port ${port} is still active after cleanup`);
+    failures++;
+  } else {
+    console.log(`  \u2713 ${label} port ${port} released`);
+  }
+}
+
 async function main() {
   console.log('Smoke test starting...');
   overallTimeout = setTimeout(() => {
@@ -120,36 +149,30 @@ async function main() {
   }, TIMEOUT + 30000);
 
   try {
-    // Build first
     try {
-      execSync('npm run build', { stdio: 'pipe', cwd: import.meta.dirname ? process.cwd() : undefined });
-      console.log('  ✓ Build complete');
+      execSync('npm run build', { stdio: 'pipe', cwd: process.cwd() });
+      console.log('  \u2713 Build complete');
     } catch {
-      console.error('  ✗ Build failed');
+      console.error('  \u2717 Build failed');
       failures++;
       return;
     }
 
     console.log('Starting services...');
 
-    // Start worker check first (quick)
     try {
       execSync('node services/worker/dist/check.js', { stdio: 'pipe', cwd: process.cwd() });
-      console.log('  ✓ Worker configuration valid');
+      console.log('  \u2713 Worker configuration valid');
     } catch {
-      console.error('  ✗ Worker configuration invalid');
+      console.error('  \u2717 Worker configuration invalid');
       failures++;
     }
 
-    // Start API
     spawnService('api', 'services/api', 'start', []);
-
-    // Start scoring
     spawnService('scoring', 'services/scoring', 'start', []);
 
     await new Promise((r) => setTimeout(r, 2000));
 
-    // Wait for API and scoring — each failure increments failures
     const apiLive = await waitForUrl(`${apiUrl}/health/live`, 'api-live', TIMEOUT / 3);
     if (!apiLive) failures++;
 
@@ -162,46 +185,41 @@ async function main() {
     const scReady = await waitForUrl(`${scoringUrl}/health/ready`, 'scoring-ready', TIMEOUT / 3);
     if (!scReady) failures++;
 
-    // Test endpoints
     if (apiLive && !(await checkUrl(`${apiUrl}/health/live`, 'api-live HTTP'))) failures++;
     if (apiReady && !(await checkUrl(`${apiUrl}/health/ready`, 'api-ready HTTP'))) failures++;
     if (scLive && !(await checkUrl(`${scoringUrl}/health/live`, 'scoring-live HTTP'))) failures++;
     if (scReady && !(await checkUrl(`${scoringUrl}/health/ready`, 'scoring-ready HTTP'))) failures++;
 
-    // CORS — allowed origin check
     try {
       const apiCors = await fetch(`${apiUrl}/health/live`, {
         headers: { origin: webOrigin },
       });
       if (apiCors.headers.get('access-control-allow-origin')) {
-        console.log('  ✓ API CORS allowed');
+        console.log('  \u2713 API CORS allowed');
       } else {
-        console.error('  ✗ API CORS missing header');
+        console.error('  \u2717 API CORS missing header');
         failures++;
       }
     } catch {
-      console.error('  ✗ API CORS allowed-origin check failed');
+      console.error('  \u2717 API CORS allowed-origin check failed');
       failures++;
     }
 
-    // CORS — disallowed origin must be rejected
     try {
       const apiNoCors = await fetch(`${apiUrl}/health/live`, {
         headers: { origin: 'https://evil.example.com' },
       });
       const header = apiNoCors.headers.get('access-control-allow-origin');
       if (header && header === 'https://evil.example.com') {
-        console.error('  ✗ API CORS disallowed origin was accepted');
+        console.error('  \u2717 API CORS disallowed origin was accepted');
         failures++;
       } else {
-        console.log('  ✓ API CORS disallowed origin correctly rejected');
+        console.log('  \u2713 API CORS disallowed origin correctly rejected');
       }
     } catch {
-      // Fetch error is acceptable for disallowed origin
-      console.log('  ✓ API CORS disallowed origin blocked (fetch error)');
+      console.log('  \u2713 API CORS disallowed origin blocked (fetch error)');
     }
 
-    // Web
     if (existsSync('apps/web/.next')) {
       spawnService('web', 'apps/web', 'start', []);
       await new Promise((r) => setTimeout(r, 3000));
@@ -211,24 +229,29 @@ async function main() {
           const res = await fetch(webUrl, { signal: AbortSignal.timeout(5000) });
           const text = await res.text();
           if (text.includes('PTE Academic Platform') || text.includes('Development Environment')) {
-            console.log('  ✓ Web page contains Phase B text');
+            console.log('  \u2713 Web page contains Phase B text');
           } else {
-            console.error('  ✗ Web page missing expected text');
+            console.error('  \u2717 Web page missing expected text');
             failures++;
           }
         } catch {
-          console.error('  ✗ Web page content check failed');
+          console.error('  \u2717 Web page content check failed');
           failures++;
         }
       } else {
         failures++;
       }
     } else {
-      console.log('  ⚠ Web not built, skipping web smoke test');
+      console.log('  \u26a0 Web not built, skipping web smoke test');
     }
   } finally {
     await stopAllChildren();
-    console.log(`\n${failures === 0 ? '✓ All smoke tests passed.' : `✗ ${failures} check(s) failed.`}`);
+
+    await checkPortReleased(apiPort, apiHost, 'API');
+    await checkPortReleased(scoringPort, scoringHost, 'Scoring');
+    await checkPortReleased(webPort, webHost, 'Web');
+
+    console.log(`\n${failures === 0 ? '\u2713 All smoke tests passed.' : `\u2717 ${failures} check(s) failed.`}`);
     process.exitCode = failures === 0 ? 0 : 1;
   }
 }

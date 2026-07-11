@@ -23,6 +23,50 @@ if (Number.isNaN(timeout)) throw new Error('LOCAL_STARTUP_TIMEOUT_MS must be set
 
 const children = [];
 const pids = {};
+let shuttingDown = false;
+
+async function shutdown(reason, exitCode) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.error(`\nShutdown: ${reason}`);
+
+  const killPromises = children.map((child) => {
+    if (child.killed || child.exitCode !== null) return Promise.resolve();
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        try {
+          child.kill('SIGKILL');
+        } catch {}
+        resolve();
+      }, 5000);
+      child.once('exit', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+      child.once('error', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+      try {
+        child.kill('SIGTERM');
+      } catch {}
+    });
+  });
+  await Promise.allSettled(killPromises);
+
+  if (existsSync('.local-runtime/pids.json')) {
+    try {
+      rmSync('.local-runtime/pids.json');
+    } catch {}
+  }
+  try {
+    const files = readFileSync('.local-runtime', 'utf-8').split('\n').filter(Boolean);
+    if (files.length === 0) rmSync('.local-runtime');
+  } catch {}
+
+  console.error(`All children terminated (${reason})`);
+  process.exitCode = exitCode;
+}
 
 async function waitForUrl(url, label, timeoutMs) {
   const start = Date.now();
@@ -30,13 +74,13 @@ async function waitForUrl(url, label, timeoutMs) {
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
       if (res.ok) {
-        console.log(`  ✓ ${label}`);
+        console.log(`  \u2713 ${label}`);
         return true;
       }
     } catch {}
     await new Promise((r) => setTimeout(r, 500));
   }
-  console.error(`  ✗ ${label} timed out after ${timeoutMs}ms`);
+  console.error(`  \u2717 ${label} timed out after ${timeoutMs}ms`);
   return false;
 }
 
@@ -61,20 +105,19 @@ console.log('OK');
 console.log('[3/5] Waiting for containers...');
 const pgUser = env.POSTGRES_USER;
 const pgDb = env.POSTGRES_DATABASE;
-// Actually use proper polling
 const pgStart = Date.now();
 let pgHealthy = false;
 while (Date.now() - pgStart < timeout && !pgHealthy) {
   try {
     execFileSync('docker', ['compose', 'exec', 'postgres', 'pg_isready', '-U', pgUser, '-d', pgDb], { stdio: 'pipe' });
     pgHealthy = true;
-    console.log('  ✓ PostgreSQL healthy');
+    console.log('  \u2713 PostgreSQL healthy');
   } catch {
     await new Promise((r) => setTimeout(r, 1000));
   }
 }
 if (!pgHealthy) {
-  console.error('  ✗ PostgreSQL not healthy');
+  console.error('  \u2717 PostgreSQL not healthy');
   process.exit(1);
 }
 
@@ -84,13 +127,13 @@ while (Date.now() - redisStart < timeout && !redisHealthy) {
   try {
     execFileSync('docker', ['compose', 'exec', 'redis', 'redis-cli', 'ping'], { stdio: 'pipe' });
     redisHealthy = true;
-    console.log('  ✓ Redis healthy');
+    console.log('  \u2713 Redis healthy');
   } catch {
     await new Promise((r) => setTimeout(r, 1000));
   }
 }
 if (!redisHealthy) {
-  console.error('  ✗ Redis not healthy');
+  console.error('  \u2717 Redis not healthy');
   process.exit(1);
 }
 console.log('OK');
@@ -113,13 +156,12 @@ for (const ws of workspaces) {
   child.stdout.on('data', (d) => process.stdout.write(`[${ws.name}] ${d}`));
   child.stderr.on('data', (d) => process.stderr.write(`[${ws.name}] ${d}`));
   child.on('exit', (code) => {
-    console.error(`[${ws.name}] exited with code ${code}`);
-    children.forEach((c) => !c.killed && c.kill());
-    process.exit(1);
+    if (shuttingDown) return;
+    console.error(`[${ws.name}] exited unexpectedly with code ${code}`);
+    shutdown(`child ${ws.name} crashed`, 1);
   });
 }
 
-// Write PIDs
 if (!existsSync('.local-runtime')) mkdirSync('.local-runtime');
 writeFileSync('.local-runtime/pids.json', JSON.stringify(pids, null, 2));
 
@@ -129,41 +171,80 @@ const apiReady = await waitForUrl(`http://${apiHost}:${apiPort}/health/ready`, '
 const scLive = await waitForUrl(`http://${scoringHost}:${scoringPort}/health/live`, 'Scoring live', timeout);
 const scReady = await waitForUrl(`http://${scoringHost}:${scoringPort}/health/ready`, 'Scoring ready', timeout);
 const webOk = await waitForUrl(`http://${webHost}:${webPort}`, 'Web', timeout);
-// Worker readiness via check command
-const workerOk = await waitForWorkerReady(timeout / 2);
 
-async function waitForWorkerReady(timeoutMs) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    try {
-      execSync('node services/worker/dist/check.js', { stdio: 'pipe', cwd: '.' });
-      console.log('  ✓ Worker ready');
-      return true;
-    } catch {
-      await new Promise((r) => setTimeout(r, 1000));
-    }
-  }
-  console.error('  ✗ Worker not ready');
-  return false;
+const workerProcess = children.find((c) => pids.worker && c.pid === pids.worker) || children[2];
+let workerReady = false;
+const workerStart = Date.now();
+while (Date.now() - workerStart < timeout && !workerReady && workerProcess.exitCode === null) {
+  await new Promise((r) => setTimeout(r, 200));
+}
+if (workerProcess.exitCode !== null && !shuttingDown) {
+  console.error('  \u2717 Worker exited before readiness');
+  await shutdown('worker exited before ready', 1);
 }
 
-const allOk = apiLive && apiReady && scLive && scReady && webOk;
+async function waitForWorkerStdout(timeoutMs) {
+  const worker = children.find((c) => pids.worker && c.pid === pids.worker) || children[2];
+  if (!worker) {
+    console.error('  \u2717 Worker process not found');
+    return false;
+  }
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const onData = (data) => {
+      if (shuttingDown) return;
+      const text = data.toString();
+      if (text.includes('worker_ready')) {
+        console.log('  \u2713 Worker ready (worker_ready event detected)');
+        workerReady = true;
+        worker.stdout.removeListener('data', onData);
+        worker.stderr.removeListener('data', onData);
+        resolve(true);
+      }
+    };
+    worker.stdout.on('data', onData);
+    worker.stderr.on('data', onData);
+    const timer = setInterval(() => {
+      if (worker.exitCode !== null && !workerReady && !shuttingDown) {
+        console.error('  \u2717 Worker exited before emitting worker_ready');
+        clearInterval(timer);
+        worker.stdout.removeListener('data', onData);
+        worker.stderr.removeListener('data', onData);
+        resolve(false);
+      }
+      if (Date.now() - start > timeoutMs && !workerReady) {
+        console.error('  \u2717 Worker readiness timed out');
+        clearInterval(timer);
+        worker.stdout.removeListener('data', onData);
+        worker.stderr.removeListener('data', onData);
+        resolve(false);
+      }
+      if (workerReady) {
+        clearInterval(timer);
+      }
+    }, 500);
+  });
+}
+
+const workerOk = await waitForWorkerStdout(timeout);
+
+const allOk = apiLive && apiReady && scLive && scReady && webOk && workerOk;
 if (allOk) {
   console.log('\nAll services started.');
   console.log(`  Web:      http://${webHost}:${webPort}`);
   console.log(`  API:      http://${apiHost}:${apiPort}`);
   console.log(`  Scoring:  http://${scoringHost}:${scoringPort}`);
 } else {
-  console.error('\nSome services failed to start.');
-  process.exit(1);
+  const failed = [];
+  if (!apiLive) failed.push('API live');
+  if (!apiReady) failed.push('API ready');
+  if (!scLive) failed.push('Scoring live');
+  if (!scReady) failed.push('Scoring ready');
+  if (!webOk) failed.push('Web');
+  if (!workerOk) failed.push('Worker');
+  console.error(`\nSome services failed to start: ${failed.join(', ')}`);
+  await shutdown('service readiness failure', 1);
 }
 
-process.on('SIGINT', () => {
-  console.log('\nShutting down...');
-  children.forEach((c) => !c.killed && c.kill('SIGTERM'));
-  setTimeout(() => children.forEach((c) => !c.killed && c.kill('SIGKILL')), 5000);
-});
-process.on('SIGTERM', () => {
-  children.forEach((c) => !c.killed && c.kill('SIGTERM'));
-  setTimeout(() => children.forEach((c) => !c.killed && c.kill('SIGKILL')), 5000);
-});
+process.on('SIGINT', () => shutdown('SIGINT', 0));
+process.on('SIGTERM', () => shutdown('SIGTERM', 0));
