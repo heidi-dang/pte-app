@@ -28,9 +28,19 @@ const scoringUrl = `http://${scoringHost}:${scoringPort}`;
 const webUrl = `http://${webHost}:${webPort}`;
 
 const children = [];
-const childExits = [];
 let failures = 0;
 let overallTimeout;
+
+function isChildAlive(child) {
+  if (!child || child.pid == null) return false;
+  if (child.exitCode !== null || child.signalCode !== null) return false;
+  try {
+    process.kill(child.pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function isPortOpen(port, host) {
   return new Promise((resolve) => {
@@ -52,9 +62,6 @@ function spawnService(name, cwd, command, args) {
     env: { ...process.env, ...env },
   });
   children.push(child);
-  child.on('exit', (code) => {
-    childExits.push({ name, code });
-  });
   child.on('error', () => {
     console.error(`  \u2717 ${name}: process error`);
     failures++;
@@ -96,7 +103,7 @@ async function checkUrl(url, label) {
 async function stopAllChildren() {
   // Phase 1: SIGTERM for graceful shutdown
   for (const child of children) {
-    if (child.exitCode !== null || child.killed) continue;
+    if (!isChildAlive(child)) continue;
     try {
       child.kill('SIGTERM');
     } catch {}
@@ -107,7 +114,7 @@ async function stopAllChildren() {
     children.map(
       (child) =>
         new Promise((resolve) => {
-          if (child.exitCode !== null || child.killed) return resolve();
+          if (!isChildAlive(child)) return resolve();
           const timer = setTimeout(resolve, 5000);
           child.once('exit', () => {
             clearTimeout(timer);
@@ -117,17 +124,35 @@ async function stopAllChildren() {
     ),
   );
 
-  // Phase 2: SIGKILL for any remaining descendants on target ports
+  // Phase 2: SIGKILL for remaining
+  for (const child of children) {
+    if (!isChildAlive(child)) continue;
+    try {
+      child.kill('SIGKILL');
+    } catch {}
+    await new Promise((resolve) => {
+      const timer = setTimeout(resolve, 2000);
+      child.once('exit', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+      child.once('close', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
+  }
+
+  // Phase 3: Port-level kill for remaining
   for (const port of [apiPort, scoringPort, webPort].filter(Boolean)) {
     try {
       execSync(`fuser -k -n tcp ${port} 2>/dev/null`, { stdio: 'pipe' });
     } catch {}
   }
 
-  // Wait for OS to release ports
   await new Promise((r) => setTimeout(r, 1000));
 
-  const remaining = children.filter((c) => c.exitCode === null && !c.killed).length;
+  const remaining = children.filter(isChildAlive).length;
   if (remaining > 0) {
     console.error(`  \u2717 ${remaining} child process(es) could not be terminated`);
     failures++;
@@ -169,7 +194,11 @@ async function main() {
     console.log('Starting services...');
 
     try {
-      execSync('node services/worker/dist/check.js', { stdio: 'pipe', cwd: process.cwd() });
+      execSync('node services/worker/dist/check.js', {
+        stdio: 'pipe',
+        cwd: process.cwd(),
+        env: { ...process.env, ...env },
+      });
       console.log('  \u2713 Worker configuration valid');
     } catch {
       console.error('  \u2717 Worker configuration invalid');
@@ -183,13 +212,10 @@ async function main() {
 
     const apiLive = await waitForUrl(`${apiUrl}/health/live`, 'api-live', TIMEOUT / 3);
     if (!apiLive) failures++;
-
     const apiReady = await waitForUrl(`${apiUrl}/health/ready`, 'api-ready', TIMEOUT / 3);
     if (!apiReady) failures++;
-
     const scLive = await waitForUrl(`${scoringUrl}/health/live`, 'scoring-live', TIMEOUT / 3);
     if (!scLive) failures++;
-
     const scReady = await waitForUrl(`${scoringUrl}/health/ready`, 'scoring-ready', TIMEOUT / 3);
     if (!scReady) failures++;
 
@@ -198,10 +224,9 @@ async function main() {
     if (scLive && !(await checkUrl(`${scoringUrl}/health/live`, 'scoring-live HTTP'))) failures++;
     if (scReady && !(await checkUrl(`${scoringUrl}/health/ready`, 'scoring-ready HTTP'))) failures++;
 
+    // CORS allowed
     try {
-      const apiCors = await fetch(`${apiUrl}/health/live`, {
-        headers: { origin: webOrigin },
-      });
+      const apiCors = await fetch(`${apiUrl}/health/live`, { headers: { origin: webOrigin } });
       if (apiCors.headers.get('access-control-allow-origin')) {
         console.log('  \u2713 API CORS allowed');
       } else {
@@ -213,10 +238,9 @@ async function main() {
       failures++;
     }
 
+    // CORS disallowed
     try {
-      const apiNoCors = await fetch(`${apiUrl}/health/live`, {
-        headers: { origin: 'https://evil.example.com' },
-      });
+      const apiNoCors = await fetch(`${apiUrl}/health/live`, { headers: { origin: 'https://evil.example.com' } });
       const header = apiNoCors.headers.get('access-control-allow-origin');
       if (header && header === 'https://evil.example.com') {
         console.error('  \u2717 API CORS disallowed origin was accepted');
@@ -269,11 +293,12 @@ function cleanup() {
     clearTimeout(overallTimeout);
     overallTimeout = undefined;
   }
-  children.forEach((c) => {
+  for (const child of children) {
+    if (!isChildAlive(child)) continue;
     try {
-      c.kill('SIGTERM');
+      child.kill('SIGTERM');
     } catch {}
-  });
+  }
 }
 
 process.on('SIGINT', cleanup);

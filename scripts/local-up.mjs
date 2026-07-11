@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, writeFileSync, rmSync, readFileSync, readdirSync, mkdirSync } from 'node:fs';
+import { existsSync, writeFileSync, rmSync, readdirSync, mkdirSync } from 'node:fs';
 import { spawn, execSync, execFileSync } from 'child_process';
 import { createServer } from 'net';
 import { loadEnvLocal, validateConfig } from './lib/local-env.mjs';
@@ -26,6 +26,18 @@ const children = [];
 const pids = {};
 let shuttingDown = false;
 let cleanupFailures = 0;
+let infrastructureStarted = false;
+
+function isChildAlive(child) {
+  if (!child || child.pid == null) return false;
+  if (child.exitCode !== null || child.signalCode !== null) return false;
+  try {
+    process.kill(child.pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function isPortOpen(port, host) {
   return new Promise((resolve) => {
@@ -44,12 +56,19 @@ async function shutdown(reason, exitCode) {
   shuttingDown = true;
   console.error(`\nShutdown: ${reason}`);
 
+  const unresolved = [];
+
   const killPromises = children.map(async (child) => {
-    if (child.killed || child.exitCode !== null) return;
+    const label = `PID ${child.pid}`;
+    if (!isChildAlive(child)) {
+      console.log(`  \u2014 ${label} already exited`);
+      return;
+    }
+
+    // Phase 1: SIGTERM
     try {
       child.kill('SIGTERM');
     } catch {}
-
     await new Promise((resolve) => {
       const timer = setTimeout(resolve, 5000);
       child.once('exit', () => {
@@ -62,41 +81,44 @@ async function shutdown(reason, exitCode) {
       });
     });
 
-    if (child.exitCode === null && !child.killed) {
-      try {
-        child.kill('SIGKILL');
-      } catch {}
-      await new Promise((resolve) => {
-        const timer = setTimeout(resolve, 2000);
-        child.once('exit', () => {
-          clearTimeout(timer);
-          resolve();
-        });
-        child.once('close', () => {
-          clearTimeout(timer);
-          resolve();
-        });
-        child.once('error', () => {
-          clearTimeout(timer);
-          resolve();
-        });
-      });
+    if (!isChildAlive(child)) {
+      console.log(`  \u2713 ${label} confirmed exited after SIGTERM`);
+      return;
     }
 
+    // Phase 2: SIGKILL
+    try {
+      child.kill('SIGKILL');
+    } catch {}
+    console.log(`  \u26a0 ${label} force-killed with SIGKILL`);
+    await new Promise((resolve) => {
+      const timer = setTimeout(resolve, 2000);
+      child.once('exit', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+      child.once('close', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+      child.once('error', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
+
     // Final liveness check
-    if (child.exitCode === null && !child.killed) {
-      try {
-        process.kill(child.pid, 0);
-        console.error(`  \u2717 ${child.pid} still alive after SIGKILL`);
-        cleanupFailures++;
-      } catch {
-        // Expected - process is gone
-      }
+    if (isChildAlive(child)) {
+      console.error(`  \u2717 ${label} still alive after SIGKILL`);
+      cleanupFailures++;
+      unresolved.push(child.pid);
+    } else {
+      console.log(`  \u2713 ${label} confirmed exited after SIGKILL`);
     }
   });
   await Promise.allSettled(killPromises);
 
-  // Force-kill any survivor processes still listening on target ports
+  // Force-kill any survivors via port
   const targetPorts = [parseInt(apiPort, 10), parseInt(scoringPort, 10), parseInt(webPort, 10)].filter(
     (p) => !Number.isNaN(p),
   );
@@ -130,21 +152,36 @@ async function shutdown(reason, exitCode) {
     }
   }
 
-  if (existsSync('.local-runtime/pids.json')) {
-    try {
-      rmSync('.local-runtime/pids.json');
-    } catch {}
-  }
-  if (existsSync('.local-runtime')) {
-    try {
-      const entries = readdirSync('.local-runtime');
-      if (entries.length === 0) {
-        rmSync('.local-runtime', { recursive: true, force: true });
-      }
-    } catch (e) {
-      console.error(`  \u2717 Failed to check runtime directory: ${e.message}`);
-      cleanupFailures++;
+  // PID state: only remove when every child is confirmed gone
+  if (unresolved.length === 0) {
+    if (existsSync('.local-runtime/pids.json')) {
+      try {
+        rmSync('.local-runtime/pids.json');
+      } catch {}
     }
+    if (existsSync('.local-runtime')) {
+      try {
+        const entries = readdirSync('.local-runtime');
+        if (entries.length === 0) rmSync('.local-runtime', { recursive: true, force: true });
+      } catch (e) {
+        console.error(`  \u2717 Failed to check runtime directory: ${e.message}`);
+        cleanupFailures++;
+      }
+    }
+  } else {
+    // Preserve unresolved state
+    const unresolvedPids = {};
+    for (const entry of Object.entries(pids)) {
+      if (unresolved.includes(entry[1].pid)) {
+        unresolvedPids[entry[0]] = entry[1];
+      }
+    }
+    try {
+      writeFileSync('.local-runtime/pids.json', JSON.stringify(unresolvedPids, null, 2));
+      console.error(`  \u2717 ${unresolved.length} unresolved process(es) remain in pids.json`);
+    } catch {}
+    process.exitCode = exitCode || 1;
+    return;
   }
 
   if (cleanupFailures > 0) {
@@ -154,6 +191,17 @@ async function shutdown(reason, exitCode) {
     console.error(`All children terminated (${reason})`);
     process.exitCode = exitCode;
   }
+
+  // Infrastructure cleanup
+  if (infrastructureStarted) {
+    try {
+      execFileSync('docker', ['compose', '--env-file', '.env.local', 'down'], { stdio: 'pipe' });
+      console.log('  \u2713 Infrastructure stopped');
+    } catch {
+      console.error('  \u26a0 Could not stop infrastructure');
+    }
+  }
+  console.log('\nTo recover manually: docker compose --env-file .env.local down');
 }
 
 function createWorkerReadyPromise(worker, timeoutMs) {
@@ -172,22 +220,13 @@ function createWorkerReadyPromise(worker, timeoutMs) {
     }
 
     const onData = (data) => {
-      if (data.toString().includes('worker_ready')) {
-        done(true);
-      }
+      if (data.toString().includes('worker_ready')) done(true);
     };
 
-    const onExit = () => {
-      done(false);
-    };
+    const onExit = () => done(false);
 
     const pollTimer = setInterval(() => {
-      if (Date.now() - start > timeoutMs) {
-        done(false);
-      }
-      if (worker.exitCode !== null && !settled) {
-        done(false);
-      }
+      if (Date.now() - start > timeoutMs || (worker.exitCode !== null && !settled)) done(false);
     }, 200);
 
     worker.stdout?.on('data', onData);
@@ -212,20 +251,27 @@ async function waitForUrl(url, label, timeoutMs) {
   return false;
 }
 
+// --- Early signal handlers (registered before startup work) ---
+process.on('SIGINT', () => shutdown('SIGINT', 0));
+process.on('SIGTERM', () => shutdown('SIGTERM', 0));
+
 console.log('[1/5] Validating environment...');
 try {
   execSync('npm run doctor', { stdio: 'pipe' });
 } catch {
   console.error('Doctor failed. Run npm run doctor for details.');
+  await shutdown('doctor failure', 1);
   process.exit(1);
 }
 console.log('OK');
 
 console.log('[2/5] Starting infrastructure...');
 try {
-  execSync('docker compose --env-file .env.local up -d', { stdio: 'inherit' });
+  execFileSync('docker', ['compose', '--env-file', '.env.local', 'up', '-d'], { stdio: 'inherit' });
+  infrastructureStarted = true;
 } catch {
   console.error('Docker Compose failed');
+  await shutdown('compose startup failure', 1);
   process.exit(1);
 }
 console.log('OK');
@@ -237,7 +283,11 @@ const pgStart = Date.now();
 let pgHealthy = false;
 while (Date.now() - pgStart < timeout && !pgHealthy) {
   try {
-    execFileSync('docker', ['compose', 'exec', 'postgres', 'pg_isready', '-U', pgUser, '-d', pgDb], { stdio: 'pipe' });
+    execFileSync(
+      'docker',
+      ['compose', '--env-file', '.env.local', 'exec', '-T', 'postgres', 'pg_isready', '-U', pgUser, '-d', pgDb],
+      { stdio: 'pipe' },
+    );
     pgHealthy = true;
     console.log('  \u2713 PostgreSQL healthy');
   } catch {
@@ -246,6 +296,7 @@ while (Date.now() - pgStart < timeout && !pgHealthy) {
 }
 if (!pgHealthy) {
   console.error('  \u2717 PostgreSQL not healthy');
+  await shutdown('postgres timeout', 1);
   process.exit(1);
 }
 
@@ -253,7 +304,9 @@ const redisStart = Date.now();
 let redisHealthy = false;
 while (Date.now() - redisStart < timeout && !redisHealthy) {
   try {
-    execFileSync('docker', ['compose', 'exec', 'redis', 'redis-cli', 'ping'], { stdio: 'pipe' });
+    execFileSync('docker', ['compose', '--env-file', '.env.local', 'exec', '-T', 'redis', 'redis-cli', 'ping'], {
+      stdio: 'pipe',
+    });
     redisHealthy = true;
     console.log('  \u2713 Redis healthy');
   } catch {
@@ -262,6 +315,7 @@ while (Date.now() - redisStart < timeout && !redisHealthy) {
 }
 if (!redisHealthy) {
   console.error('  \u2717 Redis not healthy');
+  await shutdown('redis timeout', 1);
   process.exit(1);
 }
 console.log('OK');
@@ -341,6 +395,3 @@ if (allOk) {
   console.error(`\nSome services failed to start: ${failed.join(', ')}`);
   await shutdown('service readiness failure', 1);
 }
-
-process.on('SIGINT', () => shutdown('SIGINT', 0));
-process.on('SIGTERM', () => shutdown('SIGTERM', 0));
