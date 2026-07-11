@@ -5,6 +5,7 @@ import dbPlugin from './plugins/db.js';
 import emailPlugin from './plugins/email.js';
 import authPlugin from './plugins/authenticate.js';
 import authRoutes from './routes/auth/index.js';
+import appRoutes from './routes/app/index.js';
 
 export type App = FastifyInstance;
 
@@ -29,6 +30,7 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Register routes
   await app.register(authRoutes, { prefix: '/auth' });
+  await app.register(appRoutes, { prefix: '/app' });
 
   app.get('/health/live', async () => ({
     service: 'api',
