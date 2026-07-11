@@ -41,8 +41,8 @@ describe('local-down script structure', () => {
   });
 
   it('preserves volumes', () => {
-    const composeLine = downContent.split('\n').filter((l) => l.includes('docker compose'))[0] || '';
-    assert.ok(!composeLine.includes('-v'));
+    const downLine = downContent.split('\n').filter((l) => l.includes("'down'") || l.includes(' down '))[0] || '';
+    assert.ok(!downLine.includes('-v'), `compose down line should not contain -v: ${downLine}`);
   });
 
   it('prints destructive reset command', () => {

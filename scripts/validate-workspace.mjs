@@ -234,6 +234,52 @@ if (!localUp.includes('isPortOpen') || !localUp.includes('API port')) {
   errors.push('local-up.mjs: shutdown must verify API/scoring/web ports released');
 }
 
+// 15. isChildAlive replaces child.killed
+if (!localUp.includes('function isChildAlive')) {
+  errors.push('local-up.mjs: must have isChildAlive helper instead of child.killed checks');
+}
+if (localUp.match(/child\.killed/)) {
+  errors.push('local-up.mjs: must not use child.killed as termination state - use isChildAlive');
+}
+const smokeContent = readFileSync('scripts/local-smoke.mjs', 'utf-8');
+if (smokeContent.match(/child\.killed/)) {
+  errors.push('local-smoke.mjs: must not use child.killed as termination state - use isChildAlive');
+}
+
+// 16. Signal handlers before startup work
+const sigintLine = localUp.split('\n').findIndex((l) => l.includes("'SIGINT'"));
+const doctorLine = localUp.split('\n').findIndex((l) => l.includes('Validating environment'));
+if (sigintLine < 0) errors.push('local-up.mjs: must register SIGINT handler');
+else if (sigintLine > doctorLine) errors.push('local-up.mjs: SIGINT handler must be registered before doctor');
+
+// 17. infrastructureStarted tracking
+if (!localUp.includes('infrastructureStarted')) {
+  errors.push('local-up.mjs: must track infrastructureStarted state');
+}
+
+// 18. Compose commands use --env-file .env.local
+if (localUp.includes("'compose'") && !localUp.includes("'--env-file', '.env.local'")) {
+  errors.push('local-up.mjs: all compose commands must use --env-file .env.local');
+}
+
+// 19. Non-interactive exec (-T)
+if (localUp.includes("'exec', 'postgres'") && !localUp.includes("'exec', '-T', 'postgres'")) {
+  errors.push('local-up.mjs: compose exec must use -T flag');
+}
+
+// 20. Unsupported platform PID handling
+const localDownContent = readFileSync('scripts/local-down.mjs', 'utf-8');
+if (localDownContent.includes('cannot verify process identity')) {
+  // Good - mark as detected
+} else {
+  errors.push('local-down.mjs: must handle unsupported platforms safely (no kill when identity unverifiable)');
+}
+if (localDownContent.includes('Preserving')) {
+  // Good
+} else {
+  errors.push('local-down.mjs: must preserve state when identity cannot be verified');
+}
+
 if (errors.length === 0) {
   console.log('Workspace validation: All checks passed.');
 } else {
