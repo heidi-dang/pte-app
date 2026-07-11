@@ -94,29 +94,38 @@ async function checkUrl(url, label) {
 }
 
 async function stopAllChildren() {
-  const exitPromises = children.map(
-    (child) =>
-      new Promise((resolve) => {
-        const timer = setTimeout(() => {
-          try {
-            child.kill('SIGKILL');
-          } catch {}
-          resolve();
-        }, 5000);
+  // Phase 1: SIGTERM for graceful shutdown
+  for (const child of children) {
+    if (child.exitCode !== null || child.killed) continue;
+    try {
+      child.kill('SIGTERM');
+    } catch {}
+  }
 
-        child.once('exit', () => {
-          clearTimeout(timer);
-          resolve();
-        });
-
-        try {
-          child.kill('SIGTERM');
-        } catch {}
-      }),
+  // Wait up to 5s for graceful exit
+  await Promise.allSettled(
+    children.map(
+      (child) =>
+        new Promise((resolve) => {
+          if (child.exitCode !== null || child.killed) return resolve();
+          const timer = setTimeout(resolve, 5000);
+          child.once('exit', () => {
+            clearTimeout(timer);
+            resolve();
+          });
+        }),
+    ),
   );
 
-  await Promise.allSettled(exitPromises);
-  await new Promise((r) => setTimeout(r, 500));
+  // Phase 2: SIGKILL for any remaining descendants on target ports
+  for (const port of [apiPort, scoringPort, webPort].filter(Boolean)) {
+    try {
+      execSync(`fuser -k -n tcp ${port} 2>/dev/null`, { stdio: 'pipe' });
+    } catch {}
+  }
+
+  // Wait for OS to release ports
+  await new Promise((r) => setTimeout(r, 1000));
 
   const remaining = children.filter((c) => c.exitCode === null && !c.killed).length;
   if (remaining > 0) {
