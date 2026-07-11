@@ -37,7 +37,13 @@ check('.env.local exists', () => existsSync('.env.local'));
 check('DATABASE_URL defined in .env.local', () => {
   if (!existsSync('.env.local')) return false;
   const content = readFileSync('.env.local', 'utf-8');
-  return content.includes('DATABASE_URL');
+  return (
+    content.includes('DATABASE_URL') &&
+    content.includes('BCRYPT_COST') &&
+    content.includes('AUTH_MAX_FAILED_ATTEMPTS') &&
+    content.includes('AUTH_LOCKOUT_SECONDS') &&
+    content.includes('SESSION_IDLE_TIMEOUT_SECONDS')
+  );
 });
 
 check('Docker available', () => {
