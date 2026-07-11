@@ -6,7 +6,10 @@ import { resolve } from 'path';
 const root = resolve(import.meta.dirname, '../../..');
 const workerDir = resolve(root, 'services/worker');
 
-function runWorker(args: string[], timeoutMs = 10000): Promise<{ code: number | null; stdout: string; stderr: string }> {
+function runWorker(
+  args: string[],
+  timeoutMs = 10000,
+): Promise<{ code: number | null; stdout: string; stderr: string }> {
   return new Promise((resolvePromise) => {
     const child = spawn('node', args, {
       cwd: workerDir,
@@ -15,8 +18,12 @@ function runWorker(args: string[], timeoutMs = 10000): Promise<{ code: number | 
     });
     let stdout = '';
     let stderr = '';
-    child.stdout.on('data', (d: Buffer) => { stdout += d.toString(); });
-    child.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
+    child.stdout.on('data', (d: Buffer) => {
+      stdout += d.toString();
+    });
+    child.stderr.on('data', (d: Buffer) => {
+      stderr += d.toString();
+    });
     const timer = setTimeout(() => {
       child.kill('SIGKILL');
       resolvePromise({ code: null, stdout, stderr });
@@ -42,12 +49,17 @@ describe('Worker behavioural tests', () => {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     let stdout = '';
-    child.stdout.on('data', (d: Buffer) => { stdout += d.toString(); });
-    await new Promise(r => setTimeout(r, 500));
+    child.stdout.on('data', (d: Buffer) => {
+      stdout += d.toString();
+    });
+    await new Promise((r) => setTimeout(r, 500));
     child.kill('SIGINT');
-    const code = await new Promise<number | null>(resolve => {
+    const code = await new Promise<number | null>((resolve) => {
       child.on('close', resolve);
-      setTimeout(() => { child.kill('SIGKILL'); resolve(null); }, 3000);
+      setTimeout(() => {
+        child.kill('SIGKILL');
+        resolve(null);
+      }, 3000);
     });
     assert.equal(code, 0);
   });

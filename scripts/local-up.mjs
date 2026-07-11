@@ -140,7 +140,7 @@ async function waitForWorkerReady(timeoutMs) {
       console.log('  ✓ Worker ready');
       return true;
     } catch {
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 1000));
     }
   }
   console.error('  ✗ Worker not ready');
