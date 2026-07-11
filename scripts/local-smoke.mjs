@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { existsSync } from 'fs';
-import { spawn, execSync, execFileSync } from 'child_process';
-import { createServer } from 'net';
+import { spawn, execSync } from 'child_process';
 import { loadEnvLocal } from './lib/local-env.mjs';
+import { isChildAlive, getDescendantPids, terminateManagedTree, isPortOpen } from './lib/process-lifecycle.mjs';
 
 const env = loadEnvLocal();
 const isCI = process.argv.includes('--ci');
@@ -30,47 +30,9 @@ const scoringUrl = `http://${clientHost(scoringHost)}:${scoringPort}`;
 const webUrl = `http://${clientHost(webHost)}:${webPort}`;
 
 const children = [];
-const servicePids = [];
+const managed = [];
 let failures = 0;
 let overallTimeout;
-
-function getDescendantPids(ppid) {
-  const result = [];
-  try {
-    const output = execSync(`ps -o pid= --ppid ${ppid} 2>/dev/null`, { encoding: 'utf-8', timeout: 3000 });
-    for (const line of output.trim().split('\n')) {
-      const pid = parseInt(line.trim(), 10);
-      if (!isNaN(pid)) {
-        result.push(pid);
-        result.push(...getDescendantPids(pid));
-      }
-    }
-  } catch {}
-  return result;
-}
-
-function isChildAlive(child) {
-  if (!child || child.pid == null) return false;
-  if (child.exitCode !== null || child.signalCode !== null) return false;
-  try {
-    process.kill(child.pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function isPortOpen(port, host) {
-  return new Promise((resolve) => {
-    const server = createServer();
-    server.once('error', () => resolve(true));
-    server.once('listening', () => {
-      server.close();
-      resolve(false);
-    });
-    server.listen(port, host);
-  });
-}
 
 function spawnService(name, cwd, command, args) {
   const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
@@ -81,29 +43,24 @@ function spawnService(name, cwd, command, args) {
     detached: true,
   });
   children.push(child);
+  // Capture grandchild PIDs at spawn time while ancestry is still intact
+  const grandchildPids = [];
+  const discoverInterval = setInterval(() => {
+    for (const pid of getDescendantPids(child.pid)) {
+      if (!grandchildPids.includes(pid)) {
+        grandchildPids.push(pid);
+      }
+    }
+  }, 200);
+  child.on('exit', () => {
+    clearInterval(discoverInterval);
+  });
+  managed.push({ name, child, rootPid: child.pid, grandchildPids });
   child.on('error', () => {
     console.error(`  \u2717 ${name}: process error`);
     failures++;
   });
   return child;
-}
-
-async function discoverServicePids() {
-  const ports = [apiPort, scoringPort, webPort].filter(Boolean);
-  for (const port of ports) {
-    try {
-      const out = execSync(`lsof -t -iTCP:${port} -sTCP:LISTEN 2>/dev/null`, {
-        encoding: 'utf-8',
-        timeout: 2000,
-      }).trim();
-      if (out) {
-        for (const line of out.split('\n')) {
-          const pid = parseInt(line.trim(), 10);
-          if (!isNaN(pid)) servicePids.push(pid);
-        }
-      }
-    } catch {}
-  }
 }
 
 async function waitForUrl(url, label, timeoutMs) {
@@ -138,96 +95,51 @@ async function checkUrl(url, label) {
 }
 
 async function stopAllChildren() {
-  // Phase 1: SIGTERM to process trees (all descendants)
-  for (const child of children) {
-    if (!isChildAlive(child)) continue;
-    // Walk the full process tree rooted at child.pid
-    for (const pid of getDescendantPids(child.pid)) {
+  // Terminate each managed process tree using shared helper
+  for (const entry of managed) {
+    // Kill tracked grandchild PIDs first (they may become orphaned)
+    for (const pid of entry.grandchildPids || []) {
       try {
         process.kill(pid, 'SIGTERM');
       } catch {}
     }
-    try {
-      process.kill(-child.pid, 'SIGTERM');
-    } catch {}
-    try {
-      child.kill('SIGTERM');
-    } catch {}
-  }
-
-  // Wait up to 5s for graceful exit
-  await Promise.allSettled(
-    children.map(
-      (child) =>
-        new Promise((resolve) => {
-          if (!isChildAlive(child)) return resolve();
-          const timer = setTimeout(resolve, 5000);
-          child.once('exit', () => {
-            clearTimeout(timer);
-            resolve();
-          });
-        }),
-    ),
-  );
-
-  // Phase 2: SIGKILL for remaining
-  for (const child of children) {
-    if (!isChildAlive(child)) continue;
-    for (const pid of getDescendantPids(child.pid)) {
+    if (!isChildAlive(entry.child)) continue;
+    const result = await terminateManagedTree(entry);
+    // Final kill on tracked grandchildren
+    for (const pid of entry.grandchildPids || []) {
       try {
         process.kill(pid, 'SIGKILL');
       } catch {}
     }
-    try {
-      process.kill(-child.pid, 'SIGKILL');
-    } catch {}
-    try {
-      child.kill('SIGKILL');
-    } catch {}
-    await new Promise((resolve) => {
-      const timer = setTimeout(resolve, 2000);
-      child.once('exit', () => {
-        clearTimeout(timer);
-        resolve();
+    if (!result.stopped) {
+      // Check if grandchildren were the actual target
+      const anyAlive = (entry.grandchildPids || []).some((p) => {
+        try {
+          process.kill(p, 0);
+          return true;
+        } catch {
+          return false;
+        }
       });
-      child.once('close', () => {
-        clearTimeout(timer);
-        resolve();
-      });
-    });
-  }
-
-  // Kill tracked service PIDs (processes directly listening on our ports)
-  for (const pid of servicePids) {
-    try {
-      process.kill(pid, 'SIGTERM');
-      await new Promise((r) => setTimeout(r, 200));
-      try {
-        process.kill(pid, 0);
-        process.kill(pid, 'SIGKILL');
-      } catch {}
-    } catch {}
+      if (!anyAlive && !isChildAlive(entry.child)) {
+        continue; // grandchildren already handled
+      }
+      console.error(`  \u2717 ${entry.name} could not be terminated`);
+      failures++;
+    }
   }
 
   await new Promise((r) => setTimeout(r, 1000));
 
-  // Check for remaining port occupancy — report only, do NOT kill
+  // Check for remaining port occupancy with retry — report only, do NOT kill
   const targetPorts = [apiPort, scoringPort, webPort].filter(Boolean);
   for (const port of targetPorts) {
-    try {
-      const s = createServer();
-      await new Promise((resolve, reject) => {
-        s.once('error', () => {
-          s.close();
-          reject();
-        });
-        s.once('listening', () => {
-          s.close();
-          resolve();
-        });
-        s.listen(port, '127.0.0.1');
-      });
-    } catch {
+    let occupied = true;
+    for (let attempt = 0; attempt < 8 && occupied; attempt++) {
+      await new Promise((r) => setTimeout(r, 500));
+      occupied = await isPortOpen(port, '127.0.0.1');
+    }
+    if (occupied) {
       console.error(
         `  \u2717 Port ${port} is still occupied after managed cleanup. Ownership not established — not killed.`,
       );
@@ -297,7 +209,6 @@ async function main() {
     spawnService('scoring', 'services/scoring', 'start', []);
 
     await new Promise((r) => setTimeout(r, 2000));
-    await discoverServicePids();
 
     const apiLive = await waitForUrl(`${apiUrl}/health/live`, 'api-live', TIMEOUT / 3);
     if (!apiLive) failures++;
@@ -344,7 +255,6 @@ async function main() {
     if (existsSync('apps/web/.next')) {
       spawnService('web', 'apps/web', 'start', []);
       await new Promise((r) => setTimeout(r, 3000));
-      await discoverServicePids();
       const webOk = await checkUrl(webUrl, 'web HTTP');
       if (webOk) {
         try {
