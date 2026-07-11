@@ -1,0 +1,30 @@
+{
+  "name": "@pte-app/schemas",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./environment": { "types": "./dist/environment.d.ts", "default": "./dist/environment.js" },
+    "./pagination": { "types": "./dist/pagination.d.ts", "default": "./dist/pagination.js" },
+    "./identifier": { "types": "./dist/identifier.d.ts", "default": "./dist/identifier.js" }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "tsx --test src/**/*.unit.test.ts"
+  },
+  "dependencies": {
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@pte-app/typescript-config": "*",
+    "@pte-app/eslint-config": "*",
+    "@pte-app/contracts": "*",
+    "typescript": "^5.8.0",
+    "tsx": "^4.19.0"
+  }
+}

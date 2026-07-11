@@ -21,35 +21,59 @@ export function getAllWarnings() {
 }
 
 const VALID_IDS = new Set([
-  'read_aloud', 'repeat_sentence', 'describe_image', 'retell_lecture',
-  'answer_short_question', 'summarize_group_discussion', 'respond_to_situation',
-  'summarize_written_text', 'write_essay',
-  'reading_writing_fill_blanks', 'reading_multiple_answers', 'reorder_paragraph',
-  'reading_fill_blanks', 'reading_single_answer',
-  'summarize_spoken_text', 'listening_multiple_answers', 'listening_fill_blanks',
-  'highlight_correct_summary', 'listening_single_answer', 'select_missing_word',
-  'highlight_incorrect_words', 'write_from_dictation',
+  'read_aloud',
+  'repeat_sentence',
+  'describe_image',
+  'retell_lecture',
+  'answer_short_question',
+  'summarize_group_discussion',
+  'respond_to_situation',
+  'summarize_written_text',
+  'write_essay',
+  'reading_writing_fill_blanks',
+  'reading_multiple_answers',
+  'reorder_paragraph',
+  'reading_fill_blanks',
+  'reading_single_answer',
+  'summarize_spoken_text',
+  'listening_multiple_answers',
+  'listening_fill_blanks',
+  'highlight_correct_summary',
+  'listening_single_answer',
+  'select_missing_word',
+  'highlight_incorrect_words',
+  'write_from_dictation',
 ]);
 
 const VALID_SECTIONS = ['Speaking and Writing', 'Reading', 'Listening'];
 const VALID_PROMPT_TYPES = ['text', 'audio', 'image', 'text-and-audio', 'audio-or-video'];
-const VALID_RESPONSE_TYPES = ['audio', 'text', 'dropdown-selection', 'checkbox-selection', 'drag-and-drop-order', 'drag-words-to-blanks', 'radio-selection', 'text-input', 'clickable-text-selection'];
+const VALID_RESPONSE_TYPES = [
+  'audio',
+  'text',
+  'dropdown-selection',
+  'checkbox-selection',
+  'drag-and-drop-order',
+  'drag-words-to-blanks',
+  'radio-selection',
+  'text-input',
+  'clickable-text-selection',
+];
 const VALID_TIMING_MODES = ['fixed', 'item-dependent', 'section-timed', 'range', 'not-applicable'];
 const VALID_TIMING_UNITS = ['seconds', 'words', 'sentences', 'paragraphs', 'image'];
 const VALID_SCORING_TYPES = ['partial-credit', 'correct-incorrect', 'partial-credit-negative'];
 const FUTURE_LABELS = ['future task', 'not yet official', 'future', 'unofficial'];
 
-const SECTION_COUNTS = { 'Speaking and Writing': 9, 'Reading': 5, 'Listening': 8 };
+const SECTION_COUNTS = { 'Speaking and Writing': 9, Reading: 5, Listening: 8 };
 
 const SECTION_SOURCE_MAP = {
   'Speaking and Writing': 'source-2',
-  'Reading': 'source-3',
-  'Listening': 'source-4',
+  Reading: 'source-3',
+  Listening: 'source-4',
 };
 
 const SPECIAL_SOURCE_TASKS = {
-  'summarize_group_discussion': ['source-1', 'source-2', 'source-5', 'source-6'],
-  'respond_to_situation': ['source-1', 'source-2', 'source-5', 'source-6'],
+  summarize_group_discussion: ['source-1', 'source-2', 'source-5', 'source-6'],
+  respond_to_situation: ['source-1', 'source-2', 'source-5', 'source-6'],
 };
 
 export function requiredFile(relativePath) {
@@ -86,7 +110,8 @@ export function checkUnresolvedMarkers(relativePath, content) {
 export function checkContent(relativePath, content, checks) {
   for (const [description, pattern, caseSensitive] of checks) {
     const flags = caseSensitive ? 'g' : 'gi';
-    const regex = typeof pattern === 'string' ? new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags) : pattern;
+    const regex =
+      typeof pattern === 'string' ? new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags) : pattern;
     if (!regex.test(content)) {
       errors.push(`Missing content in ${relativePath}: ${description}`);
     }
@@ -126,7 +151,12 @@ function validateTimingObject(obj, path, context) {
   if (!VALID_TIMING_UNITS.includes(obj.unit)) {
     errors.push(`${path}: ${context} has invalid timing unit "${obj.unit}"`);
   }
-  if (obj.minimum !== null && obj.maximum !== null && typeof obj.minimum === 'number' && typeof obj.maximum === 'number') {
+  if (
+    obj.minimum !== null &&
+    obj.maximum !== null &&
+    typeof obj.minimum === 'number' &&
+    typeof obj.maximum === 'number'
+  ) {
     if (obj.minimum > obj.maximum) {
       errors.push(`${path}: ${context} minimum (${obj.minimum}) exceeds maximum (${obj.maximum})`);
     }
@@ -134,7 +164,12 @@ function validateTimingObject(obj, path, context) {
   if (obj.mode === 'fixed' && (obj.minimum === null || obj.maximum === null)) {
     errors.push(`${path}: ${context} fixed mode requires non-null min/max`);
   }
-  if (obj.mode === 'fixed' && typeof obj.minimum === 'number' && typeof obj.maximum === 'number' && obj.minimum !== obj.maximum) {
+  if (
+    obj.mode === 'fixed' &&
+    typeof obj.minimum === 'number' &&
+    typeof obj.maximum === 'number' &&
+    obj.minimum !== obj.maximum
+  ) {
     errors.push(`${path}: ${context} fixed mode requires min (${obj.minimum}) === max (${obj.maximum})`);
   }
   if (typeof obj.minimum === 'number' && obj.minimum < 0) {
@@ -153,7 +188,7 @@ function loadAllReferenceIds() {
   }
   try {
     const refs = JSON.parse(readFileSync(refPath, 'utf-8'));
-    return new Set(refs.map(r => r.id));
+    return new Set(refs.map((r) => r.id));
   } catch {
     errors.push('Invalid JSON in docs/content/official-pte-reference-register.json');
     return new Set();
@@ -168,7 +203,11 @@ export function validateTaskReferences(manifestOverride) {
     const manifestPath = 'docs/content/pte-task-manifest.json';
     const content = requiredFile(manifestPath);
     if (!content) return;
-    try { manifest = JSON.parse(content); } catch { return; }
+    try {
+      manifest = JSON.parse(content);
+    } catch {
+      return;
+    }
   }
   if (!Array.isArray(manifest)) return;
 
@@ -251,7 +290,9 @@ export function validateReferenceRegisterJson(jsonPath) {
   if (!content) return;
 
   let refs;
-  try { refs = JSON.parse(content); } catch (e) {
+  try {
+    refs = JSON.parse(content);
+  } catch (e) {
     errors.push(`Invalid JSON in ${jsonPath}: ${e.message}`);
     return;
   }
@@ -289,7 +330,9 @@ export function validateReferenceRegisterJson(jsonPath) {
 
     // Publisher
     if (!ref.publisher || typeof ref.publisher !== 'string' || !ref.publisher.toLowerCase().includes('pearson')) {
-      errors.push(`${jsonPath}: entry ${idx} ("${ref.id || 'unknown'}"): publisher must include "Pearson", got "${ref.publisher}"`);
+      errors.push(
+        `${jsonPath}: entry ${idx} ("${ref.id || 'unknown'}"): publisher must include "Pearson", got "${ref.publisher}"`,
+      );
     }
 
     // URL
@@ -312,13 +355,17 @@ export function validateReferenceRegisterJson(jsonPath) {
 
     // Date
     if (!ref.lastVerifiedAt || !isValidDate(ref.lastVerifiedAt)) {
-      errors.push(`${jsonPath}: entry ${idx} ("${ref.id || 'unknown'}"): lastVerifiedAt "${ref.lastVerifiedAt}" must be a valid YYYY-MM-DD date`);
+      errors.push(
+        `${jsonPath}: entry ${idx} ("${ref.id || 'unknown'}"): lastVerifiedAt "${ref.lastVerifiedAt}" must be a valid YYYY-MM-DD date`,
+      );
     }
 
     // Approval status
     const validStatuses = ['Verified', 'Pending verification', 'Awaiting review', 'Superseded', 'Pending'];
     if (!ref.approvalStatus || !validStatuses.includes(ref.approvalStatus)) {
-      errors.push(`${jsonPath}: entry ${idx} ("${ref.id || 'unknown'}"): approvalStatus must be one of: ${validStatuses.join(', ')}, got "${ref.approvalStatus}"`);
+      errors.push(
+        `${jsonPath}: entry ${idx} ("${ref.id || 'unknown'}"): approvalStatus must be one of: ${validStatuses.join(', ')}, got "${ref.approvalStatus}"`,
+      );
     }
   }
 
@@ -340,7 +387,11 @@ export function validateBlueprintAgainstManifest(blueprintPath, manifestPath) {
     // Success - exited 0
   } catch (e) {
     if (e.status === 1) {
-      errors.push(e.stdout ? e.stdout.trim() : 'docs/content/pte-task-blueprints.md is not synchronized with the manifest. Run npm run generate:pte-blueprints.');
+      errors.push(
+        e.stdout
+          ? e.stdout.trim()
+          : 'docs/content/pte-task-blueprints.md is not synchronized with the manifest. Run npm run generate:pte-blueprints.',
+      );
     } else {
       errors.push(`Blueprint validation error: ${e.message}`);
     }
@@ -382,9 +433,14 @@ export function validateScorecard(scorecardPath) {
 
   // Check rows within each category total the category heading
   const knownCategories = [
-    'Repository and Structure', 'Requirements Completeness', 'PTE Coverage and Accuracy',
-    'Content System', 'Scoring and Calibration', 'UX and Recovery',
-    'Testing and Release Gates', 'Documentation Quality'
+    'Repository and Structure',
+    'Requirements Completeness',
+    'PTE Coverage and Accuracy',
+    'Content System',
+    'Scoring and Calibration',
+    'UX and Recovery',
+    'Testing and Release Gates',
+    'Documentation Quality',
   ];
 
   for (let ci = 0; ci < categories.length; ci++) {
@@ -394,7 +450,9 @@ export function validateScorecard(scorecardPath) {
     let hasCriteria = false;
 
     // Validate category name
-    const matchedKnown = knownCategories.some(kc => cat.name.toLowerCase() === kc.toLowerCase() || cat.name.toLowerCase().startsWith(kc.toLowerCase()));
+    const matchedKnown = knownCategories.some(
+      (kc) => cat.name.toLowerCase() === kc.toLowerCase() || cat.name.toLowerCase().startsWith(kc.toLowerCase()),
+    );
     if (!matchedKnown) {
       errors.push(`${scorecardPath}: unrecognised category "${cat.name}"`);
     }
@@ -402,7 +460,7 @@ export function validateScorecard(scorecardPath) {
     for (let i = cat.startLine + 1; i < endLine; i++) {
       const line = lines[i].trim();
       if (line.startsWith('|') && !line.startsWith('|---') && !line.startsWith('| ---')) {
-        const cells = line.split('|').filter(c => c.trim().length > 0);
+        const cells = line.split('|').filter((c) => c.trim().length > 0);
         if (cells.length >= 2) {
           const numMatch = cells[1].trim().match(/^(\d+(?:\.\d+)?)\s*$/);
           if (numMatch) {
@@ -422,7 +480,9 @@ export function validateScorecard(scorecardPath) {
     }
 
     if (hasCriteria && criterionSum !== cat.points) {
-      errors.push(`${scorecardPath}: criterion rows under '${cat.name}' sum to ${criterionSum}, but heading says ${cat.points}`);
+      errors.push(
+        `${scorecardPath}: criterion rows under '${cat.name}' sum to ${criterionSum}, but heading says ${cat.points}`,
+      );
     }
   }
 
@@ -450,7 +510,7 @@ export function validateTaskManifest(manifestPath) {
     errors.push(`${manifestPath}: expected 22 task records, found ${manifest.length}`);
   }
 
-  const ids = manifest.map(t => t.canonicalId);
+  const ids = manifest.map((t) => t.canonicalId);
   const uniqueIds = new Set(ids);
 
   if (uniqueIds.size !== ids.length) {
@@ -471,21 +531,41 @@ export function validateTaskManifest(manifestPath) {
   }
 
   const validRefIds = loadAllReferenceIds();
-  const sectionCounts = { 'Speaking and Writing': 0, 'Reading': 0, 'Listening': 0 };
+  const sectionCounts = { 'Speaking and Writing': 0, Reading: 0, Listening: 0 };
 
   const requiredFields = [
-    'canonicalId', 'displayName', 'section', 'currentOfficialTask',
-    'officialSkillsAssessed', 'scoreContributions',
-    'taskPurpose', 'studentInterface', 'inputMedia', 'answerFormat',
-    'promptType', 'responseType', 'promptLength',
-    'preparationTiming', 'responseTiming',
-    'playbackLimit', 'recordingLimit', 'officialScoringType',
-    'officialRubricTraits', 'officialHumanReviewTraits',
-    'platformEstimatedScoringRule', 'platformEstimatedScoringEvidence',
-    'feedbackFormat', 'contentMetadata',
-    'responseValidation', 'failureRecoveryBehavior',
-    'promptTranscriptRequired', 'postAttemptTranscriptAvailable',
-    'practiceMode', 'mockMode', 'referenceIds', 'lastVerifiedAt'
+    'canonicalId',
+    'displayName',
+    'section',
+    'currentOfficialTask',
+    'officialSkillsAssessed',
+    'scoreContributions',
+    'taskPurpose',
+    'studentInterface',
+    'inputMedia',
+    'answerFormat',
+    'promptType',
+    'responseType',
+    'promptLength',
+    'preparationTiming',
+    'responseTiming',
+    'playbackLimit',
+    'recordingLimit',
+    'officialScoringType',
+    'officialRubricTraits',
+    'officialHumanReviewTraits',
+    'platformEstimatedScoringRule',
+    'platformEstimatedScoringEvidence',
+    'feedbackFormat',
+    'contentMetadata',
+    'responseValidation',
+    'failureRecoveryBehavior',
+    'promptTranscriptRequired',
+    'postAttemptTranscriptAvailable',
+    'practiceMode',
+    'mockMode',
+    'referenceIds',
+    'lastVerifiedAt',
   ];
 
   for (const task of manifest) {
@@ -498,10 +578,14 @@ export function validateTaskManifest(manifestPath) {
     }
 
     if (task.skillsAssessed !== undefined) {
-      errors.push(`${manifestPath}: task "${cid}" uses deprecated field "skillsAssessed"; use "officialSkillsAssessed" and "scoreContributions"`);
+      errors.push(
+        `${manifestPath}: task "${cid}" uses deprecated field "skillsAssessed"; use "officialSkillsAssessed" and "scoreContributions"`,
+      );
     }
     if (task.officialScoringTraits !== undefined) {
-      errors.push(`${manifestPath}: task "${cid}" uses deprecated field "officialScoringTraits"; use "officialRubricTraits"`);
+      errors.push(
+        `${manifestPath}: task "${cid}" uses deprecated field "officialScoringTraits"; use "officialRubricTraits"`,
+      );
     }
 
     if (task.section && !VALID_SECTIONS.includes(task.section)) {
@@ -533,12 +617,24 @@ export function validateTaskManifest(manifestPath) {
       }
     }
     // Specific objective tasks with Score Guide "Not applicable" must have empty traits
-    const objectiveEmptyTraitsTasks = ['reading_writing_fill_blanks', 'reading_multiple_answers',
-      'reorder_paragraph', 'reading_fill_blanks', 'reading_single_answer',
-      'listening_multiple_answers', 'listening_fill_blanks', 'highlight_correct_summary',
-      'listening_single_answer', 'select_missing_word', 'highlight_incorrect_words', 'write_from_dictation'];
+    const objectiveEmptyTraitsTasks = [
+      'reading_writing_fill_blanks',
+      'reading_multiple_answers',
+      'reorder_paragraph',
+      'reading_fill_blanks',
+      'reading_single_answer',
+      'listening_multiple_answers',
+      'listening_fill_blanks',
+      'highlight_correct_summary',
+      'listening_single_answer',
+      'select_missing_word',
+      'highlight_incorrect_words',
+      'write_from_dictation',
+    ];
     if (objectiveEmptyTraitsTasks.includes(cid) && task.officialRubricTraits && task.officialRubricTraits.length > 0) {
-      errors.push(`${manifestPath}: task "${cid}" must have empty officialRubricTraits (Score Guide says Not applicable)`);
+      errors.push(
+        `${manifestPath}: task "${cid}" must have empty officialRubricTraits (Score Guide says Not applicable)`,
+      );
     }
 
     if (task.promptType && !VALID_PROMPT_TYPES.includes(task.promptType)) {
@@ -552,28 +648,58 @@ export function validateTaskManifest(manifestPath) {
     }
 
     if (task.platformEstimatedScoringRule) {
-      const validRuleTypes = ['rubric-estimate', 'correct-incorrect', 'per-correct-blank', 'per-correct-word', 'selection-with-negative-marking', 'adjacent-pair-order'];
+      const validRuleTypes = [
+        'rubric-estimate',
+        'correct-incorrect',
+        'per-correct-blank',
+        'per-correct-word',
+        'selection-with-negative-marking',
+        'adjacent-pair-order',
+      ];
       if (!validRuleTypes.includes(task.platformEstimatedScoringRule.type)) {
-        errors.push(`${manifestPath}: task "${cid}" platformEstimatedScoringRule has invalid type "${task.platformEstimatedScoringRule.type}"`);
+        errors.push(
+          `${manifestPath}: task "${cid}" platformEstimatedScoringRule has invalid type "${task.platformEstimatedScoringRule.type}"`,
+        );
       }
-      if (task.platformEstimatedScoringRule.minimumItemScore !== undefined && task.platformEstimatedScoringRule.minimumItemScore < 0) {
+      if (
+        task.platformEstimatedScoringRule.minimumItemScore !== undefined &&
+        task.platformEstimatedScoringRule.minimumItemScore < 0
+      ) {
         errors.push(`${manifestPath}: task "${cid}" platformEstimatedScoringRule minimumItemScore must be >= 0`);
       }
-      if ((task.platformEstimatedScoringRule.type === 'selection-with-negative-marking') && task.platformEstimatedScoringRule.minimumItemScore !== 0) {
-        errors.push(`${manifestPath}: task "${cid}" negative-marking platformEstimatedScoringRule must have minimumItemScore 0`);
+      if (
+        task.platformEstimatedScoringRule.type === 'selection-with-negative-marking' &&
+        task.platformEstimatedScoringRule.minimumItemScore !== 0
+      ) {
+        errors.push(
+          `${manifestPath}: task "${cid}" negative-marking platformEstimatedScoringRule must have minimumItemScore 0`,
+        );
       }
       // Platform scoring must not be labelled as official
       if (task.platformEstimatedScoringRule.type !== 'rubric-estimate') {
         const ruleStr = JSON.stringify(task.platformEstimatedScoringRule);
-        if (ruleStr.includes('official') || ruleStr.includes('pearson') || ruleStr.includes('Pearson') || ruleStr.includes('ai-evaluation')) {
-          errors.push(`${manifestPath}: task "${cid}" platformEstimatedScoringRule must not reference official Pearson scoring or ai-evaluation`);
+        if (
+          ruleStr.includes('official') ||
+          ruleStr.includes('pearson') ||
+          ruleStr.includes('Pearson') ||
+          ruleStr.includes('ai-evaluation')
+        ) {
+          errors.push(
+            `${manifestPath}: task "${cid}" platformEstimatedScoringRule must not reference official Pearson scoring or ai-evaluation`,
+          );
         }
       }
     }
 
     // responseValidation validation
     if (task.responseValidation) {
-      const requiredRvKeys = ['allowedSubmissionStates', 'rejectCorruptPayload', 'learningModeWarnBeforeSubmit', 'timedModeForceAnswer', 'noResponseScore'];
+      const requiredRvKeys = [
+        'allowedSubmissionStates',
+        'rejectCorruptPayload',
+        'learningModeWarnBeforeSubmit',
+        'timedModeForceAnswer',
+        'noResponseScore',
+      ];
       for (const key of requiredRvKeys) {
         if (!(key in task.responseValidation)) {
           errors.push(`${manifestPath}: task "${cid}" responseValidation missing required key "${key}"`);
@@ -581,10 +707,14 @@ export function validateTaskManifest(manifestPath) {
       }
       if (task.responseValidation.allowedSubmissionStates) {
         if (!task.responseValidation.allowedSubmissionStates.includes('complete')) {
-          errors.push(`${manifestPath}: task "${cid}" responseValidation.allowedSubmissionStates must include "complete"`);
+          errors.push(
+            `${manifestPath}: task "${cid}" responseValidation.allowedSubmissionStates must include "complete"`,
+          );
         }
         if (!task.responseValidation.allowedSubmissionStates.includes('incomplete')) {
-          errors.push(`${manifestPath}: task "${cid}" responseValidation.allowedSubmissionStates must include "incomplete"`);
+          errors.push(
+            `${manifestPath}: task "${cid}" responseValidation.allowedSubmissionStates must include "incomplete"`,
+          );
         }
         if (!task.responseValidation.allowedSubmissionStates.includes('empty')) {
           errors.push(`${manifestPath}: task "${cid}" responseValidation.allowedSubmissionStates must include "empty"`);
@@ -600,14 +730,28 @@ export function validateTaskManifest(manifestPath) {
 
     // failureRecoveryBehavior validation
     if (task.failureRecoveryBehavior) {
-      const requiredFrKeys = ['autosaveRequired', 'preserveLocalResponseUntilConfirmed', 'resumableUploadRequired', 'audioLoadFailureAction', 'duplicateSubmissionPrevention'];
+      const requiredFrKeys = [
+        'autosaveRequired',
+        'preserveLocalResponseUntilConfirmed',
+        'resumableUploadRequired',
+        'audioLoadFailureAction',
+        'duplicateSubmissionPrevention',
+      ];
       for (const key of requiredFrKeys) {
         if (!(key in task.failureRecoveryBehavior)) {
           errors.push(`${manifestPath}: task "${cid}" failureRecoveryBehavior missing required key "${key}"`);
         }
       }
       // Speaking recordings require resumable upload
-      const speakingTasks = ['read_aloud', 'repeat_sentence', 'describe_image', 'retell_lecture', 'answer_short_question', 'summarize_group_discussion', 'respond_to_situation'];
+      const speakingTasks = [
+        'read_aloud',
+        'repeat_sentence',
+        'describe_image',
+        'retell_lecture',
+        'answer_short_question',
+        'summarize_group_discussion',
+        'respond_to_situation',
+      ];
       if (speakingTasks.includes(cid) && task.failureRecoveryBehavior.resumableUploadRequired !== true) {
         errors.push(`${manifestPath}: task "${cid}" speaking recording requires resumableUploadRequired true`);
       }
@@ -615,7 +759,9 @@ export function validateTaskManifest(manifestPath) {
 
     // Deprecated fields
     if (task.scoringRule) {
-      errors.push(`${manifestPath}: task "${cid}" uses deprecated field "scoringRule"; use "platformEstimatedScoringRule"`);
+      errors.push(
+        `${manifestPath}: task "${cid}" uses deprecated field "scoringRule"; use "platformEstimatedScoringRule"`,
+      );
     }
 
     if (task.promptLength) {
@@ -684,29 +830,35 @@ export function validateTaskManifest(manifestPath) {
 
   if (canonical.length === 22) {
     const fieldsToCompare = [
-      'section', 'promptType', 'responseType',
-      'playbackLimit', 'recordingLimit', 'officialScoringType',
-      'promptTranscriptRequired'
+      'section',
+      'promptType',
+      'responseType',
+      'playbackLimit',
+      'recordingLimit',
+      'officialScoringType',
+      'promptTranscriptRequired',
     ];
-    const arrayFieldsToCompare = [
-      'officialSkillsAssessed', 'scoreContributions', 'officialRubricTraits'
-    ];
+    const arrayFieldsToCompare = ['officialSkillsAssessed', 'scoreContributions', 'officialRubricTraits'];
     const timingFields = ['promptLength', 'preparationTiming', 'responseTiming'];
 
     for (const task of manifest) {
       const cid = task.canonicalId;
-      const fixture = canonical.find(f => f.canonicalId === cid);
+      const fixture = canonical.find((f) => f.canonicalId === cid);
       if (!fixture) continue;
 
       for (const field of fieldsToCompare) {
         if (JSON.stringify(task[field]) !== JSON.stringify(fixture[field])) {
-          errors.push(`Task "${cid}": ${field} mismatch. Expected: ${JSON.stringify(fixture[field])}. Actual: ${JSON.stringify(task[field])}`);
+          errors.push(
+            `Task "${cid}": ${field} mismatch. Expected: ${JSON.stringify(fixture[field])}. Actual: ${JSON.stringify(task[field])}`,
+          );
         }
       }
 
       for (const field of arrayFieldsToCompare) {
         if (JSON.stringify(task[field]) !== JSON.stringify(fixture[field])) {
-          errors.push(`Task "${cid}": ${field} mismatch. Expected: ${JSON.stringify(fixture[field])}. Actual: ${JSON.stringify(task[field])}`);
+          errors.push(
+            `Task "${cid}": ${field} mismatch. Expected: ${JSON.stringify(fixture[field])}. Actual: ${JSON.stringify(task[field])}`,
+          );
         }
       }
 
@@ -714,7 +866,9 @@ export function validateTaskManifest(manifestPath) {
         if (task[field] && fixture[field]) {
           for (const sub of ['mode', 'minimum', 'maximum', 'unit']) {
             if (JSON.stringify(task[field][sub]) !== JSON.stringify(fixture[field][sub])) {
-              errors.push(`Task "${cid}": ${field}.${sub} mismatch. Expected: ${JSON.stringify(fixture[field][sub])}. Actual: ${JSON.stringify(task[field][sub])}`);
+              errors.push(
+                `Task "${cid}": ${field}.${sub} mismatch. Expected: ${JSON.stringify(fixture[field][sub])}. Actual: ${JSON.stringify(task[field][sub])}`,
+              );
             }
           }
         }
@@ -723,20 +877,41 @@ export function validateTaskManifest(manifestPath) {
       const taskRefs = new Set(task.referenceIds || []);
       const fixRefs = new Set(fixture.referenceIds || []);
       if (taskRefs.size !== fixRefs.size || [...taskRefs].sort().join(',') !== [...fixRefs].sort().join(',')) {
-        errors.push(`Task "${cid}": referenceIds mismatch. Expected: ${JSON.stringify(fixture.referenceIds)}. Actual: ${JSON.stringify(task.referenceIds)}`);
+        errors.push(
+          `Task "${cid}": referenceIds mismatch. Expected: ${JSON.stringify(fixture.referenceIds)}. Actual: ${JSON.stringify(task.referenceIds)}`,
+        );
       }
     }
   }
 
   // ---- H/I: Immutable factual assertions ----
-  const RUBRIC_TASKS = new Set(['read_aloud', 'repeat_sentence', 'describe_image', 'retell_lecture',
-    'answer_short_question', 'summarize_group_discussion', 'respond_to_situation',
-    'summarize_written_text', 'write_essay', 'summarize_spoken_text']);
+  const RUBRIC_TASKS = new Set([
+    'read_aloud',
+    'repeat_sentence',
+    'describe_image',
+    'retell_lecture',
+    'answer_short_question',
+    'summarize_group_discussion',
+    'respond_to_situation',
+    'summarize_written_text',
+    'write_essay',
+    'summarize_spoken_text',
+  ]);
 
-  const OBJECTIVE_NO_RUBRIC_TASKS = new Set(['reading_writing_fill_blanks', 'reading_multiple_answers',
-    'reorder_paragraph', 'reading_fill_blanks', 'reading_single_answer',
-    'listening_multiple_answers', 'listening_fill_blanks', 'highlight_correct_summary',
-    'listening_single_answer', 'select_missing_word', 'highlight_incorrect_words', 'write_from_dictation']);
+  const OBJECTIVE_NO_RUBRIC_TASKS = new Set([
+    'reading_writing_fill_blanks',
+    'reading_multiple_answers',
+    'reorder_paragraph',
+    'reading_fill_blanks',
+    'reading_single_answer',
+    'listening_multiple_answers',
+    'listening_fill_blanks',
+    'highlight_correct_summary',
+    'listening_single_answer',
+    'select_missing_word',
+    'highlight_incorrect_words',
+    'write_from_dictation',
+  ]);
 
   for (const task of manifest) {
     const cid = task.canonicalId;
@@ -789,20 +964,28 @@ export function validateTaskManifest(manifestPath) {
       }
       // Timing description must say total task timer includes listening and writing
       if (task.responseTimingDescription && task.responseTimingDescription.includes('begins after the audio ends')) {
-        errors.push(`${manifestPath}: task "${cid}" timer wording "begins after the audio ends" is invalid; must state "total task timer includes audio playback and writing time"`);
+        errors.push(
+          `${manifestPath}: task "${cid}" timer wording "begins after the audio ends" is invalid; must state "total task timer includes audio playback and writing time"`,
+        );
       }
     }
 
     // Write Essay: 2-3 sentence prompt
     if (cid === 'write_essay') {
       if (task.promptLength) {
-        if (task.promptLength.minimum !== 2 || task.promptLength.maximum !== 3 || task.promptLength.unit !== 'sentences') {
+        if (
+          task.promptLength.minimum !== 2 ||
+          task.promptLength.maximum !== 3 ||
+          task.promptLength.unit !== 'sentences'
+        ) {
           errors.push(`${manifestPath}: task "${cid}" promptLength must be 2-3 sentences`);
         }
       }
       if (task.officialRubricTraits) {
         if (task.officialRubricTraits.includes('Structure') || task.officialRubricTraits.includes('Coherence')) {
-          errors.push(`${manifestPath}: task "${cid}" must not split "Development, Structure and Coherence" into separate traits`);
+          errors.push(
+            `${manifestPath}: task "${cid}" must not split "Development, Structure and Coherence" into separate traits`,
+          );
         }
       }
     }
@@ -925,20 +1108,37 @@ export function validateTaskManifest(manifestPath) {
       const expected = JSON.stringify(expectedHumanReviewTraits[cid]);
       const actual = JSON.stringify(task.officialHumanReviewTraits || []);
       if (expected !== actual) {
-        errors.push(`${manifestPath}: task "${cid}" officialHumanReviewTraits mismatch. Expected: ${expected}, Actual: ${actual}`);
+        errors.push(
+          `${manifestPath}: task "${cid}" officialHumanReviewTraits mismatch. Expected: ${expected}, Actual: ${actual}`,
+        );
       }
     } else if (task.officialHumanReviewTraits && task.officialHumanReviewTraits.length > 0) {
       errors.push(`${manifestPath}: task "${cid}" must have empty officialHumanReviewTraits`);
     }
 
     // No transcript tasks
-    const noTranscriptTasks = ['read_aloud', 'repeat_sentence', 'describe_image', 'retell_lecture',
-      'answer_short_question', 'summarize_group_discussion', 'respond_to_situation',
-      'summarize_written_text', 'write_essay', 'reading_writing_fill_blanks',
-      'reading_multiple_answers', 'reorder_paragraph', 'reading_fill_blanks',
-      'reading_single_answer', 'summarize_spoken_text', 'listening_multiple_answers',
-      'highlight_correct_summary', 'listening_single_answer', 'select_missing_word',
-      'write_from_dictation'];
+    const noTranscriptTasks = [
+      'read_aloud',
+      'repeat_sentence',
+      'describe_image',
+      'retell_lecture',
+      'answer_short_question',
+      'summarize_group_discussion',
+      'respond_to_situation',
+      'summarize_written_text',
+      'write_essay',
+      'reading_writing_fill_blanks',
+      'reading_multiple_answers',
+      'reorder_paragraph',
+      'reading_fill_blanks',
+      'reading_single_answer',
+      'summarize_spoken_text',
+      'listening_multiple_answers',
+      'highlight_correct_summary',
+      'listening_single_answer',
+      'select_missing_word',
+      'write_from_dictation',
+    ];
     if (noTranscriptTasks.includes(cid) && task.promptTranscriptRequired !== false) {
       errors.push(`${manifestPath}: task "${cid}" promptTranscriptRequired must be false`);
     }
@@ -982,8 +1182,16 @@ export function validateFreeStudentRoutes(routeMapPath) {
   const content = requiredFile(routeMapPath);
   if (!content) return;
 
-  const routes = ['/app', '/app/onboarding', '/app/dashboard', '/app/courses',
-    '/app/practice', '/app/progress', '/app/subscription', '/app/profile'];
+  const routes = [
+    '/app',
+    '/app/onboarding',
+    '/app/dashboard',
+    '/app/courses',
+    '/app/practice',
+    '/app/progress',
+    '/app/subscription',
+    '/app/profile',
+  ];
 
   for (const route of routes) {
     const escaped = route.replace(/\//g, '\\/');
@@ -1007,11 +1215,18 @@ export function validateAtoZPhases(readmePath) {
 }
 
 export function validateMockTimerConsistency() {
-  const mockDocs = ['docs/product/student-journey.md', 'docs/product/acceptance-criteria.md', 'docs/architecture-decisions/0004-recoverable-assessment-state.md'];
+  const mockDocs = [
+    'docs/product/student-journey.md',
+    'docs/product/acceptance-criteria.md',
+    'docs/architecture-decisions/0004-recoverable-assessment-state.md',
+  ];
   for (const docPath of mockDocs) {
     const content = requiredFile(docPath);
     if (!content) continue;
-    if (content.includes('remaining time at interruption') || content.includes('reflects the remaining time at the point')) {
+    if (
+      content.includes('remaining time at interruption') ||
+      content.includes('reflects the remaining time at the point')
+    ) {
       errors.push(`${docPath}: contains incorrect mock timer policy`);
     }
     checkContent(docPath, content, [['Mock deadline continues during interruption', 'deadline continue', false]]);
@@ -1039,11 +1254,15 @@ export function validateScoringPrinciplesTable(principlesPath) {
   if (!manifestContent) return;
 
   let manifest;
-  try { manifest = JSON.parse(manifestContent); } catch { return; }
+  try {
+    manifest = JSON.parse(manifestContent);
+  } catch {
+    return;
+  }
   if (!Array.isArray(manifest)) return;
 
   // Find the integrated-skill table in scoring-principles.md
-  const tableStart = content.indexOf('| Task | Skills Assessed | Contribution |');
+  const tableStart = content.search(/\| Task\s+\| Skills Assessed\s+\| Contribution\s+\|/);
   if (tableStart === -1) {
     errors.push(`${principlesPath}: missing integrated-skill contribution table`);
     return;
@@ -1051,7 +1270,7 @@ export function validateScoringPrinciplesTable(principlesPath) {
 
   const tableEnd = content.indexOf('## Result Storage', tableStart);
   const tableSection = tableEnd === -1 ? content.slice(tableStart) : content.slice(tableStart, tableEnd);
-  const tableLines = tableSection.split('\n').filter(l => l.startsWith('|') && !l.includes('---'));
+  const tableLines = tableSection.split('\n').filter((l) => l.startsWith('|') && !l.includes('---'));
 
   for (const task of manifest) {
     const cid = task.canonicalId;
@@ -1060,13 +1279,13 @@ export function validateScoringPrinciplesTable(principlesPath) {
     const expectedContrib = (task.scoreContributions || []).join(', ');
 
     // Find the matching row by display name
-    const row = tableLines.find(l => l.includes(displayName));
+    const row = tableLines.find((l) => l.includes(displayName));
     if (!row) {
       errors.push(`${principlesPath}: missing row for "${displayName}" in integrated-skill table`);
       continue;
     }
 
-    const cells = row.split('|').filter(c => c.trim().length > 0);
+    const cells = row.split('|').filter((c) => c.trim().length > 0);
     if (cells.length < 3) {
       errors.push(`${principlesPath}: row for "${displayName}" has fewer than 3 cells`);
       continue;
@@ -1076,12 +1295,22 @@ export function validateScoringPrinciplesTable(principlesPath) {
     const rowContrib = cells[2].trim();
 
     // Normalize for comparison
-    const normalize = s => s.trim().split(/\s*,\s*/).sort().join(', ').toLowerCase();
+    const normalize = (s) =>
+      s
+        .trim()
+        .split(/\s*,\s*/)
+        .sort()
+        .join(', ')
+        .toLowerCase();
     if (normalize(rowSkills) !== normalize(expectedSkills)) {
-      errors.push(`${principlesPath}: "${displayName}" skills mismatch. Table says "${rowSkills}", manifest says "${expectedSkills}"`);
+      errors.push(
+        `${principlesPath}: "${displayName}" skills mismatch. Table says "${rowSkills}", manifest says "${expectedSkills}"`,
+      );
     }
     if (normalize(rowContrib) !== normalize(expectedContrib)) {
-      errors.push(`${principlesPath}: "${displayName}" contribution mismatch. Table says "${rowContrib}", manifest says "${expectedContrib}"`);
+      errors.push(
+        `${principlesPath}: "${displayName}" contribution mismatch. Table says "${rowContrib}", manifest says "${expectedContrib}"`,
+      );
     }
   }
 }
@@ -1181,16 +1410,20 @@ export function validateScoringNarrativeConsistency(principlesPath) {
     // Pattern: term followed by scoring-related words within the same sentence, excluding negations
     const scoringClaimPattern = new RegExp(
       termEscaped + '[^.]*?(?:scor|evidenc|contribut|rubric|calculated|forms part of)',
-      'i'
+      'i',
     );
     if (!scoringClaimPattern.test(text)) return false;
     // Check if the sentence containing the match has a negation
     const match = text.match(new RegExp('[^.]*?' + termEscaped + '[^.]*\\.', 'i'));
     if (match) {
       const sentence = match[0].toLowerCase();
-      if (sentence.includes('do not affect') || sentence.includes('excluded') ||
-          sentence.includes('non-scored') || sentence.includes('not affect') ||
-          sentence.includes('does not')) {
+      if (
+        sentence.includes('do not affect') ||
+        sentence.includes('excluded') ||
+        sentence.includes('non-scored') ||
+        sentence.includes('not affect') ||
+        sentence.includes('does not')
+      ) {
         return false;
       }
     }
@@ -1205,7 +1438,9 @@ export function validateScoringNarrativeConsistency(principlesPath) {
     asqHasScoringClaim = true;
   }
   if (asqHasScoringClaim) {
-    errors.push(`${principlesPath}: Answer Short Question must not assign pronunciation or oral fluency to the item score`);
+    errors.push(
+      `${principlesPath}: Answer Short Question must not assign pronunciation or oral fluency to the item score`,
+    );
   }
 
   // Also reject broader ASQ section if it contains pronunciation as scoring without clear exclusion
@@ -1225,7 +1460,9 @@ export function validateScoringNarrativeConsistency(principlesPath) {
 
   // Check "Answer Short Question uses X as scoring evidence" without bold
   if (/Answer Short Question uses.*(?:pronunciation|oral fluency).*scoring/i.test(asqBlock)) {
-    errors.push(`${principlesPath}: Answer Short Question must not use pronunciation or oral fluency as scoring evidence`);
+    errors.push(
+      `${principlesPath}: Answer Short Question must not use pronunciation or oral fluency as scoring evidence`,
+    );
   }
 }
 
@@ -1236,9 +1473,13 @@ function parseMarkdownRouteTable(content) {
   const routes = [];
   let inTable = false;
   for (const line of lines) {
-    if (line.startsWith('|') && line.includes('| `') && (line.includes('/app/') || line.includes('/content/') || line.includes('/teacher/'))) {
+    if (
+      line.startsWith('|') &&
+      line.includes('| `') &&
+      (line.includes('/app/') || line.includes('/content/') || line.includes('/teacher/'))
+    ) {
       inTable = true;
-      const cells = line.split('|').map(c => c.trim());
+      const cells = line.split('|').map((c) => c.trim());
       // Route is the first data cell (usually index 1 after splitting, but may contain backticks)
       if (cells.length >= 2) {
         const routeMatch = cells[1].match(/`([^`]+)`/);
@@ -1265,17 +1506,21 @@ export function validateRoleRouteConsistency(routeMapPath, userRolesPath) {
   if (!rolesContent) return;
 
   // Parse permission matrix from user-roles.md
-  const roleRows = rolesContent.split('\n').filter(l => l.startsWith('|') && l.includes('Content Reviewer'));
+  const roleRows = rolesContent.split('\n').filter((l) => l.startsWith('|') && l.includes('Content Reviewer'));
   if (roleRows.length === 0) {
     errors.push(`${userRolesPath}: missing Content Reviewer row in permission matrix`);
     return;
   }
 
   // Parse the header to find column positions by name
-  const headerLines = rolesContent.split('\n').filter(l => l.startsWith('|') && l.includes('Role') && l.includes('Edit'));
-  let editCol = -1, publishCol = -1, retireCol = -1;
+  const headerLines = rolesContent
+    .split('\n')
+    .filter((l) => l.startsWith('|') && l.includes('Role') && l.includes('Edit'));
+  let editCol = -1,
+    publishCol = -1,
+    retireCol = -1;
   if (headerLines.length > 0) {
-    const headers = headerLines[0].split('|').map(h => h.trim().toLowerCase());
+    const headers = headerLines[0].split('|').map((h) => h.trim().toLowerCase());
     editCol = headers.indexOf('edit');
     publishCol = headers.indexOf('publish');
     retireCol = headers.indexOf('retire');
@@ -1285,7 +1530,7 @@ export function validateRoleRouteConsistency(routeMapPath, userRolesPath) {
     errors.push(`${userRolesPath}: cannot find Edit column in permission matrix header`);
   }
 
-  const reviewRow = roleRows[0].split('|').map(c => c.trim());
+  const reviewRow = roleRows[0].split('|').map((c) => c.trim());
   const editVal = editCol >= 0 && editCol < reviewRow.length ? reviewRow[editCol] : '';
   const publishVal = publishCol >= 0 && publishCol < reviewRow.length ? reviewRow[publishCol] : '';
   const retireVal = retireCol >= 0 && retireCol < reviewRow.length ? reviewRow[retireCol] : '';
@@ -1304,16 +1549,18 @@ export function validateRoleRouteConsistency(routeMapPath, userRolesPath) {
   const routes = parseMarkdownRouteTable(routeContent);
 
   // Check /content/questions/[questionId] must state read-only
-  const questionRoute = routes.find(r => r.route === '/content/questions/[questionId]');
+  const questionRoute = routes.find((r) => r.route === '/content/questions/[questionId]');
   if (!questionRoute) {
     errors.push(`${routeMapPath}: missing required route /content/questions/[questionId]`);
-  } else if (!questionRoute.purpose.toLowerCase().includes('read-only') &&
-             !questionRoute.purpose.toLowerCase().includes('read only')) {
+  } else if (
+    !questionRoute.purpose.toLowerCase().includes('read-only') &&
+    !questionRoute.purpose.toLowerCase().includes('read only')
+  ) {
     errors.push(`${routeMapPath}: /content/questions/[questionId] must specify read-only access for Content reviewer`);
   }
 
   // Check /content/reviews/[reviewId] exists
-  const reviewRoute = routes.find(r => r.route === '/content/reviews/[reviewId]');
+  const reviewRoute = routes.find((r) => r.route === '/content/reviews/[reviewId]');
   if (!reviewRoute) {
     errors.push(`${routeMapPath}: missing required route /content/reviews/[reviewId]`);
   } else if (!reviewRoute.purpose.includes('cannot publish')) {
@@ -1342,10 +1589,12 @@ export function validateContentPublicationAuthority(workflowPath, routeMapPath, 
 
   // 3. No reviewer action can directly or automatically publish
   if (workflow.includes('triggered by approval') && !workflow.includes('triggered by Administrator authorisation')) {
-    errors.push(`${workflowPath}: publication must not be triggered by approval; must require Administrator authorisation`);
+    errors.push(
+      `${workflowPath}: publication must not be triggered by approval; must require Administrator authorisation`,
+    );
   }
   // Check for synonyms or equivalent contradictions
-  const pubStages = workflow.split('\n### ').filter(s => s.toLowerCase().includes('public'));
+  const pubStages = workflow.split('\n### ').filter((s) => s.toLowerCase().includes('public'));
   for (const stage of pubStages) {
     if (stage.includes('reviewer') && stage.includes('publication') && !stage.includes('cannot publish')) {
       errors.push(`${workflowPath}: Content Reviewer must not be able to publish content`);
@@ -1353,7 +1602,7 @@ export function validateContentPublicationAuthority(workflowPath, routeMapPath, 
   }
 
   // 4. System publication requires prior Administrator authorisation
-  const systemPubStage = workflow.split('\n### ').find(s => s.startsWith('System Publication'));
+  const systemPubStage = workflow.split('\n### ').find((s) => s.startsWith('System Publication'));
   if (systemPubStage) {
     if (!systemPubStage.toLowerCase().includes('administrator authorisation')) {
       errors.push(`${workflowPath}: System Publication must require Administrator authorisation`);
@@ -1361,7 +1610,7 @@ export function validateContentPublicationAuthority(workflowPath, routeMapPath, 
   }
 
   // 5. Content Reviewer may recommend revision or retirement but cannot execute
-  const recStage = workflow.split('\n### ').find(s => s.startsWith('Revision or Retirement Recommendation'));
+  const recStage = workflow.split('\n### ').find((s) => s.startsWith('Revision or Retirement Recommendation'));
   if (recStage) {
     if (!recStage.includes('Content reviewer')) {
       errors.push(`${workflowPath}: Revision or Retirement Recommendation must be by Content reviewer`);
@@ -1377,7 +1626,7 @@ export function validateContentPublicationAuthority(workflowPath, routeMapPath, 
   }
 
   // 7. System Retirement requires Administrator authorisation
-  const systemRetStage = workflow.split('\n### ').find(s => s.startsWith('System Retirement'));
+  const systemRetStage = workflow.split('\n### ').find((s) => s.startsWith('System Retirement'));
   if (systemRetStage && !systemRetStage.toLowerCase().includes('administrator authorisation')) {
     errors.push(`${workflowPath}: System Retirement must require Administrator authorisation`);
   }
@@ -1389,14 +1638,14 @@ export function validateContentPublicationAuthority(workflowPath, routeMapPath, 
 
   // 9. User roles matrix check
   if (rolesContent) {
-    const revRows = rolesContent.split('\n').filter(l => l.startsWith('|') && l.includes('Content Reviewer'));
+    const revRows = rolesContent.split('\n').filter((l) => l.startsWith('|') && l.includes('Content Reviewer'));
     if (revRows.length === 0) {
       errors.push(`${userRolesPath}: missing Content Reviewer row`);
     } else {
-      const cells = revRows[0].split('|').map(c => c.trim());
-      const headers = rolesContent.split('\n').filter(l => l.startsWith('|') && l.includes('Role'))[0];
+      const cells = revRows[0].split('|').map((c) => c.trim());
+      const headers = rolesContent.split('\n').filter((l) => l.startsWith('|') && l.includes('Role'))[0];
       if (headers) {
-        const hdrs = headers.split('|').map(h => h.trim().toLowerCase());
+        const hdrs = headers.split('|').map((h) => h.trim().toLowerCase());
         const pubIdx = hdrs.indexOf('publish');
         const retIdx = hdrs.indexOf('retire');
         if (pubIdx >= 0 && pubIdx < cells.length && cells[pubIdx] !== 'No') {
@@ -1411,7 +1660,7 @@ export function validateContentPublicationAuthority(workflowPath, routeMapPath, 
 
   // 10. Route map check
   if (routeMap) {
-    const reviewRouteLine = routeMap.split('\n').find(l => l.includes('/content/reviews/[reviewId]'));
+    const reviewRouteLine = routeMap.split('\n').find((l) => l.includes('/content/reviews/[reviewId]'));
     if (reviewRouteLine && !reviewRouteLine.includes('cannot publish')) {
       errors.push(`${routeMapPath}: /content/reviews/[reviewId] must state it cannot publish or retire content`);
     }
@@ -1422,8 +1671,10 @@ export function validateContentPublicationAuthority(workflowPath, routeMapPath, 
     if (!acceptContent.includes('reviewer cannot publish') && !acceptContent.includes('cannot publish content')) {
       errors.push(`${acceptancePath}: must state that content reviewer cannot publish`);
     }
-    if (!acceptContent.includes('Only an Administrator can authorise publication') &&
-        !acceptContent.toLowerCase().includes('administrator can authorise')) {
+    if (
+      !acceptContent.includes('Only an Administrator can authorise publication') &&
+      !acceptContent.toLowerCase().includes('administrator can authorise')
+    ) {
       errors.push(`${acceptancePath}: must state that only Administrator can authorise publication`);
     }
   }
@@ -1439,7 +1690,7 @@ export function validateStudentAssessmentRoutes(routeMapPath) {
 
   // Helper: find route by exact match
   function findExactRoute(routes, path) {
-    return routes.find(r => r.route === path);
+    return routes.find((r) => r.route === path);
   }
 
   // Diagnostic routes (exact match only)
@@ -1463,11 +1714,7 @@ export function validateStudentAssessmentRoutes(routeMapPath) {
   }
 
   // Section-test routes (exact match only)
-  const sectionTestRoutes = [
-    '/app/section-tests',
-    '/app/section-tests/[testId]',
-    '/app/section-attempts/[attemptId]',
-  ];
+  const sectionTestRoutes = ['/app/section-tests', '/app/section-tests/[testId]', '/app/section-attempts/[attemptId]'];
   for (const route of sectionTestRoutes) {
     const found = findExactRoute(routes, route);
     if (!found) {
@@ -1483,21 +1730,43 @@ export function validateAll() {
   resetValidation();
 
   const requiredFiles = [
-    '.editorconfig', '.gitattributes', '.gitignore', '.nvmrc', '.node-version',
-    'LICENSE', 'README.md', 'package.json',
-    'docs/product/product-requirements.md', 'docs/product/user-roles.md',
-    'docs/product/student-journey.md', 'docs/product/route-map.md',
-    'docs/product/feature-priority.md', 'docs/product/acceptance-criteria.md',
-    'docs/content/pte-task-blueprints.md', 'docs/content/pte-task-manifest.json',
-    'docs/content/official-pte-reference-register.md', 'docs/content/official-pte-reference-register.json',
-    'docs/content/content-policy.md', 'docs/content/content-workflow.md',
-    'docs/scoring/scoring-principles.md', 'docs/scoring/calibration-plan.md',
-    'docs/testing/test-strategy.md', 'docs/testing/audit-scorecard.md',
-    'docs/operations/development-workflow.md', 'docs/operations/release-criteria.md',
-    'docs/architecture-decisions/0001-monorepo.md', 'docs/architecture-decisions/0002-provider-adapters.md',
-    'docs/architecture-decisions/0003-versioned-content-and-scoring.md', 'docs/architecture-decisions/0004-recoverable-assessment-state.md',
+    '.editorconfig',
+    '.gitattributes',
+    '.gitignore',
+    '.nvmrc',
+    '.node-version',
+    'LICENSE',
+    'README.md',
+    'package.json',
+    'docs/product/product-requirements.md',
+    'docs/product/user-roles.md',
+    'docs/product/student-journey.md',
+    'docs/product/route-map.md',
+    'docs/product/feature-priority.md',
+    'docs/product/acceptance-criteria.md',
+    'docs/content/pte-task-blueprints.md',
+    'docs/content/pte-task-manifest.json',
+    'docs/content/official-pte-reference-register.md',
+    'docs/content/official-pte-reference-register.json',
+    'docs/content/content-policy.md',
+    'docs/content/content-workflow.md',
+    'docs/scoring/scoring-principles.md',
+    'docs/scoring/calibration-plan.md',
+    'docs/testing/test-strategy.md',
+    'docs/testing/audit-scorecard.md',
+    'docs/operations/development-workflow.md',
+    'docs/operations/release-criteria.md',
+    'docs/architecture-decisions/0001-monorepo.md',
+    'docs/architecture-decisions/0002-provider-adapters.md',
+    'docs/architecture-decisions/0003-versioned-content-and-scoring.md',
+    'docs/architecture-decisions/0004-recoverable-assessment-state.md',
     'scripts/validate-docs.mjs',
-    'apps/.gitkeep', 'services/.gitkeep', 'packages/.gitkeep', 'content/.gitkeep', 'infrastructure/.gitkeep', 'scripts/.gitkeep',
+    'apps/.gitkeep',
+    'services/.gitkeep',
+    'packages/.gitkeep',
+    'content/.gitkeep',
+    'infrastructure/.gitkeep',
+    'scripts/.gitkeep',
   ];
 
   for (const file of requiredFiles) {
@@ -1614,7 +1883,12 @@ export function validateAll() {
     ]);
   }
 
-  for (const adr of ['0001-monorepo.md', '0002-provider-adapters.md', '0003-versioned-content-and-scoring.md', '0004-recoverable-assessment-state.md']) {
+  for (const adr of [
+    '0001-monorepo.md',
+    '0002-provider-adapters.md',
+    '0003-versioned-content-and-scoring.md',
+    '0004-recoverable-assessment-state.md',
+  ]) {
     const adrContent = requiredFile(`docs/architecture-decisions/${adr}`);
     if (adrContent) {
       checkContent(`docs/architecture-decisions/${adr}`, adrContent, [
@@ -1633,7 +1907,7 @@ export function validateAll() {
     'docs/content/content-workflow.md',
     'docs/product/route-map.md',
     'docs/product/acceptance-criteria.md',
-    'docs/product/user-roles.md'
+    'docs/product/user-roles.md',
   );
   validateStudentAssessmentRoutes('docs/product/route-map.md');
 
