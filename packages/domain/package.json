@@ -1,0 +1,26 @@
+{
+  "name": "@pte-app/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./entities": { "types": "./dist/entities/index.d.ts", "default": "./dist/entities/index.js" },
+    "./repositories": { "types": "./dist/repositories/index.d.ts", "default": "./dist/repositories/index.js" }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "tsx --test src/**/*.unit.test.ts"
+  },
+  "devDependencies": {
+    "@pte-app/contracts": "*",
+    "@pte-app/typescript-config": "*",
+    "@pte-app/eslint-config": "*",
+    "typescript": "^5.8.0",
+    "tsx": "^4.19.0"
+  }
+}
