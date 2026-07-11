@@ -22,11 +22,10 @@ jobs:
       - run: cp .env.example .env.local
       - run: npm run generate:pte-blueprints
       - run: node scripts/generate-pte-blueprints.mjs --validate
-      - run: npm run ci
+      - run: npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run validate:workspace
 
-      - name: Start services and run lifecycle
+      - name: Start local environment
         run: |
-          # Start infrastructure in background and wait for readiness
           npm run local:up &
           UP_PID=$!
           # Wait for all services to be ready (timeout 120s)
