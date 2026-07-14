@@ -21,3 +21,6 @@ export {
 
 export type { AuditEventFilter } from './filter.js';
 export { matchesFilter, filterEvents } from './filter.js';
+
+export { LocalTestSimilarityProvider } from './similarity.js';
+export type { SimilarityProvider, SimilarityResult } from './similarity.js';

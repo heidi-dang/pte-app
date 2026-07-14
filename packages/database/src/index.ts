@@ -8,3 +8,7 @@ export * as users from './repositories/users.js';
 export * as sessions from './repositories/sessions.js';
 export * as audit from './repositories/audit.js';
 export * as configuration from './repositories/configuration.js';
+export * as sources from './repositories/sources.js';
+export * as licences from './repositories/licences.js';
+export * as provenanceRepo from './repositories/provenance.js';
+export * as evidenceRepo from './repositories/evidence.js';

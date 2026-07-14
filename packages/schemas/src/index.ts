@@ -41,3 +41,5 @@ export {
   VersionedExamMetadataConfigSchema,
   VersionedMediaMetadataConfigSchema,
 } from './configuration.js';
+
+export * from './content-provenance.js';

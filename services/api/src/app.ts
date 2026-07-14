@@ -4,6 +4,7 @@ import cookie from '@fastify/cookie';
 import { createConnection, checkHealth, runMigrations } from '@pte-app/database';
 import { Config } from './env.js';
 import { authPlugin } from './auth/plugin.js';
+import { contentProvenancePlugin } from './content-provenance/plugin.js';
 
 export type App = FastifyInstance;
 
@@ -56,6 +57,7 @@ export async function buildApp(config: Config, options: { skipDb?: boolean } = {
 
   if (dbConnection) {
     await app.register(authPlugin, { db: dbConnection });
+    await app.register(contentProvenancePlugin, { db: dbConnection });
   }
 
   return app;

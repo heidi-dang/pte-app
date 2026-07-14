@@ -81,3 +81,5 @@ export {
   isFeatureEnabled,
   getFeatureFlagValue,
 } from './config/index.js';
+
+export * from './content-provenance/index.js';
