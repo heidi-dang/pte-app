@@ -343,7 +343,7 @@ describe('auth integration', () => {
 
       const events = await audit.getAuditEventsByTarget(connection, 'user', userId);
       assert.ok(events.length >= 1);
-      assert.equal(events[0].eventType, 'created');
+      assert.equal(events[0]!.eventType, 'created');
     });
   });
 
