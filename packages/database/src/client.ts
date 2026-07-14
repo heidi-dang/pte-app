@@ -28,6 +28,7 @@ export async function createConnection(
   });
 
   let lastError: unknown;
+  let ended = false;
   for (let attempt = 1; attempt <= config.retryAttempts; attempt++) {
     try {
       const client = await pool.connect();
@@ -37,6 +38,8 @@ export async function createConnection(
         pool,
         config,
         async close() {
+          if (ended) return;
+          ended = true;
           await pool.end();
         },
       };
