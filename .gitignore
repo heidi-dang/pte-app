@@ -9,3 +9,4 @@ coverage
 .turbo
 .local-runtime/
 .config/
+test-results/
