@@ -27,9 +27,9 @@ try {
   errors.push('Missing .gitignore');
 }
 
-const laterPhaseDirs = []; // Phase D+ allowed as we progress
-for (const d of laterPhaseDirs) {
-  if (existsSync(d)) errors.push(`Later phase directory detected: ${d}`);
+const phaseCDirs = ['packages/domain', 'packages/contracts', 'packages/schemas'];
+for (const d of phaseCDirs) {
+  if (existsSync(d)) errors.push(`Phase C directory detected: ${d}`);
 }
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf-8'));
