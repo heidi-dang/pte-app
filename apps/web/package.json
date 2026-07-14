@@ -13,16 +13,18 @@
     "test:integration": "node --test 'src/**/*.integration.test.ts'"
   },
   "dependencies": {
+    "@pte-app/design-system": "*",
     "next": "^15.3.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@pte-app/eslint-config": "*",
+    "@pte-app/typescript-config": "*",
     "@types/node": "^22.0.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
-    "typescript": "^5.8.0",
-    "@pte-app/typescript-config": "*",
-    "@pte-app/eslint-config": "*"
+    "typescript": "^5.8.0"
   }
 }

@@ -1,15 +1,18 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { applyEnvLocal } from '@pte-app/database/testing/env';
+applyEnvLocal();
 import { loadConfig } from './env.js';
 import { buildApp, type App } from './app.js';
 import { createServer } from 'node:net';
 
 describe('API network integration', () => {
+  const config = loadConfig();
   let app: App;
   let port: number;
 
   before(async () => {
-    app = await buildApp(loadConfig());
+    app = await buildApp(config, { skipDb: true });
     await app.listen({ host: '127.0.0.1', port: 0 });
     const addr = app.server.address();
     port = addr && typeof addr === 'object' ? addr.port : 0;
