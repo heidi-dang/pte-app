@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Container, Card, Button } from '@pte-app/design-system';
+import './page.css';
 
 type ServiceStatus = 'loading' | 'ok' | 'fail';
 
@@ -18,16 +20,14 @@ export default function Home() {
 
     try {
       const res = await fetch(`${apiUrl}/health/live`, { signal: AbortSignal.timeout(5000) });
-      if (res.ok) setApiStatus('ok');
-      else setApiStatus('fail');
+      setApiStatus(res.ok ? 'ok' : 'fail');
     } catch {
       setApiStatus('fail');
     }
 
     try {
       const res = await fetch(`${scoringUrl}/health/live`, { signal: AbortSignal.timeout(5000) });
-      if (res.ok) setScoringStatus('ok');
-      else setScoringStatus('fail');
+      setScoringStatus(res.ok ? 'ok' : 'fail');
     } catch {
       setScoringStatus('fail');
     }
@@ -43,58 +43,51 @@ export default function Home() {
       className={status === 'ok' ? 'status-ok' : status === 'fail' ? 'status-fail' : 'status-loading'}
       role="status"
     >
-      {status === 'ok' ? '✓ Operational' : status === 'fail' ? '✗ Unreachable' : '⟳ Checking...'}
+      {status === 'ok' ? 'Operational' : status === 'fail' ? 'Unreachable' : 'Checking...'}
     </span>
   );
 
   return (
-    <main>
-      <h1>PTE Academic Platform</h1>
-      <h2>Development Environment</h2>
-      <p
-        style={{
-          marginBottom: '2rem',
-          padding: '0.75rem 1rem',
-          background: '#fef3c7',
-          borderRadius: '6px',
-          fontSize: '0.9rem',
-        }}
-      >
-        ⓘ Product features begin in later phases. This is the Phase B environment foundation.
-      </p>
+    <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
+      <Container>
+        <div className="hero">
+          <h1>PTE Academic Platform</h1>
+          <p>Prepare for your PTE Academic exam with adaptive practice, instant scoring, and progress tracking.</p>
+          <div className="hero-actions">
+            <a href="/register">
+              <Button>Create account</Button>
+            </a>
+            <a href="/login">
+              <Button variant="secondary">Log in</Button>
+            </a>
+          </div>
+        </div>
 
-      <div className="status-card">
-        <h3>
-          Web Application <span className="status-ok">✓ Running</span>
-        </h3>
-      </div>
+        <div className="status-grid">
+          <Card>
+            <h3>Web Application</h3>
+            <StatusBadge status="ok" />
+          </Card>
+          <Card>
+            <h3>API Service</h3>
+            <StatusBadge status={apiStatus} />
+          </Card>
+          <Card>
+            <h3>Scoring Service</h3>
+            <StatusBadge status={scoringStatus} />
+          </Card>
+        </div>
 
-      <div className="status-card">
-        <h3>
-          API Service <StatusBadge status={apiStatus} />
-        </h3>
-      </div>
+        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+          <Button onClick={checkHealth} variant="secondary">
+            Retry health checks
+          </Button>
+        </div>
 
-      <div className="status-card">
-        <h3>
-          Scoring Service <StatusBadge status={scoringStatus} />
-        </h3>
-      </div>
-
-      <div className="status-card">
-        <h3>
-          Worker <span className="status-ok">✓ Check via local smoke</span>
-        </h3>
-      </div>
-
-      <button onClick={checkHealth} aria-label="Retry health checks">
-        Retry Health Checks
-      </button>
-
-      <div className="footer">
-        <p>Version: {version}</p>
-        <p>Environment: {typeof window !== 'undefined' ? window.location.hostname : 'ssr'}</p>
-      </div>
+        <footer className="footer">
+          <p>Version: {version}</p>
+        </footer>
+      </Container>
     </main>
   );
 }
