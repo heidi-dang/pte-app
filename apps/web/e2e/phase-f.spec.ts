@@ -130,7 +130,9 @@ test.describe('Phase F browser E2E', () => {
   test('15. reduced-motion preference renders', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
-    const transition = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--ds-animation-speed'));
+    const transition = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--ds-animation-speed'),
+    );
     expect(transition).toBeTruthy();
   });
 
@@ -143,7 +145,9 @@ test.describe('Phase F browser E2E', () => {
 
   test('17. no unexpected console error', async ({ page }) => {
     const errors: string[] = [];
-    page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()); });
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') errors.push(msg.text());
+    });
     const token = await register(`console-${Date.now()}@test.com`, testPassword);
     await page.context().addCookies([{ name: 'pte_session', value: token, domain: 'localhost', path: '/' }]);
     await page.goto('/dashboard');
