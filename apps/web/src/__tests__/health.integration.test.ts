@@ -123,14 +123,10 @@ describe('Web integration', () => {
     assert.ok(text.includes('PTE Academic Platform'));
   });
 
-  it('contains Development Environment heading', async () => {
+  it('contains authentication links', async () => {
     const text = await (await fetch(`http://127.0.0.1:${port}`)).text();
-    assert.ok(text.includes('Development Environment'));
-  });
-
-  it('contains Phase B notice', async () => {
-    const text = await (await fetch(`http://127.0.0.1:${port}`)).text();
-    assert.ok(text.includes('Phase B'));
+    assert.ok(text.includes('Create account'));
+    assert.ok(text.includes('Log in'));
   });
 
   it('contains retry control', async () => {
@@ -138,8 +134,9 @@ describe('Web integration', () => {
     assert.ok(text.includes('Retry'));
   });
 
-  it('contains API and scoring links', async () => {
+  it('contains service status section', async () => {
     const text = await (await fetch(`http://127.0.0.1:${port}`)).text();
-    assert.ok(text.includes('API') || text.includes('api_url'));
+    assert.ok(text.includes('API Service'));
+    assert.ok(text.includes('Scoring Service'));
   });
 });
