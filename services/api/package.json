@@ -14,14 +14,12 @@
   },
   "dependencies": {
     "@fastify/cors": "^11.0.0",
-    "fastify": "^5.3.0",
-    "jsonwebtoken": "^9.0.3"
+    "fastify": "^5.3.0"
   },
   "devDependencies": {
-    "@pte-app/typescript-config": "*",
-    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.0.0",
+    "typescript": "^5.8.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.8.0"
+    "@pte-app/typescript-config": "*"
   }
 }
