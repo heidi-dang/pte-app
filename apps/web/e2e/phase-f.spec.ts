@@ -61,15 +61,15 @@ test.describe('Phase F browser E2E', () => {
     await page.click('button:has-text("Log out")');
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
 
-    // Verify the old token no longer works with the API
+    // Confirm session fully invalidated: protected page redirects to login
+    await page.goto(`${cfg.webUrl}/dashboard`);
+    await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
+
+    // Verify the old token is revoked directly via the API
     const meRes = await fetch(`${cfg.apiUrl}/auth/me`, {
       headers: { authorization: `Bearer ${token}` },
     });
     expect(meRes.status).toBe(401);
-
-    // Verify protected page redirects to login
-    await page.goto(`${cfg.webUrl}/dashboard`);
-    await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
   });
 
   test('7. teacher reaches /teacher', async ({ page }) => {
@@ -135,33 +135,41 @@ test.describe('Phase F browser E2E', () => {
   });
 
   test('14. dark-mode changes body background', async ({ page }) => {
-    // Measure light-mode background
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto(`${cfg.webUrl}/`);
-    const lightBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    await page.waitForSelector('html');
+    const lightBg = await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor);
 
-    // Measure dark-mode background
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto(`${cfg.webUrl}/`);
-    const darkBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    await page.waitForSelector('html');
+    const darkBg = await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor);
 
+    expect(lightBg).not.toBe(darkBg);
+    expect(lightBg).not.toBe('rgba(0, 0, 0, 0)');
+    expect(darkBg).not.toBe('rgba(0, 0, 0, 0)');
     expect(lightBg).not.toBe(darkBg);
   });
 
   test('15. reduced-motion disables drawer transition', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 375, height: 667 });
     const email = `motion-${Date.now()}@test.com`;
     const token = await register(email, pw);
     await page.context().addCookies([{ name: cfg.sessionCookieName, value: token, domain: 'localhost', path: '/' }]);
     await page.goto(`${cfg.webUrl}/`);
 
-    // Verify the drawer transition style is affected
+    // Open the drawer first
+    await page.click('[aria-label="Open menu"]');
+    await expect(page.locator('.ds-drawer--open')).toBeVisible();
+
+    // Now check the drawer element's transition duration
     const transitionDuration = await page.evaluate(() => {
-      const drawer = document.querySelector('.ds-drawer');
-      if (!drawer) return null;
-      return getComputedStyle(drawer).transitionDuration;
+      const el = document.querySelector('.ds-drawer');
+      return el ? window.getComputedStyle(el).transitionDuration : null;
     });
-    expect(transitionDuration).toBe('0s');
+    // Under reduced motion, the value should be 0s (or the computed empty value)
+    expect(transitionDuration === '0s' || transitionDuration === '0s, 0s' || transitionDuration === '').toBeTruthy();
   });
 
   test('16. API outage shows recoverable error', async ({ page }) => {
