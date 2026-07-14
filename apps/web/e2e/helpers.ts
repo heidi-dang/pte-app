@@ -1,7 +1,13 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { loadE2EConfig } from './config';
+
+const cfg = loadE2EConfig();
+
+export function getConfig() {
+  return cfg;
+}
 
 export async function register(email: string, password: string): Promise<string> {
-  const res = await fetch(`${API_URL}/auth/register`, {
+  const res = await fetch(`${cfg.apiUrl}/auth/register`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ email, password, displayName: email.split('@')[0] }),
@@ -13,18 +19,18 @@ export async function register(email: string, password: string): Promise<string>
 
 export async function createUserWithRole(email: string, password: string, role: string): Promise<string> {
   const token = await register(email, password);
-  const meRes = await fetch(`${API_URL}/auth/me`, {
+  const meRes = await fetch(`${cfg.apiUrl}/auth/me`, {
     headers: { authorization: `Bearer ${token}` },
   });
   if (!meRes.ok) throw new Error('Failed to get user');
   const me = await meRes.json();
   const { Client } = await import('pg');
   const client = new Client({
-    host: 'localhost',
-    port: 5432,
-    database: 'pte_app_test',
-    user: 'pte_app',
-    password: 'local_dev_password_only',
+    host: cfg.dbHost,
+    port: cfg.dbPort,
+    database: cfg.dbName,
+    user: cfg.dbUser,
+    password: cfg.dbPassword,
   });
   await client.connect();
   try {
