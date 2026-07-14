@@ -230,6 +230,35 @@ describe('auth integration', () => {
       assert.equal(me2.statusCode, 401);
     });
 
+    it('does not revoke sessions belonging to other users', async () => {
+      // Register a second user
+      const otherEmail = `other-${Date.now()}@example.com`;
+      const otherRes = await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { email: otherEmail, password: 'password123', displayName: 'Other' },
+      });
+      assert.equal(otherRes.statusCode, 201);
+      const otherToken = otherRes.json().token;
+
+      // Revoke current user's other sessions - should not affect the other user
+      const others = await app.inject({
+        method: 'DELETE',
+        url: '/auth/sessions/others',
+        headers: { authorization: `Bearer ${token}` },
+      });
+      assert.equal(others.statusCode, 200);
+
+      // Other user's session should still be valid
+      const otherMe = await app.inject({
+        method: 'GET',
+        url: '/auth/me',
+        headers: { authorization: `Bearer ${otherToken}` },
+      });
+      assert.equal(otherMe.statusCode, 200);
+      assert.equal(otherMe.json().user.email, otherEmail);
+    });
+
     it('logs out and invalidates the session token', async () => {
       const login = await app.inject({
         method: 'POST',
