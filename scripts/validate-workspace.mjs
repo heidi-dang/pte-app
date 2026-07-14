@@ -27,10 +27,7 @@ try {
   errors.push('Missing .gitignore');
 }
 
-const phaseCDirs = ['packages/domain', 'packages/contracts', 'packages/schemas'];
-for (const d of phaseCDirs) {
-  if (existsSync(d)) errors.push(`Phase C directory detected: ${d}`);
-}
+// Phase C directories are now allowed (shared contracts, domain, schemas)
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf-8'));
 const requiredScripts = [
