@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { register, login, createUserWithRole } from './helpers';
+import { register, createUserWithRole } from './helpers';
 
 test.describe('Phase F browser E2E', () => {
   const testEmail = `e2e-${Date.now()}@test.com`;
