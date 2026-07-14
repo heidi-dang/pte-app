@@ -1,9 +1,20 @@
+import type { BrowserContext } from '@playwright/test';
 import { loadE2EConfig } from './config';
 
 const cfg = loadE2EConfig();
 
 export function getConfig() {
   return cfg;
+}
+
+export async function setSessionCookie(context: BrowserContext, token: string): Promise<void> {
+  await context.addCookies([{
+    name: cfg.sessionCookieName,
+    value: token,
+    domain: cfg.cookieDomain,
+    path: cfg.cookiePath,
+    secure: cfg.cookieSecure,
+  }]);
 }
 
 export async function register(email: string, password: string): Promise<string> {
