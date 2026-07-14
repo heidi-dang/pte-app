@@ -1,6 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
+import { getSessionCookieName } from './config';
 
 export interface User {
   id: string;
@@ -24,7 +25,7 @@ function getApiUrl(): string {
 
 async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get(process.env.SESSION_COOKIE_NAME || 'pte_session');
+  const sessionCookie = cookieStore.get(getSessionCookieName());
   const headers = new Headers(options.headers);
   if (sessionCookie?.value) {
     headers.set('authorization', `Bearer ${sessionCookie.value}`);
@@ -51,7 +52,7 @@ export async function registerAccount(formData: FormData): Promise<AuthResult> {
       return { success: false, error: data.message || `Registration failed (${res.status})` };
     }
     const cookieStore = await cookies();
-    cookieStore.set(process.env.SESSION_COOKIE_NAME || 'pte_session', data.token, {
+    cookieStore.set(process.env.SESSION_COOKIE_NAME || getSessionCookieName(), data.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -77,7 +78,7 @@ export async function loginAccount(formData: FormData): Promise<AuthResult> {
       return { success: false, error: data.message || `Login failed (${res.status})` };
     }
     const cookieStore = await cookies();
-    cookieStore.set(process.env.SESSION_COOKIE_NAME || 'pte_session', data.token, {
+    cookieStore.set(process.env.SESSION_COOKIE_NAME || getSessionCookieName(), data.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -108,5 +109,5 @@ export async function logoutAccount(): Promise<void> {
     // Best-effort logout
   }
   const cookieStore = await cookies();
-  cookieStore.delete(process.env.SESSION_COOKIE_NAME || 'pte_session');
+  cookieStore.delete(process.env.SESSION_COOKIE_NAME || getSessionCookieName());
 }

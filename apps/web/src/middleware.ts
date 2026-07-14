@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getSessionCookieName } from './lib/config';
 
 const authRequiredPaths = [
   '/dashboard',
@@ -16,7 +17,7 @@ const authRequiredPaths = [
 const guestPaths = ['/login', '/register'];
 
 export function middleware(request: NextRequest) {
-  const session = request.cookies.get(process.env.SESSION_COOKIE_NAME || 'pte_session')?.value;
+  const session = request.cookies.get(getSessionCookieName())?.value;
   const pathname = request.nextUrl.pathname;
 
   const needsAuth = authRequiredPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
