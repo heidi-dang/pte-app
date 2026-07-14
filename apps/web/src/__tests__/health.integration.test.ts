@@ -1,9 +1,24 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createServer } from 'node:net';
+
+// Load .env.local into process.env
+const envLocalPath = resolve(import.meta.dirname, '../../../../.env.local');
+if (existsSync(envLocalPath)) {
+  for (const line of readFileSync(envLocalPath, 'utf-8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx > 0) {
+      const key = trimmed.slice(0, eqIdx).trim();
+      const val = trimmed.slice(eqIdx + 1).trim();
+      if (!process.env[key]) process.env[key] = val;
+    }
+  }
+}
 
 const root = resolve(import.meta.dirname, '../../../..');
 const webDir = resolve(root, 'apps/web');
