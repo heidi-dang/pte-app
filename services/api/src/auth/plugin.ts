@@ -182,7 +182,7 @@ export async function authPlugin(app: FastifyInstance, options: AuthPluginOption
     return reply.status(200).send({ ok: true });
   });
 
-  app.delete('/auth/sessions', async (request: FastifyRequest, reply: FastifyReply) => {
+  app.delete('/auth/sessions/others', async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.auth) {
       return reply.status(401).send({ error: 'Unauthorized' });
     }
