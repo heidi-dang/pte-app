@@ -1,6 +1,5 @@
+export type { ProvenanceTarget, ProvenanceEntry, ProvenanceChain } from './chain.js';
 export {
-  ProvenanceEntry,
-  ProvenanceChain,
   createProvenanceChain,
   appendToChain,
   chainLength,
@@ -11,9 +10,8 @@ export {
   chainHasEventType,
 } from './chain.js';
 
+export type { ContentVersion, ContentVersionTarget, ContentVersionHistory } from './version-history.js';
 export {
-  ContentVersion,
-  ContentVersionHistory,
   createContentVersionHistory,
   addVersion,
   currentVersion,
@@ -21,4 +19,5 @@ export {
   versionExists,
 } from './version-history.js';
 
-export { AuditEventFilter, matchesFilter, filterEvents } from './filter.js';
+export type { AuditEventFilter } from './filter.js';
+export { matchesFilter, filterEvents } from './filter.js';

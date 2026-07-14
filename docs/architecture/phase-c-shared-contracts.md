@@ -16,7 +16,8 @@ Phase C establishes the foundational type system, versioned contracts, runtime v
 
 ## Design Principles
 
-- **Immutable by construction**: All exported objects are deeply frozen.
+- **Immutable by construction**: All exported configuration objects are deeply frozen.
+- **Runtime immutability in provenance**: Provenance chains, entries, and version histories are deeply frozen at runtime.
 - **Strongly typed identifiers**: Every entity ID uses a branded type from `@pte-app/types`.
 - **Versioned configuration**: All configuration objects carry a configuration ID, semantic version, status, effective dates, and source provenance.
 - **No silent fallbacks**: Unknown configuration IDs throw explicit errors.

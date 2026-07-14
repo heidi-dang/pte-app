@@ -1,31 +1,33 @@
-import type { Version } from '@pte-app/types';
+import type { Version, AuditEventId } from '@pte-app/types';
+import { deepFreeze } from './freeze.js';
+import type { ProvenanceTarget } from './chain.js';
+
+export type ContentVersionTarget = ProvenanceTarget;
 
 export interface ContentVersion {
   readonly version: Version;
-  readonly auditEventId: string;
+  readonly auditEventId: AuditEventId;
   readonly publishedAt: string;
   readonly retiredAt: string | null;
 }
 
 export interface ContentVersionHistory {
-  readonly contentId: string;
-  readonly contentType: string;
+  readonly target: ContentVersionTarget;
   readonly versions: ReadonlyArray<ContentVersion>;
 }
 
-export function createContentVersionHistory(contentId: string, contentType: string): ContentVersionHistory {
-  return {
-    contentId,
-    contentType,
+export function createContentVersionHistory(target: ContentVersionTarget): ContentVersionHistory {
+  return deepFreeze({
+    target,
     versions: [],
-  };
+  });
 }
 
 export function addVersion(history: ContentVersionHistory, version: ContentVersion): ContentVersionHistory {
-  return {
+  return deepFreeze({
     ...history,
     versions: [...history.versions, version],
-  };
+  });
 }
 
 export function currentVersion(history: ContentVersionHistory): ContentVersion | null {

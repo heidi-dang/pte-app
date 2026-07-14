@@ -16,7 +16,7 @@ Depends only on `@pte-app/contracts` and `@pte-app/types`. Must NOT depend on `@
 
 Immutable audit event chains with append-only semantics:
 
-- `createProvenanceChain(targetId, targetType)`
+- `createProvenanceChain(target: ProvenanceTarget)`
 - `appendToChain(chain, event)`
 - `chainLength(chain)`
 - `lastEventInChain(chain)`
@@ -25,11 +25,60 @@ Immutable audit event chains with append-only semantics:
 - `eventsInRange(chain, from, to)`
 - `chainHasEventType(chain, eventType)`
 
+`ProvenanceTarget` is a discriminated union of branded entity IDs:
+
+```typescript
+{
+  type: 'question';
+  id: QuestionId;
+}
+{
+  type: 'course';
+  id: CourseId;
+}
+{
+  type: 'lesson';
+  id: LessonId;
+}
+{
+  type: 'exam';
+  id: ExamId;
+}
+{
+  type: 'session';
+  id: SessionId;
+}
+{
+  type: 'attempt';
+  id: AttemptId;
+}
+{
+  type: 'result';
+  id: ResultId;
+}
+{
+  type: 'media';
+  id: MediaId;
+}
+{
+  type: 'upload';
+  id: UploadId;
+}
+{
+  type: 'user';
+  id: UserId;
+}
+{
+  type: 'configuration';
+  id: ConfigurationId;
+}
+```
+
 ### version-history
 
 Content version tracking:
 
-- `createContentVersionHistory(contentId, contentType)`
+- `createContentVersionHistory(target: ContentVersionTarget)`
 - `addVersion(history, version)`
 - `currentVersion(history)`
 - `versionCount(history)`
@@ -44,6 +93,7 @@ Audit event filtering:
 
 ## Design
 
-- All data structures are immutable
+- All data structures are runtime immutable (deeply frozen)
 - Pure functions with no side effects
 - No infrastructure or I/O dependencies
+- Branded target identifiers prevent entity ID interchange

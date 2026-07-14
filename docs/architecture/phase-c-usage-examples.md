@@ -100,8 +100,9 @@ if (questionHasTimeLimit(question)) {
 ```typescript
 import { createProvenanceChain, appendToChain, filterEvents } from '@pte-app/provenance';
 import type { AuditEventContract } from '@pte-app/contracts';
+import type { QuestionId } from '@pte-app/types';
 
-const chain = createProvenanceChain('q-1', 'question');
+const chain = createProvenanceChain({ type: 'question', id: 'q-1' as QuestionId });
 const updated = appendToChain(chain, auditEvent);
 
 // Filter events

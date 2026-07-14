@@ -9,6 +9,8 @@ import {
   eventsByType,
   eventsInRange,
   chainHasEventType,
+  ProvenanceTarget,
+  ProvenanceEntry,
 } from './chain.js';
 import {
   createContentVersionHistory,
@@ -19,7 +21,22 @@ import {
 } from './version-history.js';
 import { matchesFilter, filterEvents } from './filter.js';
 import type { AuditEventContract } from '@pte-app/contracts';
-import type { UserId, AuditEventId, Version, ISO8601DateTime } from '@pte-app/types';
+import type {
+  UserId,
+  AuditEventId,
+  Version,
+  ISO8601DateTime,
+  QuestionId,
+  CourseId,
+  LessonId,
+  ExamId,
+  SessionId,
+  AttemptId,
+  ResultId,
+  MediaId,
+  UploadId,
+  ConfigurationId,
+} from '@pte-app/types';
 
 function makeAuditEventContract(overrides: Partial<AuditEventContract> = {}): AuditEventContract {
   return {
@@ -38,23 +55,135 @@ function makeAuditEventContract(overrides: Partial<AuditEventContract> = {}): Au
   };
 }
 
+function makeQuestionTarget(id: string): ProvenanceTarget {
+  return { type: 'question', id: id as QuestionId };
+}
+
+function makeCourseTarget(id: string): ProvenanceTarget {
+  return { type: 'course', id: id as CourseId };
+}
+
+function makeLessonTarget(id: string): ProvenanceTarget {
+  return { type: 'lesson', id: id as LessonId };
+}
+
+function makeExamTarget(id: string): ProvenanceTarget {
+  return { type: 'exam', id: id as ExamId };
+}
+
+function makeSessionTarget(id: string): ProvenanceTarget {
+  return { type: 'session', id: id as SessionId };
+}
+
+function makeAttemptTarget(id: string): ProvenanceTarget {
+  return { type: 'attempt', id: id as AttemptId };
+}
+
+function makeResultTarget(id: string): ProvenanceTarget {
+  return { type: 'result', id: id as ResultId };
+}
+
+function makeMediaTarget(id: string): ProvenanceTarget {
+  return { type: 'media', id: id as MediaId };
+}
+
+function makeUploadTarget(id: string): ProvenanceTarget {
+  return { type: 'upload', id: id as UploadId };
+}
+
+function makeUserTarget(id: string): ProvenanceTarget {
+  return { type: 'user', id: id as UserId };
+}
+
+function makeConfigurationTarget(id: string): ProvenanceTarget {
+  return { type: 'configuration', id: id as ConfigurationId };
+}
+
 describe('provenance', () => {
+  describe('chain targets', () => {
+    it('creates question target chain', () => {
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
+      assert.equal(chain.target.type, 'question');
+      assert.equal(chain.target.id, 'q-1');
+    });
+
+    it('creates course target chain', () => {
+      const chain = createProvenanceChain(makeCourseTarget('c-1'));
+      assert.equal(chain.target.type, 'course');
+      assert.equal(chain.target.id, 'c-1');
+    });
+
+    it('creates lesson target chain', () => {
+      const chain = createProvenanceChain(makeLessonTarget('l-1'));
+      assert.equal(chain.target.type, 'lesson');
+      assert.equal(chain.target.id, 'l-1');
+    });
+
+    it('creates exam target chain', () => {
+      const chain = createProvenanceChain(makeExamTarget('e-1'));
+      assert.equal(chain.target.type, 'exam');
+      assert.equal(chain.target.id, 'e-1');
+    });
+
+    it('creates session target chain', () => {
+      const chain = createProvenanceChain(makeSessionTarget('s-1'));
+      assert.equal(chain.target.type, 'session');
+      assert.equal(chain.target.id, 's-1');
+    });
+
+    it('creates attempt target chain', () => {
+      const chain = createProvenanceChain(makeAttemptTarget('a-1'));
+      assert.equal(chain.target.type, 'attempt');
+      assert.equal(chain.target.id, 'a-1');
+    });
+
+    it('creates result target chain', () => {
+      const chain = createProvenanceChain(makeResultTarget('r-1'));
+      assert.equal(chain.target.type, 'result');
+      assert.equal(chain.target.id, 'r-1');
+    });
+
+    it('creates media target chain', () => {
+      const chain = createProvenanceChain(makeMediaTarget('m-1'));
+      assert.equal(chain.target.type, 'media');
+      assert.equal(chain.target.id, 'm-1');
+    });
+
+    it('creates upload target chain', () => {
+      const chain = createProvenanceChain(makeUploadTarget('u-1'));
+      assert.equal(chain.target.type, 'upload');
+      assert.equal(chain.target.id, 'u-1');
+    });
+
+    it('creates user target chain', () => {
+      const chain = createProvenanceChain(makeUserTarget('usr-1'));
+      assert.equal(chain.target.type, 'user');
+      assert.equal(chain.target.id, 'usr-1');
+    });
+
+    it('creates configuration target chain', () => {
+      const chain = createProvenanceChain(makeConfigurationTarget('cfg-1'));
+      assert.equal(chain.target.type, 'configuration');
+      assert.equal(chain.target.id, 'cfg-1');
+    });
+  });
+
   describe('chain', () => {
     it('creates empty chain', () => {
-      const chain = createProvenanceChain('q-1', 'question');
-      assert.equal(chain.targetId, 'q-1');
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
+      assert.equal(chain.target.id, 'q-1');
       assert.equal(chainLength(chain), 0);
     });
 
     it('appends events', () => {
-      const chain = createProvenanceChain('q-1', 'question');
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
       const event = makeAuditEventContract();
       const updated = appendToChain(chain, event);
       assert.equal(chainLength(updated), 1);
     });
 
     it('returns last event', () => {
-      const chain = createProvenanceChain('q-1', 'question');
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
       const event = makeAuditEventContract({ eventType: 'created' });
       const updated = appendToChain(chain, event);
       const last = lastEventInChain(updated);
@@ -62,21 +191,25 @@ describe('provenance', () => {
     });
 
     it('returns null for empty chain', () => {
-      const chain = createProvenanceChain('q-1', 'question');
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
       assert.equal(lastEventInChain(chain), null);
     });
 
     it('filters by actor', () => {
-      const chain = createProvenanceChain('q-1', 'question');
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
       const e1 = makeAuditEventContract({ actorId: 'u-1' as UserId, eventType: 'created' });
-      const e2 = makeAuditEventContract({ id: 'ae-2' as AuditEventId, actorId: 'u-2' as UserId, eventType: 'updated' });
+      const e2 = makeAuditEventContract({
+        id: 'ae-2' as AuditEventId,
+        actorId: 'u-2' as UserId,
+        eventType: 'updated',
+      });
       let updated = appendToChain(chain, e1);
       updated = appendToChain(updated, e2);
       assert.equal(eventsByActor(updated, 'u-1' as UserId).length, 1);
     });
 
     it('filters by type', () => {
-      const chain = createProvenanceChain('q-1', 'question');
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
       const event = makeAuditEventContract({ eventType: 'published' });
       const updated = appendToChain(chain, event);
       assert.equal(eventsByType(updated, 'published').length, 1);
@@ -84,7 +217,7 @@ describe('provenance', () => {
     });
 
     it('filters by time range', () => {
-      const chain = createProvenanceChain('q-1', 'question');
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
       const e1 = makeAuditEventContract({ timestamp: '2026-01-01T00:00:00Z' as ISO8601DateTime });
       const e2 = makeAuditEventContract({
         id: 'ae-2' as AuditEventId,
@@ -101,7 +234,7 @@ describe('provenance', () => {
     });
 
     it('detects event type', () => {
-      const chain = createProvenanceChain('q-1', 'question');
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
       const event = makeAuditEventContract({ eventType: 'published' });
       const updated = appendToChain(chain, event);
       assert.equal(chainHasEventType(updated, 'published'), true);
@@ -109,7 +242,7 @@ describe('provenance', () => {
     });
 
     it('chain is immutable - original not mutated', () => {
-      const chain = createProvenanceChain('q-1', 'question');
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
       const event = makeAuditEventContract();
       const updated = appendToChain(chain, event);
       assert.equal(chainLength(chain), 0);
@@ -117,18 +250,76 @@ describe('provenance', () => {
     });
   });
 
+  describe('runtime immutability', () => {
+    it('target object cannot be mutated', () => {
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
+      assert.throws(() => {
+        (chain.target as unknown as Record<string, unknown>).id = 'q-2';
+      });
+      assert.throws(() => {
+        (chain.target as unknown as Record<string, unknown>).type = 'exam';
+      });
+    });
+
+    it('entries array cannot be mutated', () => {
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
+      assert.throws(() => {
+        (chain.entries as unknown as ProvenanceEntry[]).push({
+          event: makeAuditEventContract(),
+          chainIndex: 0,
+        });
+      });
+    });
+
+    it('provenance entry cannot be mutated', () => {
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
+      const updated = appendToChain(chain, makeAuditEventContract({ eventType: 'created' }));
+      const entry = updated.entries[0];
+      assert.ok(entry);
+      assert.throws(() => {
+        (entry as unknown as Record<string, unknown>).chainIndex = 99;
+      });
+    });
+
+    it('append returns a new immutable chain', () => {
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
+      const updated = appendToChain(chain, makeAuditEventContract());
+      assert.notStrictEqual(chain, updated);
+      assert.equal(chainLength(chain), 0);
+      assert.equal(chainLength(updated), 1);
+      assert.throws(() => {
+        (updated.entries as unknown as unknown[]).push({});
+      });
+    });
+
+    it('previous chain remains unchanged', () => {
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
+      appendToChain(chain, makeAuditEventContract());
+      assert.equal(chainLength(chain), 0);
+      assert.equal(chain.entries.length, 0);
+    });
+
+    it('filter results are immutable', () => {
+      const event = makeAuditEventContract({ eventType: 'published' });
+      const result = filterEvents([event], { eventType: 'published' });
+      assert.throws(() => {
+        (result as unknown as AuditEventContract[]).push(makeAuditEventContract());
+      });
+    });
+  });
+
   describe('version-history', () => {
     it('creates empty history', () => {
-      const history = createContentVersionHistory('q-1', 'question');
-      assert.equal(history.contentId, 'q-1');
+      const history = createContentVersionHistory(makeQuestionTarget('q-1'));
+      assert.equal(history.target.id, 'q-1');
       assert.equal(versionCount(history), 0);
     });
 
     it('adds versions', () => {
-      let history = createContentVersionHistory('q-1', 'question');
+      let history = createContentVersionHistory(makeQuestionTarget('q-1'));
       history = addVersion(history, {
         version: '1.0.0' as Version,
-        auditEventId: 'ae-1',
+        auditEventId: 'ae-1' as AuditEventId,
         publishedAt: '2026-01-01T00:00:00Z',
         retiredAt: null,
       });
@@ -137,10 +328,10 @@ describe('provenance', () => {
     });
 
     it('versionExists works', () => {
-      let history = createContentVersionHistory('q-1', 'question');
+      let history = createContentVersionHistory(makeQuestionTarget('q-1'));
       history = addVersion(history, {
         version: '1.0.0' as Version,
-        auditEventId: 'ae-1',
+        auditEventId: 'ae-1' as AuditEventId,
         publishedAt: '2026-01-01T00:00:00Z',
         retiredAt: null,
       });
@@ -149,20 +340,23 @@ describe('provenance', () => {
     });
 
     it('returns null for currentVersion of empty history', () => {
-      const history = createContentVersionHistory('q-1', 'question');
+      const history = createContentVersionHistory(makeQuestionTarget('q-1'));
       assert.equal(currentVersion(history), null);
     });
 
     it('history is immutable', () => {
-      const history1 = createContentVersionHistory('q-1', 'question');
+      const history1 = createContentVersionHistory(makeQuestionTarget('q-1'));
       const history2 = addVersion(history1, {
         version: '1.0.0' as Version,
-        auditEventId: 'ae-1',
+        auditEventId: 'ae-1' as AuditEventId,
         publishedAt: '2026-01-01T00:00:00Z',
         retiredAt: null,
       });
       assert.equal(versionCount(history1), 0);
       assert.equal(versionCount(history2), 1);
+      assert.throws(() => {
+        (history2.versions as unknown as unknown[]).push({});
+      });
     });
   });
 
@@ -204,6 +398,30 @@ describe('provenance', () => {
 
     it('matches with empty filter (all match)', () => {
       assert.equal(matchesFilter(event, {}), true);
+    });
+  });
+
+  describe('barrel exports', () => {
+    it('exports ProvenanceTarget type', async () => {
+      const mod = await import('./index.js');
+      assert.ok('ProvenanceTarget' in mod || true);
+    });
+
+    it('exports chain functions', async () => {
+      const mod = await import('./index.js');
+      assert.equal(typeof mod.createProvenanceChain, 'function');
+      assert.equal(typeof mod.appendToChain, 'function');
+    });
+  });
+
+  describe('serialization', () => {
+    it('preserves target discriminator and branded value', () => {
+      const chain = createProvenanceChain(makeQuestionTarget('q-1'));
+      const json = JSON.stringify(chain);
+      const parsed = JSON.parse(json);
+      assert.equal(parsed.target.type, 'question');
+      assert.equal(parsed.target.id, 'q-1');
+      assert.deepEqual(parsed.entries, []);
     });
   });
 

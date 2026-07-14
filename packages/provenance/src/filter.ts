@@ -1,5 +1,6 @@
 import type { AuditEventContract } from '@pte-app/contracts';
 import type { UserId } from '@pte-app/types';
+import { deepFreeze } from './freeze.js';
 
 export interface AuditEventFilter {
   readonly eventType?: AuditEventContract['eventType'];
@@ -22,5 +23,5 @@ export function filterEvents(
   events: ReadonlyArray<AuditEventContract>,
   filter: AuditEventFilter,
 ): ReadonlyArray<AuditEventContract> {
-  return events.filter((event) => matchesFilter(event, filter));
+  return deepFreeze(events.filter((event) => matchesFilter(event, filter)));
 }
