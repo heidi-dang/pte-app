@@ -9,6 +9,34 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+
+    env:
+      PG_REQUIRED: 'true'
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: pte_app
+          POSTGRES_USER: pte_app
+          POSTGRES_PASSWORD: local_dev_password_only
+        options: >-
+          --health-cmd pg_isready -U pte_app -d pte_app
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
