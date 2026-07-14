@@ -30,11 +30,11 @@ Phase E adds account registration, password authentication, server-side sessions
 
 ## Roles and Permissions
 
-| Role              | Permissions                                          |
-| ----------------- | ---------------------------------------------------- |
-| `student`         | `content:read`, `assessment:take`, `progress:read`   |
-| `teacher`         | `content:read`, `content:write`, `assessment:review` |
-| `admin`           | All permissions                                      |
+| Role             | Permissions                                          |
+| ---------------- | ---------------------------------------------------- |
+| `student`        | `content:read`, `assessment:take`, `progress:read`   |
+| `teacher`        | `content:read`, `content:write`, `assessment:review` |
+| `admin`          | All permissions                                      |
 | `content_editor` | `content:read`, `content:write`, `content:publish`   |
 
 Roles are assigned during registration and can be managed later by administrators.
