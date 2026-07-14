@@ -302,10 +302,9 @@ describe('auth integration', () => {
       const sessionId = res.json().session.id;
 
       // Manually expire the session
-      await connection.pool.query(
-        'UPDATE sessions SET expires_at = NOW() - INTERVAL \'1 hour\' WHERE id = $1',
-        [sessionId],
-      );
+      await connection.pool.query("UPDATE sessions SET expires_at = NOW() - INTERVAL '1 hour' WHERE id = $1", [
+        sessionId,
+      ]);
 
       const me = await app.inject({
         method: 'GET',
