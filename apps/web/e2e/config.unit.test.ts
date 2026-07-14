@@ -80,15 +80,74 @@ describe('E2E configuration', () => {
     });
   });
 
-  it('rejects database port out of range', async () => {
-    await withEnv({ ...baseEnv, E2E_DATABASE_PORT: '0' }, async () => {
-      await assert.rejects(loadConfig(), /between 1 and 65535/);
+  describe('port validation', () => {
+    it('rejects 5432abc (trailing letters)', () => {
+      return withEnv({ ...baseEnv, E2E_DATABASE_PORT: '5432abc' }, async () => {
+        await assert.rejects(loadConfig(), /positive integer/);
+      });
     });
-    await withEnv({ ...baseEnv, E2E_DATABASE_PORT: '70000' }, async () => {
-      await assert.rejects(loadConfig(), /between 1 and 65535/);
+
+    it('rejects 12.5 (decimal)', () => {
+      return withEnv({ ...baseEnv, E2E_DATABASE_PORT: '12.5' }, async () => {
+        await assert.rejects(loadConfig(), /positive integer/);
+      });
     });
-    await withEnv({ ...baseEnv, E2E_DATABASE_PORT: 'abc' }, async () => {
-      await assert.rejects(loadConfig(), /between 1 and 65535/);
+
+    it('rejects +5432 (leading plus)', () => {
+      return withEnv({ ...baseEnv, E2E_DATABASE_PORT: '+5432' }, async () => {
+        await assert.rejects(loadConfig(), /positive integer/);
+      });
+    });
+
+    it('rejects -1 (negative)', () => {
+      return withEnv({ ...baseEnv, E2E_DATABASE_PORT: '-1' }, async () => {
+        await assert.rejects(loadConfig(), /positive integer/);
+      });
+    });
+
+    it('rejects 0 (zero)', () => {
+      return withEnv({ ...baseEnv, E2E_DATABASE_PORT: '0' }, async () => {
+        await assert.rejects(loadConfig(), /positive integer/);
+      });
+    });
+
+    it('rejects 65536 (exceeds max)', () => {
+      return withEnv({ ...baseEnv, E2E_DATABASE_PORT: '65536' }, async () => {
+        await assert.rejects(loadConfig(), /between 1 and 65535/);
+      });
+    });
+
+    it('rejects empty string', () => {
+      return withEnv({ ...baseEnv, E2E_DATABASE_PORT: '' }, async () => {
+        await assert.rejects(loadConfig(), /E2E_DATABASE_PORT/);
+      });
+    });
+
+    it('rejects whitespace-only string', () => {
+      return withEnv({ ...baseEnv, E2E_DATABASE_PORT: '   ' }, async () => {
+        await assert.rejects(loadConfig(), /E2E_DATABASE_PORT/);
+      });
+    });
+
+    it('accepts 1 (minimum)', () => {
+      return withEnv({ ...baseEnv, E2E_DATABASE_PORT: '1' }, async () => {
+        const cfg = await loadConfig();
+        assert.equal(cfg.dbPort, 1);
+      });
+    });
+
+    it('accepts 5432 (standard)', () => {
+      return withEnv({ ...baseEnv, E2E_DATABASE_PORT: '5432' }, async () => {
+        const cfg = await loadConfig();
+        assert.equal(cfg.dbPort, 5432);
+      });
+    });
+
+    it('accepts 65535 (maximum)', () => {
+      return withEnv({ ...baseEnv, E2E_DATABASE_PORT: '65535' }, async () => {
+        const cfg = await loadConfig();
+        assert.equal(cfg.dbPort, 65535);
+      });
     });
   });
 });

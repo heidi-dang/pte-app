@@ -36,9 +36,13 @@ export function loadE2EConfig(): E2EConfig {
     throw new Error(`E2E_API_URL is not a valid absolute URL: ${apiUrlRaw}`);
   }
 
+  const portMatch = /^[1-9]\d*$/.test(dbPortRaw);
+  if (!portMatch) {
+    throw new Error(`E2E_DATABASE_PORT must be a positive integer: ${dbPortRaw}`);
+  }
   const dbPort = parseInt(dbPortRaw, 10);
-  if (isNaN(dbPort) || dbPort < 1 || dbPort > 65535) {
-    throw new Error(`E2E_DATABASE_PORT must be an integer between 1 and 65535: ${dbPortRaw}`);
+  if (dbPort < 1 || dbPort > 65535) {
+    throw new Error(`E2E_DATABASE_PORT must be between 1 and 65535: ${dbPortRaw}`);
   }
 
   const cookieDomain = webUrl.hostname;
