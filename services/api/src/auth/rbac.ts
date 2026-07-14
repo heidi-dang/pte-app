@@ -26,6 +26,10 @@ export const DEFAULT_PERMISSIONS: PermissionMatrix = Object.freeze({
   ]),
   admin: Object.freeze([
     'dashboard:admin',
+    'dashboard:student',
+    'dashboard:teacher',
+    'dashboard:content',
+    'dashboard:support',
     'profile:read',
     'profile:update',
     'sessions:manage',

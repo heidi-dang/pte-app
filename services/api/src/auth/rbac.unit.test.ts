@@ -19,9 +19,16 @@ describe('RBAC', () => {
   });
 
   it('defines permissions for each role', () => {
-    for (const role of ALL_ROLES) {
-      const perms = hasPermission([role], `dashboard:${role === 'admin' ? 'admin' : role}`);
-      assert.ok(perms, `Role ${role} should have dashboard:${role} permission`);
+    const roleToDashboard: Record<string, string> = {
+      student: 'student',
+      teacher: 'teacher',
+      content_editor: 'content',
+      admin: 'admin',
+      support: 'support',
+    };
+    for (const [role, dash] of Object.entries(roleToDashboard)) {
+      const perms = hasPermission([role as UserRole], `dashboard:${dash}`);
+      assert.ok(perms, `Role ${role} should have dashboard:${dash} permission`);
     }
   });
 
