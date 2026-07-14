@@ -231,32 +231,42 @@ describe('auth integration', () => {
     });
 
     it('does not revoke sessions belonging to other users', async () => {
-      // Register a second user
-      const otherEmail = `other-${Date.now()}@example.com`;
-      const otherRes = await app.inject({
+      // Create two different users
+      const userA = `userA-${Date.now()}@example.com`;
+      const userB = `userB-${Date.now()}@example.com`;
+
+      const resA = await app.inject({
         method: 'POST',
         url: '/auth/register',
-        payload: { email: otherEmail, password: 'password123', displayName: 'Other' },
+        payload: { email: userA, password: 'password123', displayName: 'UserA' },
       });
-      assert.equal(otherRes.statusCode, 201);
-      const otherToken = otherRes.json().token;
+      assert.equal(resA.statusCode, 201);
+      const tokenA = resA.json().token;
 
-      // Revoke current user's other sessions - should not affect the other user
+      const resB = await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { email: userB, password: 'password123', displayName: 'UserB' },
+      });
+      assert.equal(resB.statusCode, 201);
+      const tokenB = resB.json().token;
+
+      // Revoke user A's other sessions - should not affect user B
       const others = await app.inject({
         method: 'DELETE',
         url: '/auth/sessions/others',
-        headers: { authorization: `Bearer ${token}` },
+        headers: { authorization: `Bearer ${tokenA}` },
       });
       assert.equal(others.statusCode, 200);
 
-      // Other user's session should still be valid
-      const otherMe = await app.inject({
+      // User B's session should be unaffected
+      const meB = await app.inject({
         method: 'GET',
         url: '/auth/me',
-        headers: { authorization: `Bearer ${otherToken}` },
+        headers: { authorization: `Bearer ${tokenB}` },
       });
-      assert.equal(otherMe.statusCode, 200);
-      assert.equal(otherMe.json().user.email, otherEmail);
+      assert.equal(meB.statusCode, 200);
+      assert.equal(meB.json().user.email, userB);
     });
 
     it('logs out and invalidates the session token', async () => {
