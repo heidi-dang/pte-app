@@ -1,15 +1,29 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const protectedPaths = ['/dashboard'];
+const authRequiredPaths = [
+  '/dashboard',
+  '/profile',
+  '/settings',
+  '/sessions',
+  '/student',
+  '/teacher',
+  '/admin',
+  '/content',
+  '/support',
+];
+
 const guestPaths = ['/login', '/register'];
 
 export function middleware(request: NextRequest) {
   const session = request.cookies.get(process.env.SESSION_COOKIE_NAME || 'pte_session')?.value;
   const pathname = request.nextUrl.pathname;
 
-  if (protectedPaths.some((p) => pathname.startsWith(p)) && !session) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  const needsAuth = authRequiredPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  if (needsAuth && !session) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   if (guestPaths.includes(pathname) && session) {

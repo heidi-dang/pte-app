@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import '@pte-app/design-system/styles';
-import { Header } from '@pte-app/design-system';
-import { getCurrentUser, logoutAccount } from '../lib/auth';
+import { ToastProvider } from '@pte-app/design-system';
+import { getCurrentUser } from '../lib/auth';
+import { LayoutInner } from './layout-inner';
 
 export const metadata: Metadata = {
   title: 'PTE Academic Platform',
@@ -13,39 +14,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const user = await getCurrentUser();
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="color-scheme" content="light dark" />
+      </head>
       <body>
-        <Header
-          brand={<a href="/">PTE Academic</a>}
-          nav={
-            user ? (
-              <>
-                <a className="ds-header__link" href="/dashboard">
-                  Dashboard
-                </a>
-                <form action={logoutAccount} style={{ display: 'inline' }}>
-                  <button
-                    type="submit"
-                    className="ds-header__link"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                  >
-                    Log out
-                  </button>
-                </form>
-              </>
-            ) : (
-              <>
-                <a className="ds-header__link" href="/login">
-                  Log in
-                </a>
-                <a className="ds-header__link" href="/register">
-                  Create account
-                </a>
-              </>
-            )
-          }
-        />
-        {children}
+        <ToastProvider>
+          <LayoutInner user={user}>{children}</LayoutInner>
+        </ToastProvider>
       </body>
     </html>
   );

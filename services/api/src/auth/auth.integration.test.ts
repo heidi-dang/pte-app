@@ -302,10 +302,9 @@ describe('auth integration', () => {
       const sessionId = res.json().session.id;
 
       // Manually expire the session
-      await connection.pool.query(
-        'UPDATE sessions SET expires_at = NOW() - INTERVAL \'1 hour\' WHERE id = $1',
-        [sessionId],
-      );
+      await connection.pool.query("UPDATE sessions SET expires_at = NOW() - INTERVAL '1 hour' WHERE id = $1", [
+        sessionId,
+      ]);
 
       const me = await app.inject({
         method: 'GET',
@@ -343,7 +342,7 @@ describe('auth integration', () => {
 
       const events = await audit.getAuditEventsByTarget(connection, 'user', userId);
       assert.ok(events.length >= 1);
-      assert.equal(events[0].eventType, 'created');
+      assert.equal(events[0]!.eventType, 'created');
     });
   });
 
