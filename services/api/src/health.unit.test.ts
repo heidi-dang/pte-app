@@ -1,11 +1,15 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { applyEnvLocal } from '@pte-app/database/testing/env';
+applyEnvLocal();
 import { loadConfig } from './env.js';
 import { buildApp } from './app.js';
 
 describe('API health endpoints', () => {
+  const config = loadConfig();
+
   it('GET /health/live returns 200', async () => {
-    const app = await buildApp(loadConfig());
+    const app = await buildApp(config, { skipDb: true });
     const res = await app.inject({ method: 'GET', url: '/health/live' });
     assert.equal(res.statusCode, 200);
     assert.equal(res.json().status, 'ok');
@@ -13,7 +17,7 @@ describe('API health endpoints', () => {
   });
 
   it('GET /health/ready returns 200 with ready', async () => {
-    const app = await buildApp(loadConfig());
+    const app = await buildApp(config, { skipDb: true });
     const res = await app.inject({ method: 'GET', url: '/health/ready' });
     assert.equal(res.statusCode, 200);
     assert.equal(res.json().ready, true);
@@ -21,7 +25,7 @@ describe('API health endpoints', () => {
   });
 
   it('response includes service and version fields', async () => {
-    const app = await buildApp(loadConfig());
+    const app = await buildApp(config, { skipDb: true });
     const res = await app.inject({ method: 'GET', url: '/health/live' });
     assert.equal(res.json().service, 'api');
     assert.equal(typeof res.json().version, 'string');
@@ -30,8 +34,7 @@ describe('API health endpoints', () => {
   });
 
   it('CORS allowed origin receives Access-Control-Allow-Origin', async () => {
-    const config = loadConfig();
-    const app = await buildApp(config);
+    const app = await buildApp(config, { skipDb: true });
     const res = await app.inject({
       method: 'OPTIONS',
       url: '/health/live',
@@ -42,7 +45,7 @@ describe('API health endpoints', () => {
   });
 
   it('graceful close works', async () => {
-    const app = await buildApp(loadConfig());
+    const app = await buildApp(config, { skipDb: true });
     await app.close();
     assert.ok(true, 'close completed without error');
   });

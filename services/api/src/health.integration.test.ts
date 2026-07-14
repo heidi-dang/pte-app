@@ -1,15 +1,25 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { applyEnvLocal } from '@pte-app/database/testing/env';
+applyEnvLocal();
 import { loadConfig } from './env.js';
 import { buildApp, type App } from './app.js';
+import { createConnection, type DatabaseConnection } from '@pte-app/database';
+import { setupTestDatabase, resetTestDatabase } from '@pte-app/database/testing/setup';
 import { createServer } from 'node:net';
 
 describe('API network integration', () => {
+  const config = loadConfig();
+  const testConfig = { ...config.database, database: `${config.database.database}_test` };
+  let connection: DatabaseConnection;
   let app: App;
   let port: number;
 
   before(async () => {
-    app = await buildApp(loadConfig());
+    await setupTestDatabase(config.database);
+    connection = await createConnection(testConfig);
+    await resetTestDatabase(config.database);
+    app = await buildApp({ ...config, database: testConfig });
     await app.listen({ host: '127.0.0.1', port: 0 });
     const addr = app.server.address();
     port = addr && typeof addr === 'object' ? addr.port : 0;
@@ -17,6 +27,7 @@ describe('API network integration', () => {
 
   after(async () => {
     await app.close();
+    await connection.close();
     await new Promise<void>((resolve) => {
       const s = createServer();
       s.once('error', () => {
