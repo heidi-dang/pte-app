@@ -123,7 +123,7 @@ describe('Worker behavioural tests', () => {
   });
 
   it('long-running worker emits worker_ready', async () => {
-    const child = spawn(tsxBin, ['src/main.ts'], {
+    const child = spawn('node', ['dist/main.js'], {
       cwd: workerDir,
       env: { ...process.env, LOG_LEVEL: 'info', APP_VERSION: '0.0.0' },
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -139,7 +139,7 @@ describe('Worker behavioural tests', () => {
   });
 
   it('SIGINT emits worker_shutdown and exits zero', async () => {
-    const child = spawn(tsxBin, ['src/main.ts'], {
+    const child = spawn('node', ['dist/main.js'], {
       cwd: workerDir,
       env: { ...process.env, LOG_LEVEL: 'info', APP_VERSION: '0.0.0' },
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -175,7 +175,7 @@ describe('Worker behavioural tests', () => {
   });
 
   it('SIGTERM emits worker_shutdown and exits zero', async () => {
-    const child = spawn(tsxBin, ['src/main.ts'], {
+    const child = spawn('node', ['dist/main.js'], {
       cwd: workerDir,
       env: { ...process.env, LOG_LEVEL: 'info', APP_VERSION: '0.0.0' },
       stdio: ['pipe', 'pipe', 'pipe'],

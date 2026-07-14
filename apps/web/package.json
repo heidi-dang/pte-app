@@ -9,8 +9,8 @@
     "start": "next start --port ${WEB_PORT:-3000}",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "test:unit": "node --test src/**/*.unit.test.ts",
-    "test:integration": "node --test src/**/*.integration.test.ts"
+    "test:unit": "node --test 'src/**/*.unit.test.ts'",
+    "test:integration": "node --test 'src/**/*.integration.test.ts'"
   },
   "dependencies": {
     "next": "^15.3.0",

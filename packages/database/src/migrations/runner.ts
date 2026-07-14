@@ -1,0 +1,24 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import type { DatabaseConnection } from '../client.js';
+import { applyMigrations, type Migration } from './journal.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+export async function loadMigration(version: string, name: string): Promise<Migration> {
+  const sql = readFileSync(join(__dirname, `${version}_${name}.sql`), 'utf-8');
+  return { version, name, sql };
+}
+
+export async function loadMigrations(): Promise<Migration[]> {
+  return [await loadMigration('0001', 'initial')];
+}
+
+export async function runMigrations(
+  connection: DatabaseConnection,
+  options: { dryRun?: boolean; onProgress?: (version: string) => void } = {},
+): Promise<void> {
+  const migrations = await loadMigrations();
+  await applyMigrations(connection, migrations, options);
+}

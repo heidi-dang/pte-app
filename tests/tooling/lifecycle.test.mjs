@@ -207,7 +207,12 @@ setTimeout(() => {}, 30000);`,
       const { execSync } = await import('child_process');
       let output = '';
       try {
-        output = execSync(`${process.execPath} "${localDown}"`, { cwd: root, encoding: 'utf-8', timeout: 5000 });
+        output = execSync(`${process.execPath} "${localDown}"`, {
+          cwd: root,
+          encoding: 'utf-8',
+          timeout: 5000,
+          env: { ...process.env, PTE_TEST_MODE: 'true' },
+        });
       } catch (e) {
         output = (e.stdout || '') + (e.stderr || '');
       }
@@ -247,7 +252,12 @@ setTimeout(() => {}, 30000);`,
       const { execSync } = await import('child_process');
       let stdout = '';
       try {
-        stdout = execSync(`${process.execPath} "${localDown}"`, { cwd: root, encoding: 'utf-8', timeout: 5000 });
+        stdout = execSync(`${process.execPath} "${localDown}"`, {
+          cwd: root,
+          encoding: 'utf-8',
+          timeout: 5000,
+          env: { ...process.env, PTE_TEST_MODE: 'true' },
+        });
       } catch (e) {
         stdout = e.stdout || '';
       }

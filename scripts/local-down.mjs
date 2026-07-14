@@ -182,16 +182,20 @@ async function main() {
     }
   }
 
-  console.log('Stopping Docker Compose services...');
-  if (!existsSync('.env.local')) {
-    console.log('  \u2014 Docker Compose teardown skipped (no .env.local)');
+  if (process.env.PTE_TEST_MODE === 'true') {
+    console.log('  \u2014 Docker Compose teardown skipped (PTE_TEST_MODE)');
   } else {
-    try {
-      execFileSync('docker', ['compose', '--env-file', '.env.local', 'down'], { stdio: 'inherit' });
-      console.log('  \u2713 Docker Compose services stopped (volumes preserved)');
-    } catch (e) {
-      console.error(`  \u2717 Docker Compose down failed: ${e.message}`);
-      failures++;
+    console.log('Stopping Docker Compose services...');
+    if (!existsSync('.env.local')) {
+      console.log('  \u2014 Docker Compose teardown skipped (no .env.local)');
+    } else {
+      try {
+        execFileSync('docker', ['compose', '--env-file', '.env.local', 'down'], { stdio: 'inherit' });
+        console.log('  \u2713 Docker Compose services stopped (volumes preserved)');
+      } catch (e) {
+        console.error(`  \u2717 Docker Compose down failed: ${e.message}`);
+        failures++;
+      }
     }
   }
 
