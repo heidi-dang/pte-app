@@ -1,8 +1,12 @@
+import { redirect } from 'next/navigation';
 import { Container, Card, Badge, Progress } from '@pte-app/design-system';
 import { requireRole } from '../../lib/role-guard';
+import { getCurrentUser } from '../../lib/auth';
 
 export default async function StudentDashboard() {
   await requireRole('/student');
+  const user = await getCurrentUser();
+  if (!user) redirect('/login');
 
   return (
     <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
