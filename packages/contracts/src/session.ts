@@ -1,4 +1,4 @@
-import type { SessionId, ExamId, UserId, Version, ISO8601DateTime, JsonObject } from '@pte-app/types';
+import type { SessionId, ExamId, UserId, QuestionId, Version, ISO8601DateTime, JsonObject } from '@pte-app/types';
 
 export interface SessionContract {
   readonly id: SessionId;
@@ -10,7 +10,7 @@ export interface SessionContract {
   readonly expiresAt: ISO8601DateTime;
   readonly completedAt: ISO8601DateTime | null;
   readonly currentTaskIndex: number;
-  readonly answers: ReadonlyArray<string>;
+  readonly answers: ReadonlyArray<QuestionId>;
   readonly metadata: JsonObject;
 }
 

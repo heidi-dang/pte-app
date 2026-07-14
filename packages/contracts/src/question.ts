@@ -1,4 +1,4 @@
-import type { QuestionId, JsonObject, Version, ISO8601DateTime } from '@pte-app/types';
+import type { QuestionId, MediaId, Version, ISO8601DateTime, JsonObject } from '@pte-app/types';
 
 export interface QuestionContract {
   readonly id: QuestionId;
@@ -18,7 +18,7 @@ export interface QuestionContract {
 }
 
 export interface QuestionMediaReference {
-  readonly mediaId: string;
+  readonly mediaId: MediaId;
   readonly type: string;
   readonly required: boolean;
 }

@@ -4,19 +4,11 @@ Audit event tracking and content versioning for the PTE Academic platform.
 
 ## Purpose
 
-Provides pure functions for building provenance chains, tracking content version history, and filtering audit events.
+Provides pure functions for building provenance chains, tracking content version history, and filtering audit events. Contains zero infrastructure, persistence, or network code.
 
-## Usage
+## Dependency Rule
 
-```typescript
-import {
-  createProvenanceChain,
-  appendToChain,
-  createContentVersionHistory,
-  addVersion,
-  filterEvents,
-} from '@pte-app/provenance';
-```
+Depends only on `@pte-app/contracts` and `@pte-app/types`. Must NOT depend on `@pte-app/domain` or `@pte-app/schemas`.
 
 ## Modules
 

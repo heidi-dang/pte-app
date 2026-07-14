@@ -1,35 +1,60 @@
-export type { TimingProfile } from '../configuration.js';
+export type {
+  TimingProfileConfig,
+  VersionedTimingProfile,
+  QuestionMetadataConfig,
+  ExamMetadataConfig,
+  MediaMetadataConfig,
+  LanguageMetadataConfig,
+  FeatureFlags,
+  VersionedFeatureFlags,
+  VersionedLanguageConfig,
+  VersionedQuestionMetadataConfig,
+  VersionedExamMetadataConfig,
+  VersionedMediaMetadataConfig,
+} from '../configuration.js';
 
 export {
+  TRAINING_TIMING_PROFILES,
   getTimingProfile,
-  TIMING_PROFILES,
-  SPEAKING_TIMING,
-  WRITING_TIMING,
-  READING_TIMING,
-  LISTENING_TIMING,
+  getTimingProfileById,
+  getActiveTimingProfiles,
+  requireTimingProfile,
 } from './timing.js';
 
-export type { QuestionMetadataConfig, ExamMetadataConfig, MediaMetadataConfig } from '../configuration.js';
-
 export {
-  getQuestionConfig,
-  getExamConfig,
-  getMediaConfig,
-  DEFAULT_QUESTION_CONFIG,
-  DEFAULT_EXAM_CONFIG,
-  DEFAULT_MEDIA_CONFIG,
+  TRAINING_QUESTION_CONFIG,
+  TRAINING_EXAM_CONFIG,
+  TRAINING_MEDIA_CONFIG,
+  getQuestionConfigById,
+  requireQuestionConfig,
+  getExamConfigById,
+  requireExamConfig,
+  getMediaConfigById,
+  requireMediaConfig,
+  getActiveQuestionConfig,
+  getActiveExamConfig,
+  getActiveMediaConfig,
 } from './metadata.js';
 
-export type { LanguageMetadataConfig } from '../configuration.js';
-
-export { SUPPORTED_LANGUAGES, getEnabledLanguages, getLanguageByCode, isLanguageEnabled } from './languages.js';
-
-export type { FeatureFlags } from '../configuration.js';
+export {
+  TRAINING_LANGUAGE_CONFIG,
+  getLanguageConfigById,
+  requireLanguageConfig,
+  getActiveLanguageConfig,
+  getEnabledLanguages,
+  getLanguageByCode,
+  isLanguageEnabled,
+} from './languages.js';
 
 export {
-  DEFAULT_FEATURE_FLAGS,
-  FEATURE_FLAGS_BY_ENVIRONMENT,
-  getFeatureFlags,
+  TRAINING_DEFAULT_FLAGS,
+  TRAINING_DEVELOPMENT_FLAGS,
+  TRAINING_STAGING_FLAGS,
+  TRAINING_PRODUCTION_FLAGS,
+  getFeatureFlagsById,
+  requireFeatureFlags,
+  getFeatureFlagsForEnvironment,
+  requireFeatureFlagsForEnvironment,
   isFeatureEnabled,
   getFeatureFlagValue,
 } from './features.js';

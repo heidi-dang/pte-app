@@ -1,12 +1,12 @@
 import type { CourseContract } from '@pte-app/contracts';
-import type { CourseId, Version, ISO8601DateTime } from '@pte-app/types';
+import type { CourseId, LessonId, Version, ISO8601DateTime } from '@pte-app/types';
 
 export interface Course {
   readonly id: CourseId;
   readonly version: Version;
   readonly title: string;
   readonly description: string;
-  readonly lessonIds: ReadonlyArray<string>;
+  readonly lessonIds: ReadonlyArray<LessonId>;
   readonly difficulty: string;
   readonly estimatedMinutes: number;
   readonly tags: ReadonlyArray<string>;
@@ -35,6 +35,6 @@ export function courseLessonCount(course: Course): number {
   return course.lessonIds.length;
 }
 
-export function courseHasLesson(course: Course, lessonId: string): boolean {
+export function courseHasLesson(course: Course, lessonId: LessonId): boolean {
   return course.lessonIds.includes(lessonId);
 }

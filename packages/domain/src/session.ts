@@ -1,5 +1,5 @@
 import type { SessionContract, SessionStatus } from '@pte-app/contracts';
-import type { SessionId, ExamId, UserId, Version, ISO8601DateTime } from '@pte-app/types';
+import type { SessionId, ExamId, UserId, QuestionId, Version, ISO8601DateTime } from '@pte-app/types';
 
 export interface Session {
   readonly id: SessionId;
@@ -11,7 +11,7 @@ export interface Session {
   readonly expiresAt: ISO8601DateTime;
   readonly completedAt: ISO8601DateTime | null;
   readonly currentTaskIndex: number;
-  readonly answers: ReadonlyArray<string>;
+  readonly answers: ReadonlyArray<QuestionId>;
   readonly metadata: Record<string, unknown>;
 }
 

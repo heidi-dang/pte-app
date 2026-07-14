@@ -14,7 +14,7 @@ export const ResultContractSchema = z.object({
   attemptId: z.string().min(1),
   overallScore: z.number().min(0),
   maxScore: z.number().min(0),
-  sectionScores: z.array(SectionScoreSchema).readonly(),
+  sectionScores: z.array(SectionScoreSchema),
   passed: z.boolean(),
   scoredAt: z.string().datetime(),
   metadata: z.record(z.unknown()),

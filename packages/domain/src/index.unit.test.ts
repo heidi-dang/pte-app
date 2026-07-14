@@ -10,6 +10,7 @@ import {
 import { createSession, sessionIsActive, sessionIsCompleted, sessionIsTerminal } from './session.js';
 import { createAttempt, attemptResponseCount, attemptIsScored } from './attempt.js';
 import { createResult, resultScorePercentage } from './result.js';
+import type { QuestionId, SessionId } from '@pte-app/types';
 
 describe('domain', () => {
   describe('Question', () => {
@@ -91,9 +92,9 @@ describe('domain', () => {
       version: '1.0.0' as any,
       userId: 'u-1' as any,
       examId: 'e-1' as any,
-      sessionId: 's-1',
+      sessionId: 's-1' as any,
       status: 'in_progress',
-      questionResponses: [{ questionId: 'q-1', answer: 'hello', score: null, durationMs: 5000 }],
+      questionResponses: [{ questionId: 'q-1' as QuestionId, answer: 'hello', score: null, durationMs: 5000 }],
       startedAt: '2026-01-01T00:00:00Z' as any,
       completedAt: null,
       totalScore: null,

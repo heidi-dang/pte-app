@@ -16,7 +16,7 @@ export const AttemptContractSchema = z.object({
   examId: z.string().min(1),
   sessionId: z.string().min(1),
   status: AttemptStatusSchema,
-  questionResponses: z.array(QuestionResponseSchema).readonly(),
+  questionResponses: z.array(QuestionResponseSchema),
   startedAt: z.string().datetime(),
   completedAt: z.string().datetime().nullable(),
   totalScore: z.number().nullable(),

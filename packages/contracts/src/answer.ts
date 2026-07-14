@@ -1,9 +1,9 @@
-import type { AttemptId, JsonObject, Version, ISO8601DateTime } from '@pte-app/types';
+import type { AttemptId, QuestionId, Version, ISO8601DateTime, JsonObject } from '@pte-app/types';
 
 export interface AnswerContract {
   readonly attemptId: AttemptId;
   readonly version: Version;
-  readonly questionId: string;
+  readonly questionId: QuestionId;
   readonly response: AnswerResponse;
   readonly submittedAt: ISO8601DateTime;
   readonly durationMs: number;

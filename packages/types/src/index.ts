@@ -14,6 +14,11 @@ export type FeedbackId = Brand<string, 'FeedbackId'>;
 export type AuditEventId = Brand<string, 'AuditEventId'>;
 export type ProgressId = Brand<string, 'ProgressId'>;
 export type ConfigurationId = Brand<string, 'ConfigurationId'>;
+export type TimingProfileId = Brand<string, 'TimingProfileId'>;
+export type SectionId = Brand<string, 'SectionId'>;
+export type TaskId = Brand<string, 'TaskId'>;
+export type ScoringProfileId = Brand<string, 'ScoringProfileId'>;
+export type LanguageCode = Brand<string, 'LanguageCode'>;
 
 export type ISO8601DateTime = Brand<string, 'ISO8601DateTime'>;
 export type ISO8601Date = Brand<string, 'ISO8601Date'>;
@@ -23,7 +28,9 @@ export type NonNegativeInteger = Brand<number, 'NonNegativeInteger'>;
 export type Percentage = Brand<number, 'Percentage'>;
 export type Version = Brand<string, 'Version'>;
 
-export type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
+export type ConfigurationStatus = 'active' | 'deprecated' | 'superseded' | 'draft';
+
+export type JsonValue = string | number | boolean | null | JsonObject | ReadonlyArray<JsonValue>;
 export type JsonObject = { readonly [key: string]: JsonValue };
 
 export type ReadonlyDeep<T> = T extends Primitive

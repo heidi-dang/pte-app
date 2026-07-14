@@ -2,119 +2,197 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   getTimingProfile,
-  TIMING_PROFILES,
-  SPEAKING_TIMING,
-  getQuestionConfig,
-  getExamConfig,
-  getMediaConfig,
-  SUPPORTED_LANGUAGES,
+  getTimingProfileById,
+  getActiveTimingProfiles,
+  requireTimingProfile,
+  TRAINING_TIMING_PROFILES,
+  TRAINING_QUESTION_CONFIG,
+  TRAINING_EXAM_CONFIG,
+  TRAINING_MEDIA_CONFIG,
+  requireQuestionConfig,
+  requireExamConfig,
+  requireMediaConfig,
+  getActiveQuestionConfig,
+  getActiveExamConfig,
+  getActiveMediaConfig,
+  TRAINING_LANGUAGE_CONFIG,
+  getActiveLanguageConfig,
   getEnabledLanguages,
   getLanguageByCode,
   isLanguageEnabled,
-  getFeatureFlags,
+  requireLanguageConfig,
+  TRAINING_DEFAULT_FLAGS,
+  TRAINING_DEVELOPMENT_FLAGS,
+  TRAINING_PRODUCTION_FLAGS,
+  requireFeatureFlags,
+  requireFeatureFlagsForEnvironment,
   isFeatureEnabled,
   getFeatureFlagValue,
 } from './config/index.js';
+import type { ConfigurationId } from '@pte-app/types';
 
 describe('config', () => {
   describe('timing', () => {
-    it('has all section profiles', () => {
-      assert.equal('speaking' in TIMING_PROFILES, true);
-      assert.equal('writing' in TIMING_PROFILES, true);
-      assert.equal('reading' in TIMING_PROFILES, true);
-      assert.equal('listening' in TIMING_PROFILES, true);
+    it('has all training timing profiles', () => {
+      assert.ok(TRAINING_TIMING_PROFILES.length >= 4);
     });
 
-    it('returns correct profile', () => {
-      const profile = getTimingProfile('speaking');
-      assert.deepEqual(profile, SPEAKING_TIMING);
+    it('returns profile by section and taskType', () => {
+      const profile = getTimingProfile('speaking', 'read-aloud');
+      assert.ok(profile);
+      assert.equal(profile.section, 'speaking');
+      assert.equal(profile.taskType, 'read-aloud');
     });
 
-    it('returns undefined for unknown section', () => {
-      assert.equal(getTimingProfile('unknown'), undefined);
+    it('returns undefined for unknown section and taskType', () => {
+      assert.equal(getTimingProfile('unknown', 'unknown'), undefined);
     });
 
-    it('timing objects are frozen', () => {
+    it('returns profile by id', () => {
+      const profile = getTimingProfileById(TRAINING_TIMING_PROFILES[0]!.id);
+      assert.ok(profile);
+      assert.equal(profile.id, TRAINING_TIMING_PROFILES[0]!.id);
+    });
+
+    it('throws for unknown profile id', () => {
       assert.throws(() => {
-        (SPEAKING_TIMING as any).preparationSeconds = 999;
+        requireTimingProfile('nonexistent' as ConfigurationId, 'task');
+      }, /No timing profile found/);
+    });
+
+    it('gets active profiles', () => {
+      const active = getActiveTimingProfiles();
+      assert.ok(active.length >= 4);
+    });
+
+    it('timing profiles are deeply frozen', () => {
+      const profile = TRAINING_TIMING_PROFILES[0]!;
+      assert.throws(() => {
+        (profile as any).preparationSeconds = 999;
+      });
+      assert.throws(() => {
+        (profile.metadata as any).note = 'changed';
       });
     });
   });
 
   describe('metadata', () => {
-    it('returns default question config', () => {
-      const config = getQuestionConfig();
-      assert.equal(config.maxPromptLength, 5000);
-      assert.ok(config.supportedMediaTypes.length > 0);
+    it('returns active question config', () => {
+      const config = getActiveQuestionConfig();
+      assert.equal(config.config.maxPromptLength, 5000);
+      assert.ok(config.config.supportedMediaTypes.length > 0);
+      assert.equal(config.status, 'active');
     });
 
-    it('returns default exam config', () => {
-      const config = getExamConfig();
-      assert.equal(config.maxTasks, 20);
-      assert.equal(config.maxTimeMinutes, 180);
+    it('returns active exam config', () => {
+      const config = getActiveExamConfig();
+      assert.equal(config.config.maxTasks, 20);
+      assert.equal(config.config.maxTimeMinutes, 180);
+      assert.equal(config.status, 'active');
     });
 
-    it('returns default media config', () => {
-      const config = getMediaConfig();
-      assert.ok(config.maxFileSizeBytes > 0);
-      assert.ok(config.allowedMimeTypes.length > 0);
+    it('returns active media config', () => {
+      const config = getActiveMediaConfig();
+      assert.ok(config.config.maxFileSizeBytes > 0);
+      assert.ok(config.config.allowedMimeTypes.length > 0);
+      assert.equal(config.status, 'active');
+    });
+
+    it('throws for unknown question config', () => {
+      assert.throws(() => {
+        requireQuestionConfig('unknown' as ConfigurationId);
+      }, /Unknown question configuration/);
+    });
+
+    it('throws for unknown exam config', () => {
+      assert.throws(() => {
+        requireExamConfig('unknown' as ConfigurationId);
+      }, /Unknown exam configuration/);
+    });
+
+    it('throws for unknown media config', () => {
+      assert.throws(() => {
+        requireMediaConfig('unknown' as ConfigurationId);
+      }, /Unknown media configuration/);
     });
   });
 
   describe('languages', () => {
-    it('has supported languages', () => {
-      assert.ok(SUPPORTED_LANGUAGES.length >= 4);
+    it('has language config', () => {
+      const config = getActiveLanguageConfig();
+      assert.ok(config.languages.length >= 4);
     });
 
     it('returns enabled languages', () => {
-      const enabled = getEnabledLanguages();
+      const config = getActiveLanguageConfig();
+      const enabled = getEnabledLanguages(config);
       assert.ok(enabled.length >= 1);
       assert.ok(enabled.every((l) => l.enabled));
     });
 
     it('finds language by code', () => {
-      const en = getLanguageByCode('en');
+      const config = getActiveLanguageConfig();
+      const en = getLanguageByCode(config, 'en');
       assert.equal(en?.name, 'English');
     });
 
     it('returns undefined for unknown code', () => {
-      assert.equal(getLanguageByCode('xx'), undefined);
+      const config = getActiveLanguageConfig();
+      assert.equal(getLanguageByCode(config, 'xx'), undefined);
     });
 
     it('checks language enabled', () => {
-      assert.equal(isLanguageEnabled('en'), true);
-      assert.equal(isLanguageEnabled('xx'), false);
+      const config = getActiveLanguageConfig();
+      assert.equal(isLanguageEnabled(config, 'en'), true);
+      assert.equal(isLanguageEnabled(config, 'xx'), false);
+    });
+
+    it('throws for unknown language config', () => {
+      assert.throws(() => {
+        requireLanguageConfig('unknown' as ConfigurationId);
+      }, /Unknown language configuration/);
     });
   });
 
   describe('features', () => {
     it('returns default flags', () => {
-      const flags = getFeatureFlags();
-      assert.equal(flags.darkMode, false);
-      assert.equal(flags.audioRecording, true);
+      const config = TRAINING_DEFAULT_FLAGS;
+      assert.equal(config.flags.darkMode, false);
+      assert.equal(config.flags.audioRecording, true);
+      assert.equal(config.status, 'active');
     });
 
     it('returns dev flags', () => {
-      const flags = getFeatureFlags('development');
-      assert.equal(flags.darkMode, true);
-      assert.equal(flags.betaQuestions, true);
+      const config = TRAINING_DEVELOPMENT_FLAGS;
+      assert.equal(config.flags.darkMode, true);
+      assert.equal(config.flags.betaQuestions, true);
     });
 
     it('returns production flags', () => {
-      const flags = getFeatureFlags('production');
-      assert.equal(flags.darkMode, false);
+      const config = TRAINING_PRODUCTION_FLAGS;
+      assert.equal(config.flags.darkMode, false);
+    });
+
+    it('throws for unknown feature flag config', () => {
+      assert.throws(() => {
+        requireFeatureFlags('unknown' as ConfigurationId);
+      }, /Unknown feature flag configuration/);
+    });
+
+    it('throws for unknown environment', () => {
+      assert.throws(() => {
+        requireFeatureFlagsForEnvironment('nonexistent');
+      }, /No feature flag configuration for environment/);
     });
 
     it('checks feature enabled', () => {
-      const flags = getFeatureFlags();
-      assert.equal(isFeatureEnabled(flags, 'audioRecording'), true);
-      assert.equal(isFeatureEnabled(flags, 'darkMode'), false);
+      assert.equal(isFeatureEnabled(TRAINING_DEFAULT_FLAGS.flags, 'audioRecording'), true);
+      assert.equal(isFeatureEnabled(TRAINING_DEFAULT_FLAGS.flags, 'darkMode'), false);
     });
 
     it('gets flag value with default', () => {
-      const flags = getFeatureFlags();
-      assert.equal(getFeatureFlagValue(flags, 'nonexistent', 'fallback'), 'fallback');
-      assert.equal(getFeatureFlagValue(flags, 'darkMode', true), false);
+      assert.equal(getFeatureFlagValue(TRAINING_DEFAULT_FLAGS.flags, 'nonexistent', 'fallback'), 'fallback');
+      assert.equal(getFeatureFlagValue(TRAINING_DEFAULT_FLAGS.flags, 'darkMode', true), false);
     });
   });
 });

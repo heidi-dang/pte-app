@@ -1,13 +1,13 @@
 import type { ProgressContract } from '@pte-app/contracts';
-import type { ProgressId, UserId, CourseId, Version, ISO8601DateTime } from '@pte-app/types';
+import type { ProgressId, UserId, CourseId, LessonId, TaskId, Version, ISO8601DateTime } from '@pte-app/types';
 
 export interface Progress {
   readonly id: ProgressId;
   readonly version: Version;
   readonly userId: UserId;
   readonly courseId: CourseId;
-  readonly completedLessonIds: ReadonlyArray<string>;
-  readonly attemptedTaskIds: ReadonlyArray<string>;
+  readonly completedLessonIds: ReadonlyArray<LessonId>;
+  readonly attemptedTaskIds: ReadonlyArray<TaskId>;
   readonly score: number | null;
   readonly completionPercentage: number;
   readonly startedAt: ISO8601DateTime;

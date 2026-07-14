@@ -15,6 +15,7 @@ All domain identifiers use branded types to prevent accidental misuse:
 - `UserId`, `QuestionId`, `ExamId`, `SessionId`, `CourseId`, `LessonId`
 - `AttemptId`, `MediaId`, `UploadId`, `ResultId`, `FeedbackId`
 - `AuditEventId`, `ProgressId`, `ConfigurationId`
+- `TimingProfileId`, `SectionId`, `TaskId`, `ScoringProfileId`, `LanguageCode`
 
 ### Primitive Wrappers
 
@@ -25,6 +26,7 @@ All domain identifiers use branded types to prevent accidental misuse:
 - `NonNegativeInteger` — Number guaranteed >= 0
 - `Percentage` — Number representing 0-100
 - `Version` — Semver version string
+- `ConfigurationStatus` — `'active' | 'deprecated' | 'superseded' | 'draft'`
 
 ### Utility Types
 

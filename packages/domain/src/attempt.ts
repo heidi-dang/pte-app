@@ -1,12 +1,12 @@
 import type { AttemptContract, AttemptStatus, QuestionResponse } from '@pte-app/contracts';
-import type { AttemptId, UserId, ExamId, Version, ISO8601DateTime } from '@pte-app/types';
+import type { AttemptId, SessionId, UserId, ExamId, Version, ISO8601DateTime } from '@pte-app/types';
 
 export interface Attempt {
   readonly id: AttemptId;
   readonly version: Version;
   readonly userId: UserId;
   readonly examId: ExamId;
-  readonly sessionId: string;
+  readonly sessionId: SessionId;
   readonly status: AttemptStatus;
   readonly questionResponses: ReadonlyArray<QuestionResponse>;
   readonly startedAt: ISO8601DateTime;

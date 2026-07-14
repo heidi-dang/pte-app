@@ -19,7 +19,6 @@
   },
   "dependencies": {
     "@pte-app/contracts": "*",
-    "@pte-app/domain": "*",
     "@pte-app/types": "*"
   },
   "devDependencies": {

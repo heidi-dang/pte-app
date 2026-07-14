@@ -12,6 +12,6 @@ export const SessionContractSchema = z.object({
   expiresAt: z.string().datetime(),
   completedAt: z.string().datetime().nullable(),
   currentTaskIndex: z.number().int().min(0),
-  answers: z.array(z.string()).readonly(),
+  answers: z.array(z.string()),
   metadata: z.record(z.unknown()),
 });

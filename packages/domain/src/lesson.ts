@@ -1,5 +1,5 @@
 import type { LessonContract } from '@pte-app/contracts';
-import type { LessonId, CourseId, Version, ISO8601DateTime } from '@pte-app/types';
+import type { LessonId, CourseId, TaskId, Version, ISO8601DateTime } from '@pte-app/types';
 
 export interface Lesson {
   readonly id: LessonId;
@@ -8,7 +8,7 @@ export interface Lesson {
   readonly title: string;
   readonly description: string;
   readonly order: number;
-  readonly taskIds: ReadonlyArray<string>;
+  readonly taskIds: ReadonlyArray<TaskId>;
   readonly estimatedMinutes: number;
   readonly metadata: Record<string, unknown>;
   readonly createdAt: ISO8601DateTime;

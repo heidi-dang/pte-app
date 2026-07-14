@@ -15,7 +15,7 @@ import type {
   ResultContract,
   FeedbackContract,
   AuditEventContract,
-  ConfigurationContract,
+  VersionedConfiguration,
 } from './index.js';
 import { CONTRACT_VERSION } from './index.js';
 
@@ -85,19 +85,26 @@ describe('contracts', () => {
     });
   });
 
-  describe('ConfigurationContract', () => {
+  describe('VersionedConfiguration', () => {
     it('is assignable with valid scope', () => {
-      const c: ConfigurationContract = {
+      const c: VersionedConfiguration = {
         id: 'cfg-1' as any,
         version: '1.0.0' as any,
+        status: 'active',
         key: 'timing.read-aloud',
         value: { preparationSeconds: 30, responseSeconds: 40 },
         scope: 'question',
         environment: 'production',
+        effectiveFrom: '2026-01-01' as any,
+        effectiveUntil: null,
+        source: 'estimated-training-configuration',
+        supersededBy: null,
+        migrationCompatibility: null,
         createdAt: '2026-01-01T00:00:00Z' as any,
         updatedAt: '2026-01-01T00:00:00Z' as any,
       };
       assert.equal(c.scope, 'question');
+      assert.equal(c.status, 'active');
     });
   });
 });

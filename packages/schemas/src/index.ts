@@ -14,8 +14,6 @@ export { LessonContractSchema } from './lesson.js';
 
 export { ProgressContractSchema } from './progress.js';
 
-export { MediaTypeSchema, MediaContractSchema } from './media.js';
-
 export { UploadStatusSchema, UploadContractSchema } from './upload.js';
 
 export { AttemptStatusSchema, QuestionResponseSchema, AttemptContractSchema } from './attempt.js';
@@ -28,11 +26,18 @@ export { AuditEventTypeSchema, AuditEventContractSchema } from './audit-event.js
 
 export {
   ConfigurationScopeSchema,
-  ConfigurationContractSchema,
-  TimingProfileSchema,
+  ConfigurationStatusSchema,
+  VersionedConfigurationSchema,
+  TimingProfileConfigSchema,
+  VersionedTimingProfileSchema,
   QuestionMetadataConfigSchema,
   ExamMetadataConfigSchema,
   MediaMetadataConfigSchema,
   LanguageMetadataConfigSchema,
   FeatureFlagsSchema,
+  VersionedFeatureFlagsSchema,
+  VersionedLanguageConfigSchema,
+  VersionedQuestionMetadataConfigSchema,
+  VersionedExamMetadataConfigSchema,
+  VersionedMediaMetadataConfigSchema,
 } from './configuration.js';
