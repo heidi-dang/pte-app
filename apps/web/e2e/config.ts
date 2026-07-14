@@ -24,11 +24,15 @@ export function loadE2EConfig(): E2EConfig {
   const dbPortRaw = env('E2E_DATABASE_PORT');
 
   let webUrl: URL;
-  try { webUrl = new URL(webUrlRaw); } catch {
+  try {
+    webUrl = new URL(webUrlRaw);
+  } catch {
     throw new Error(`E2E_WEB_URL is not a valid absolute URL: ${webUrlRaw}`);
   }
 
-  try { new URL(apiUrlRaw); } catch {
+  try {
+    new URL(apiUrlRaw);
+  } catch {
     throw new Error(`E2E_API_URL is not a valid absolute URL: ${apiUrlRaw}`);
   }
 

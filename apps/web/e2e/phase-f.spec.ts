@@ -5,18 +5,6 @@ const cfg = getConfig();
 const pw = 'E2EPassword123';
 
 test.describe('Phase F browser E2E', () => {
-
-  async function authedCtx(email: string, token: string) {
-    const ctx = { context: (await test.info().parent?.testInfo?.retry ? undefined : undefined) };
-    // Use per-test context via test.use? No, we just use the page context
-  }
-
-  async function loginSession(page: import('@playwright/test').Page, email: string, password: string): Promise<string> {
-    const token = await register(email, password);
-    await setSessionCookie(page.context(), token);
-    return token;
-  }
-
   test('1. register student', async ({ page }) => {
     await page.goto(`${cfg.webUrl}/register`);
     await page.fill('[name="displayName"]', 'E2E User');
@@ -181,7 +169,9 @@ test.describe('Phase F browser E2E', () => {
   test('17. console error policy', async ({ page }) => {
     const allowed: string[] = [];
     const errors: string[] = [];
-    page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()); });
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') errors.push(msg.text());
+    });
     page.on('pageerror', (err) => errors.push(err.message));
 
     const token = await register(`console-${Date.now()}@test.com`, pw);

@@ -10,7 +10,6 @@ function loadConfig() {
 }
 
 describe('E2E configuration', () => {
-
   const baseEnv: Record<string, string> = {
     E2E_WEB_URL: 'http://localhost:3000',
     E2E_API_URL: 'http://localhost:4000',
