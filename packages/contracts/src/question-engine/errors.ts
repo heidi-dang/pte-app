@@ -12,7 +12,10 @@ export type QuestionEngineErrorCode =
   | 'PLAYBACK_NOT_ALLOWED'
   | 'PLAYBACK_ALREADY_CONSUMED'
   | 'TRANSCRIPT_NOT_AUTHORISED'
-  | 'RENDERER_CONTRACT_MISMATCH';
+  | 'RENDERER_CONTRACT_MISMATCH'
+  | 'MISSING_MODE_PROFILE'
+  | 'INCOMPATIBLE_MODE_PROFILE'
+  | 'MISSING_TIMER_DISPLAY_PROFILE';
 
 export interface QuestionEngineErrorContract {
   code: QuestionEngineErrorCode;

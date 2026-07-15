@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import type { TimerDisplayProfile } from '@pte-app/contracts';
 
 export interface QuestionTimerProps {
   /**
@@ -15,8 +16,8 @@ export interface QuestionTimerProps {
    * Used to compute the initial clock-skew offset.
    */
   serverNowAtCreation: string;
-  /** Milliseconds before deadline at which the warning state is entered. */
-  warningThresholdMs?: number;
+  /** Timer display profile driving refresh interval and warning thresholds. */
+  displayProfile?: TimerDisplayProfile;
   onWarning?: () => void;
   onExpired?: () => void;
   className?: string;
@@ -34,15 +35,20 @@ function formatDuration(ms: number): string {
  * QuestionTimer derives countdown from the server deadline to avoid client
  * clock skew. It computes a one-time skew offset at mount and applies it
  * on every tick so all subsequent calculations reference server time.
+ *
+ * The refresh interval and warning thresholds are driven by a TimerDisplayProfile.
  */
 export function QuestionTimer({
   serverDeadline,
   serverNowAtCreation,
-  warningThresholdMs = 60_000,
+  displayProfile,
   onWarning,
   onExpired,
   className,
 }: QuestionTimerProps) {
+  const refreshIntervalMs = displayProfile?.refreshIntervalMs ?? 1000;
+  const warningThresholdsMs = displayProfile?.warningThresholdsMs ?? [60_000];
+
   const skewOffsetMs = useRef<number>(0);
   const warningFiredRef = useRef(false);
   const expiredFiredRef = useRef(false);
@@ -69,9 +75,12 @@ export function QuestionTimer({
       const remaining = computeRemaining();
       setRemainingMs(remaining);
 
-      if (!warningFiredRef.current && remaining <= warningThresholdMs && remaining > 0) {
-        warningFiredRef.current = true;
-        onWarning?.();
+      if (!warningFiredRef.current) {
+        const shouldWarn = warningThresholdsMs.some((threshold) => remaining <= threshold && remaining > 0);
+        if (shouldWarn) {
+          warningFiredRef.current = true;
+          onWarning?.();
+        }
       }
 
       if (!expiredFiredRef.current && remaining === 0) {
@@ -80,13 +89,13 @@ export function QuestionTimer({
       }
     };
 
-    const id = setInterval(tick, 500);
+    const id = setInterval(tick, refreshIntervalMs);
     tick();
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serverDeadline, warningThresholdMs]);
+  }, [serverDeadline, refreshIntervalMs, warningThresholdsMs.join(',')]);
 
-  const isWarning = remainingMs <= warningThresholdMs && remainingMs > 0;
+  const lowestThreshold = Math.max(...warningThresholdsMs);
+  const isWarning = remainingMs <= lowestThreshold && remainingMs > 0;
   const isExpired = remainingMs === 0;
   const displayText = formatDuration(remainingMs);
 

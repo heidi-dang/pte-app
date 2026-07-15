@@ -15,7 +15,11 @@ export interface SessionModeCapabilities {
   allowsEmptySubmission: boolean;
 }
 
-export const QUESTION_SESSION_MODE_CAPABILITIES: Record<QuestionSessionMode, SessionModeCapabilities> = {
+/**
+ * Development/test fixture only. NOT the production source of truth.
+ * Production logic resolves QuestionSessionModeProfile instances attached to sessions.
+ */
+export const DEV_MODE_CAPABILITIES_FIXTURE: Record<QuestionSessionMode, SessionModeCapabilities> = {
   learning: {
     canPause: true,
     showsFeedback: true,
@@ -47,7 +51,7 @@ export const QUESTION_SESSION_MODE_CAPABILITIES: Record<QuestionSessionMode, Ses
     allowsEmptySubmission: false,
   },
   'section-test': {
-    canPause: true,
+    canPause: false,
     showsFeedback: false,
     showsCorrectAnswer: false,
     usesServerDeadline: true,
@@ -57,9 +61,9 @@ export const QUESTION_SESSION_MODE_CAPABILITIES: Record<QuestionSessionMode, Ses
     allowsEmptySubmission: false,
   },
   mock: {
-    canPause: true,
-    showsFeedback: true,
-    showsCorrectAnswer: true,
+    canPause: false,
+    showsFeedback: false,
+    showsCorrectAnswer: false,
     usesServerDeadline: false,
     allowsReview: true,
     allowsPlayback: true,

@@ -13,6 +13,9 @@ export interface QuestionSession {
   questionId?: QuestionId;
   questionVersionId?: QuestionVersionId;
   questionType?: string;
+  modeProfileId?: string;
+  modeProfileVersion?: number;
+  timerDisplayProfileId?: string;
   timingProfileId?: string;
   playbackProfileId?: string;
   scoringProfileId?: string;

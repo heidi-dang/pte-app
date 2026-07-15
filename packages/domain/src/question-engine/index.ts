@@ -6,3 +6,5 @@ export * from './playback-rights.js';
 export * from './idempotency.js';
 export * from './event-replay.js';
 export * from './renderer-registry.js';
+export * from './mode-profile-resolver.js';
+export * from './timer-display-resolver.js';

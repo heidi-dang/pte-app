@@ -46,3 +46,5 @@ export type { AuditEvent } from './audit-event.js';
 export * from './content-provenance/index.js';
 
 export * from './question-engine/index.js';
+
+export * from './questions/index.js';

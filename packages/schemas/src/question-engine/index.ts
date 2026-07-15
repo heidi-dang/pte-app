@@ -6,3 +6,5 @@ export * from './playback.schema.js';
 export * from './progress-event.schema.js';
 export * from './submission.schema.js';
 export * from './renderer-manifest.schema.js';
+export * from './mode-profile.schema.js';
+export * from './timer-display-profile.schema.js';
