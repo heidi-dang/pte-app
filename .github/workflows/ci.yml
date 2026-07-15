@@ -13,6 +13,7 @@ jobs:
 
     env:
       PG_REQUIRED: 'true'
+      CI: 'true'
 
     services:
       postgres:
@@ -44,14 +45,29 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+
       - run: npm ci
-      - run: node --check scripts/local-up.mjs
-      - run: node --check scripts/local-down.mjs
-      - run: node --check scripts/local-smoke.mjs
       - run: cp .env.example .env.local
-      - run: npm run generate:pte-blueprints
-      - run: node scripts/generate-pte-blueprints.mjs --validate
-      - run: npm run ci
+
+      - name: Prepare E2E runtime environment
+        run: node scripts/prepare-e2e-runtime.mjs
+
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:docs
+      - run: npm run validate:docs
+      - run: npm run test:tooling
+      - run: npm run test:unit
+      - run: npm run test:integration
+      - run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - run: npm run test:e2e
+
+      - run: npm run validate:workspace
       - run: git diff --check
       - name: Fail on tracked file changes
         run: |
@@ -60,3 +76,28 @@ jobs:
             git diff --stat
             exit 1
           fi
+
+      - name: Upload E2E report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7
+
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: apps/web/test-results/
+          retention-days: 7
+
+      - name: Upload service logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-service-logs
+          path: apps/web/.local-runtime/
+          include-hidden-files: true
+          retention-days: 7
