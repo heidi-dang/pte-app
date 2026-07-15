@@ -53,8 +53,31 @@ Phase I implements the Universal Question Engine — a reusable, session-oriente
 | `learning`       | Yes   | Yes (no correct answers)   | No              | Yes      | No               | Yes      |
 | `review`         | No    | Yes (with correct answers) | No              | No       | No               | Yes      |
 | `timed-practice` | No    | Yes (no correct answers)   | Yes             | Yes      | No               | No       |
-| `section-test`   | Yes   | No                         | Yes             | Yes      | No               | No       |
-| `mock`           | Yes   | Yes (with correct answers) | No              | Yes      | Yes              | Yes      |
+| `section-test`   | No    | No                         | Yes             | Yes      | No               | No       |
+| `mock`           | No*   | No*                        | No              | Yes      | Yes              | Yes      |
+
+\* Mock mode defaults are profile-driven: pause is false by default and enabled only if the versioned mock profile explicitly allows it. Feedback and correct answers are withheld during the active attempt; review becomes available only after authorised completion.
+
+## Versioned Mode Profiles
+
+Production session behaviour is driven by `QuestionSessionModeProfile` instances, not a fixed global record. Each profile declares an id, version, mode, and a `SessionModeCapabilities` block. Optional profile IDs link to timing, playback, and scoring configurations.
+
+The `DEV_MODE_CAPABILITIES_FIXTURE` constant in `session-mode.ts` exists as a development/test fixture only. Production logic resolves the profile attached to the session via `resolveModeProfile()`.
+
+Mode profiles are:
+
+- Versioned — multiple profiles may exist for the same mode
+- Immutable — a published version is never mutated
+- Attached to the session at creation time
+
+## Timer Display Profiles
+
+Timer display behaviour is driven by `TimerDisplayProfile` instances. Each profile specifies:
+
+- `refreshIntervalMs` — the setInterval resolution for the countdown
+- `warningThresholdsMs` — sorted ascending list of thresholds (ms before deadline) at which warnings fire
+
+The default development fixture uses 1000ms refresh and warnings at 60s, 30s, and 10s. Production logic resolves the profile from the session configuration.
 
 ## Session State Machine
 
@@ -140,7 +163,7 @@ Timed sessions (`timed-practice`, `section-test`) use a server-owned absolute de
 4. **Expiry**: When `remaining === 0`, the client fires `onExpired` which triggers submission. The server also checks deadline on every response save and rejects writes after expiry.
 5. **Reconnection**: On reconnect, the client fetches the session and reads the current `serverDeadline`. If the deadline has passed, the server transitions the session to `expired` and the client reflects this.
 
-The timer component uses `setInterval` at 500ms resolution. Warning threshold is configurable (default 60 seconds before deadline).
+The timer component uses a `TimerDisplayProfile` to configure the `setInterval` resolution and warning thresholds. The profile is resolved server-side and attached to the session, replacing any fixed cadence. The default development fixture uses 1000ms resolution with warnings at 60s, 30s, and 10s before deadline.
 
 ## Playback-Right Persistence
 
