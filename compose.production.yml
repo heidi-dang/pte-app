@@ -1,0 +1,183 @@
+name: pte-production
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
+
+x-restart: &production-restart
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: pte-prod-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DATABASE}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    <<: *production-restart
+    logging: *default-logging
+    networks:
+      - private
+
+  redis:
+    image: redis:7-alpine
+    container_name: pte-prod-redis
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    <<: *production-restart
+    logging: *default-logging
+    networks:
+      - private
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    image: pte-production-api:${RELEASE_COMMIT}
+    container_name: pte-prod-api
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    <<: *production-restart
+    logging: *default-logging
+    networks:
+      - edge
+      - private
+
+  scoring:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: scoring
+    image: pte-production-scoring:${RELEASE_COMMIT}
+    container_name: pte-prod-scoring
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    <<: *production-restart
+    logging: *default-logging
+    networks:
+      - edge
+      - private
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    image: pte-production-worker:${RELEASE_COMMIT}
+    container_name: pte-prod-worker
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    <<: *production-restart
+    logging: *default-logging
+    networks:
+      - private
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_SCORING_URL: ${NEXT_PUBLIC_SCORING_URL}
+    image: pte-production-web:${RELEASE_COMMIT}
+    container_name: pte-prod-web
+    env_file:
+      - .env.production
+    depends_on:
+      api:
+        condition: service_started
+    <<: *production-restart
+    logging: *default-logging
+    networks:
+      - edge
+      - private
+
+  caddy:
+    image: caddy:2
+    container_name: pte-prod-caddy
+    ports:
+      - '${CADDY_HTTP_PORT:-80}:80'
+      - '${CADDY_HTTPS_PORT:-443}:443'
+    volumes:
+      - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./secrets/origin.pem:/etc/caddy/certs/origin.pem:ro
+      - ./secrets/origin-key.pem:/etc/caddy/certs/origin-key.pem:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    env_file:
+      - .env.production
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:80/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      web:
+        condition: service_started
+      api:
+        condition: service_started
+      scoring:
+        condition: service_started
+    <<: *production-restart
+    logging: *default-logging
+    networks:
+      - edge
+
+volumes:
+  pgdata:
+  redisdata:
+  caddydata:
+  caddyconfig:
+
+networks:
+  edge:
+    name: pte-edge
+    driver: bridge
+  private:
+    name: pte-private
+    driver: bridge
+    internal: true

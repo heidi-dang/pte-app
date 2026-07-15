@@ -49,6 +49,7 @@ jobs:
       - run: node --check scripts/local-down.mjs
       - run: node --check scripts/local-smoke.mjs
       - run: cp .env.example .env.local
+      - run: cp .env.production.test .env.production
       - run: npm run generate:pte-blueprints
       - run: node scripts/generate-pte-blueprints.mjs --validate
       - run: npm run ci
