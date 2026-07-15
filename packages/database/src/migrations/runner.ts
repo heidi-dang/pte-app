@@ -16,6 +16,7 @@ export async function loadMigrations(): Promise<Migration[]> {
     await loadMigration('0001', 'initial'),
     await loadMigration('0002', 'content_provenance'),
     await loadMigration('0003', 'provenance_ext'),
+    await loadMigration('0004', 'question_engine'),
   ];
 }
 
