@@ -53,7 +53,12 @@ class CookieJar {
 
 async function api(path: string, opts: RequestInit & { token?: string; jar?: CookieJar } = {}): Promise<ApiResponse> {
   const url = `${harness.apiUrl}${path}`;
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {};
+  const method = opts.method || 'GET';
+  if (method !== 'GET' && method !== 'HEAD' && opts.body === undefined) {
+    opts.body = '{}';
+  }
+  if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
   if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
   if (opts.jar && opts.jar.header()) headers.Cookie = opts.jar.header();
   const res = await fetch(url, {
