@@ -160,6 +160,25 @@ export async function supersedeLicence(
   await connection.pool.query('UPDATE content_licences SET supersedes = $1 WHERE id = $2', [oldId, newId]);
 }
 
+export async function activateLicence(
+  connection: DatabaseConnection,
+  id: LicenceId,
+): Promise<LicenceRecord | undefined> {
+  const result = await connection.pool.query<Record<string, unknown>>(
+    `UPDATE content_licences SET status = 'active', updated_at = NOW()
+     WHERE id = $1 AND status = 'draft'
+     RETURNING id, licence_type as "licenceType", licensor, licensee, rights_granted as "rightsGranted", prohibited_uses as "prohibitedUses",
+               attribution_required as "attributionRequired", commercial_use_allowed as "commercialUseAllowed",
+               modification_allowed as "modificationAllowed", redistribution_allowed as "redistributionAllowed",
+               valid_from as "validFrom", valid_until as "validUntil", jurisdiction, status,
+               evidence_ids as "evidenceIds", supersedes, created_by as "createdBy",
+               created_at as "createdAt", updated_at as "updatedAt", version`,
+    [id],
+  );
+  if (!result.rows[0]) return undefined;
+  return result.rows[0] as unknown as LicenceRecord;
+}
+
 export async function revokeLicence(connection: DatabaseConnection, id: LicenceId): Promise<LicenceRecord | undefined> {
   const result = await connection.pool.query<Record<string, unknown>>(
     `UPDATE content_licences SET status = 'revoked', updated_at = NOW()

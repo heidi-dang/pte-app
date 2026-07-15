@@ -3,8 +3,6 @@
 import { useState } from 'react';
 import { Container, Card, Input, Button, Alert } from '@pte-app/design-system';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
 export default function NewSourceForm() {
   const [sourceType, setSourceType] = useState('original_creation_record');
   const [title, setTitle] = useState('');
@@ -26,7 +24,7 @@ export default function NewSourceForm() {
     setSuccess(false);
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/content-provenance/sources`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/content-provenance/sources`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -37,8 +35,8 @@ export default function NewSourceForm() {
           publisher,
           sourceUrl,
           jurisdiction,
-          sourceDate: sourceDate ? new Date(sourceDate).toISOString() : undefined,
-          accessDate: accessDate ? new Date(accessDate).toISOString() : undefined,
+          sourceDate: new Date(sourceDate).toISOString(),
+          accessDate: new Date(accessDate).toISOString(),
           description,
         }),
       });
@@ -139,23 +137,25 @@ export default function NewSourceForm() {
               />
             </div>
             <div style={{ marginBottom: '1rem' }}>
-              <label htmlFor="sourceDate">Source Date</label>
+              <label htmlFor="sourceDate">Source Date *</label>
               <Input
                 id="sourceDate"
                 data-testid="source-date-input"
                 type="date"
                 value={sourceDate}
                 onChange={(e) => setSourceDate(e.target.value)}
+                required
               />
             </div>
             <div style={{ marginBottom: '1rem' }}>
-              <label htmlFor="accessDate">Access Date</label>
+              <label htmlFor="accessDate">Access Date *</label>
               <Input
                 id="accessDate"
                 data-testid="source-access-date-input"
                 type="date"
                 value={accessDate}
                 onChange={(e) => setAccessDate(e.target.value)}
+                required
               />
             </div>
             <div style={{ marginBottom: '1rem' }}>

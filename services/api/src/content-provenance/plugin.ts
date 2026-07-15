@@ -294,6 +294,16 @@ export async function contentProvenancePlugin(
     return reply.status(201).send(newLicence);
   });
 
+  app.post('/content-provenance/licences/:id/activate', async (request, reply) => {
+    const auth = getAuth(request, reply);
+    if (!auth) return;
+    if (!requireRoles(auth, ['content_editor', 'admin'], reply)) return;
+    const { id } = request.params as { id: string };
+    const record = await licences.activateLicence(db, id as LicenceId);
+    if (!record) return reply.status(404).send({ error: 'Licence not found or not in draft status' });
+    return reply.status(200).send(record);
+  });
+
   app.post('/content-provenance/licences/:id/revoke', async (request, reply) => {
     const auth = getAuth(request, reply);
     if (!auth) return;

@@ -19,7 +19,7 @@ async function logout(page: Page): Promise<string> {
   expect(oldToken).toBeTruthy();
 
   await page.request.post(`${cfg.apiUrl}/auth/logout`, {
-    headers: { authorization: `Bearer ${oldToken}`, 'content-type': 'application/json' },
+    headers: { authorization: `Bearer ${oldToken}` },
   });
 
   const cookiesAfter = await page.context().cookies();
@@ -33,7 +33,7 @@ async function getAuthHeaders(page: Page): Promise<Record<string, string>> {
   const cookies = await page.context().cookies();
   const sessionCookie = cookies.find((c) => c.name === cfg.sessionCookieName);
   const token = sessionCookie?.value ?? '';
-  return { authorization: `Bearer ${token}`, 'content-type': 'application/json' };
+  return { authorization: `Bearer ${token}` };
 }
 
 test.describe('Phase G browser-driven provenance workflow', () => {
@@ -65,6 +65,8 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     await page.fill('[data-testid="source-publisher-input"]', 'E2E Publisher');
     await page.fill('[data-testid="source-url-input"]', 'https://example.com/e2e');
     await page.fill('[data-testid="source-jurisdiction-input"]', 'AU');
+    await page.fill('[data-testid="source-date-input"]', '2024-01-01');
+    await page.fill('[data-testid="source-access-date-input"]', '2024-06-01');
     await page.fill('[data-testid="source-description-input"]', 'E2E test source');
     await page.click('[data-testid="source-submit-btn"]');
 
@@ -100,6 +102,12 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     await page.locator('[data-testid="view-licence-link"]').click();
     await page.waitForURL('**/content/provenance/licences/**');
     await expect(page.locator('[data-testid="licence-id-value"]')).toContainText(licenceId);
+
+    // Activate licence (draft → active)
+    const editorHeadersLic = await getAuthHeaders(page);
+    await page.request.post(`${cfg.apiUrl}/content-provenance/licences/${licenceId}/activate`, {
+      headers: editorHeadersLic,
+    });
 
     // ── 9: Attach evidence through the UI ──
     await page.goto(`${cfg.webUrl}/content/provenance/evidence/new`);
@@ -306,7 +314,7 @@ test.describe('Phase G browser-driven provenance workflow', () => {
   test('sequential duplicate with same key returns same decision ID', async ({ request }) => {
     const email = `idem-seq-${Date.now()}@test.com`;
     const token = await createUserWithRole(email, pw, 'admin');
-    const auth = { headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' } };
+    const auth = { headers: { authorization: `Bearer ${token}` } };
     const testContentId = `idem-seq-${Date.now()}`;
     const requestId = `req-seq-${Date.now()}`;
 
@@ -330,7 +338,7 @@ test.describe('Phase G browser-driven provenance workflow', () => {
   test('different requestId creates separate decisions', async ({ request }) => {
     const email = `idem-diff-${Date.now()}@test.com`;
     const token = await createUserWithRole(email, pw, 'admin');
-    const auth = { headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' } };
+    const auth = { headers: { authorization: `Bearer ${token}` } };
     const testContentId = `idem-diff-${Date.now()}`;
 
     const res1 = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
@@ -352,7 +360,7 @@ test.describe('Phase G browser-driven provenance workflow', () => {
   test('same requestId with different contentVersion creates separate decisions', async ({ request }) => {
     const email = `idem-ver-${Date.now()}@test.com`;
     const token = await createUserWithRole(email, pw, 'admin');
-    const auth = { headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' } };
+    const auth = { headers: { authorization: `Bearer ${token}` } };
     const testContentId = `idem-ver-${Date.now()}`;
     const requestId = `req-ver-${Date.now()}`;
 
