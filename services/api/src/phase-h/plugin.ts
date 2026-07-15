@@ -302,14 +302,12 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     const ip = (all || []).filter((p: any) => p.status !== 'completed');
     if (ip.length > 0) {
       const latest = ip.sort((a: any, b: any) => (b.lastActivityAt || '').localeCompare(a.lastActivityAt || ''))[0];
-      return reply
-        .status(200)
-        .send({
-          resumeType: 'in_progress',
-          lessonId: latest.lessonId,
-          lessonVersionId: latest.lessonVersionId,
-          blockPosition: latest.blockPosition,
-        });
+      return reply.status(200).send({
+        resumeType: 'in_progress',
+        lessonId: latest.lessonId,
+        lessonVersionId: latest.lessonVersionId,
+        blockPosition: latest.blockPosition,
+      });
     }
     return reply.status(200).send({ resumeType: 'first_lesson', courseId });
   });
@@ -418,14 +416,12 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
       answers,
       submissionId: subId,
     });
-    return reply
-      .status(200)
-      .send({
-        attempt,
-        passed,
-        feedback: fb,
-        estimatedTrainingScore: `Estimated training score: ${score}/${items.length} (${Math.round((score / Math.max(items.length, 1)) * 100)}%)`,
-      });
+    return reply.status(200).send({
+      attempt,
+      passed,
+      feedback: fb,
+      estimatedTrainingScore: `Estimated training score: ${score}/${items.length} (${Math.round((score / Math.max(items.length, 1)) * 100)}%)`,
+    });
   });
 
   // ═══════════════════════════════════════════════════════
@@ -476,14 +472,12 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
       reqId(request),
     );
     if (!pub.eligible)
-      return reply
-        .status(400)
-        .send({
-          error: 'Publication not eligible',
-          blockers: pub.blockers,
-          warnings: pub.warnings,
-          decisionId: pub.decisionId,
-        });
+      return reply.status(400).send({
+        error: 'Publication not eligible',
+        blockers: pub.blockers,
+        warnings: pub.warnings,
+        decisionId: pub.decisionId,
+      });
     return reply
       .status(200)
       .send({ course: await repo.courses.publishCourse(db, course.id), decisionId: pub.decisionId });
@@ -508,17 +502,15 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     if (!canEdit(auth.roles)) return reply.status(403).send({ error: 'Forbidden' });
     const { courseId } = request.params as { courseId: string };
     const body = request.body as Record<string, unknown>;
-    return reply
-      .status(201)
-      .send(
-        await repo.modules.createCourseModule(db, {
-          courseId,
-          title: body.title as string,
-          description: (body.description as string) || '',
-          orderPosition: (body.orderPosition as number) || 0,
-          createdBy: auth.userId,
-        }),
-      );
+    return reply.status(201).send(
+      await repo.modules.createCourseModule(db, {
+        courseId,
+        title: body.title as string,
+        description: (body.description as string) || '',
+        orderPosition: (body.orderPosition as number) || 0,
+        createdBy: auth.userId,
+      }),
+    );
   });
 
   app.post('/learn/admin/modules/:moduleId/lessons', async (request, reply) => {
@@ -529,21 +521,19 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     const body = request.body as Record<string, unknown>;
     const mod = await repo.modules.getCourseModuleById(db, moduleId);
     if (!mod) return reply.status(404).send({ error: 'Module not found' });
-    return reply
-      .status(201)
-      .send(
-        await repo.lessons.createLesson(db, {
-          moduleId: mod.id,
-          courseId: mod.courseId,
-          title: body.title as string,
-          slug: body.slug as string,
-          summary: (body.summary as string) || '',
-          orderPosition: (body.orderPosition as number) || 0,
-          isOptional: (body.isOptional as boolean) || false,
-          estimatedMinutes: (body.estimatedMinutes as number) || 10,
-          createdBy: auth.userId,
-        }),
-      );
+    return reply.status(201).send(
+      await repo.lessons.createLesson(db, {
+        moduleId: mod.id,
+        courseId: mod.courseId,
+        title: body.title as string,
+        slug: body.slug as string,
+        summary: (body.summary as string) || '',
+        orderPosition: (body.orderPosition as number) || 0,
+        isOptional: (body.isOptional as boolean) || false,
+        estimatedMinutes: (body.estimatedMinutes as number) || 10,
+        createdBy: auth.userId,
+      }),
+    );
   });
 
   app.post('/learn/admin/lessons/:lessonId/publish', async (request, reply) => {
@@ -563,14 +553,12 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
       reqId(request),
     );
     if (!pub.eligible)
-      return reply
-        .status(400)
-        .send({
-          error: 'Publication not eligible',
-          blockers: pub.blockers,
-          warnings: pub.warnings,
-          decisionId: pub.decisionId,
-        });
+      return reply.status(400).send({
+        error: 'Publication not eligible',
+        blockers: pub.blockers,
+        warnings: pub.warnings,
+        decisionId: pub.decisionId,
+      });
     return reply
       .status(200)
       .send({ lesson: await repo.lessons.publishLesson(db, lesson.id), decisionId: pub.decisionId });
@@ -592,18 +580,16 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     const body = request.body as Record<string, unknown>;
     const lvId = (body.lessonVersionId as string) || (await resolvePublishedLessonVersion(db, lessonId)) || '';
     if (!lvId) return reply.status(400).send({ error: 'No lesson version' });
-    return reply
-      .status(201)
-      .send(
-        await repo.lessonBlocks.createLessonBlock(db, {
-          lessonId,
-          lessonVersionId: lvId,
-          blockType: body.blockType || 'text',
-          orderPosition: (body.orderPosition as number) || 0,
-          title: (body.title as string) || '',
-          content: body.content || {},
-        }),
-      );
+    return reply.status(201).send(
+      await repo.lessonBlocks.createLessonBlock(db, {
+        lessonId,
+        lessonVersionId: lvId,
+        blockType: body.blockType || 'text',
+        orderPosition: (body.orderPosition as number) || 0,
+        title: (body.title as string) || '',
+        content: body.content || {},
+      }),
+    );
   });
 
   app.post('/learn/admin/prerequisites', async (request, reply) => {
@@ -612,17 +598,15 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     if (!canEdit(auth.roles)) return reply.status(403).send({ error: 'Forbidden' });
     const body = request.body as Record<string, unknown>;
     try {
-      return reply
-        .status(201)
-        .send(
-          await repo.prerequisites.createPrerequisite(db, {
-            lessonId: body.lessonId as string,
-            prerequisiteType: (body.prerequisiteType as string) || 'lesson_completion',
-            prerequisiteLessonId: (body.prerequisiteLessonId as string) || null,
-            prerequisiteModuleId: (body.prerequisiteModuleId as string) || null,
-            prerequisiteCourseId: (body.prerequisiteCourseId as string) || null,
-          }),
-        );
+      return reply.status(201).send(
+        await repo.prerequisites.createPrerequisite(db, {
+          lessonId: body.lessonId as string,
+          prerequisiteType: (body.prerequisiteType as string) || 'lesson_completion',
+          prerequisiteLessonId: (body.prerequisiteLessonId as string) || null,
+          prerequisiteModuleId: (body.prerequisiteModuleId as string) || null,
+          prerequisiteCourseId: (body.prerequisiteCourseId as string) || null,
+        }),
+      );
     } catch (err: any) {
       if (err.message?.includes('cycle')) return reply.status(400).send({ error: 'Prerequisite cycle detected' });
       if (err.message?.includes('self')) return reply.status(400).send({ error: 'Self-dependency not allowed' });
@@ -644,16 +628,14 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     if (!auth) return;
     if (!canEdit(auth.roles) && !isTeacher(auth.roles)) return reply.status(403).send({ error: 'Forbidden' });
     const body = request.body as Record<string, unknown>;
-    return reply
-      .status(201)
-      .send(
-        await repo.teacherNotes.createTeacherNote(db, {
-          entityType: body.entityType as string,
-          entityId: body.entityId as string,
-          content: body.content as string,
-          authorId: auth.userId,
-        }),
-      );
+    return reply.status(201).send(
+      await repo.teacherNotes.createTeacherNote(db, {
+        entityType: body.entityType as string,
+        entityId: body.entityId as string,
+        content: body.content as string,
+        authorId: auth.userId,
+      }),
+    );
   });
 
   app.get('/learn/admin/notes/:entityType/:entityId', async (request, reply) => {

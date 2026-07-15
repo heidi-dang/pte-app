@@ -27,9 +27,13 @@ export async function getTeacherAssignment(
   if (!r.rows[0]) return null;
   const row = r.rows[0];
   return {
-    id: row.id as string, teacherId: row.teacher_id as string, courseId: row.course_id as string,
-    status: row.status as 'active', startsAt: row.starts_at as string,
-    expiresAt: row.expires_at as string | null, revokedAt: row.revoked_at as string | null,
+    id: row.id as string,
+    teacherId: row.teacher_id as string,
+    courseId: row.course_id as string,
+    status: row.status as 'active',
+    startsAt: row.starts_at as string,
+    expiresAt: row.expires_at as string | null,
+    revokedAt: row.revoked_at as string | null,
   };
 }
 
