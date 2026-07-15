@@ -328,7 +328,7 @@ export class QuestionEngineService {
 
   private async logEvent(
     sessionId: QuestionSessionId,
-    type: any,
+    type: import('@pte-app/contracts').QuestionProgressEventType,
     payload: Record<string, unknown>,
     tx?: DatabaseClient,
   ): Promise<void> {

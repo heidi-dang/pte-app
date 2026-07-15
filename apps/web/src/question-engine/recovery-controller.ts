@@ -5,7 +5,7 @@ export interface LocalRecoverySnapshot {
   lastAcknowledgedRevision: number;
   pendingResponse: unknown;
   pendingResponseState: ResponseState;
-  pendingEvents: any[];
+  pendingEvents: Record<string, unknown>[];
   retryCount: number;
   lastAttemptAt: string;
 }
@@ -46,7 +46,7 @@ export class IndexedDbRecoveryStore implements QuestionRecoveryStore {
         const store = tx.objectStore(this.storeName);
         const req = store.get(sessionId);
         req.onerror = () => reject(req.error);
-        req.onsuccess = () => resolve(req.result || null);
+        req.onsuccess = () => resolve((req.result as LocalRecoverySnapshot) || null);
       });
     } catch {
       return null;

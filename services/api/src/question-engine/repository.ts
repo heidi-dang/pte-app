@@ -285,30 +285,30 @@ export class QuestionSessionRepository {
     };
   }
 
-  private mapSessionRow(row: any): QuestionSession {
+  private mapSessionRow(row: Record<string, unknown>): QuestionSession {
     return {
       id: row.id as QuestionSessionId,
       mode: row.mode as QuestionSessionMode,
       state: row.state as SessionState,
-      createdAt: row.created_at,
-      startedAt: row.started_at || undefined,
-      pausedAt: row.paused_at || undefined,
-      submittedAt: row.submitted_at || undefined,
-      expiredAt: row.expired_at || undefined,
-      abandonedAt: row.abandoned_at || undefined,
-      updatedAt: row.updated_at,
+      createdAt: row.created_at as string,
+      startedAt: (row.started_at as string) || undefined,
+      pausedAt: (row.paused_at as string) || undefined,
+      submittedAt: (row.submitted_at as string) || undefined,
+      expiredAt: (row.expired_at as string) || undefined,
+      abandonedAt: (row.abandoned_at as string) || undefined,
+      updatedAt: row.updated_at as string,
     };
   }
 
-  private mapResponseRow(row: any): QuestionResponseEnvelope {
+  private mapResponseRow(row: Record<string, unknown>): QuestionResponseEnvelope {
     return {
       sessionId: row.session_id as QuestionSessionId,
       questionVersionId: row.question_version_id as QuestionVersionId,
-      questionType: row.question_type || '',
+      questionType: (row.question_type as string) || '',
       revision: row.revision as ResponseRevision,
       state: row.response_state as ResponseState,
-      response: JSON.parse(row.response_payload),
-      updatedAt: row.updated_at,
+      response: JSON.parse(row.response_payload as string),
+      updatedAt: row.updated_at as string,
     };
   }
 }

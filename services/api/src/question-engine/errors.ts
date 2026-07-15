@@ -30,12 +30,18 @@ export function mapErrorCodeToStatus(code: QuestionEngineErrorCode): number {
   return ERROR_CODE_TO_STATUS[code] || 500;
 }
 
-export function toHttpError(error: any): HttpErrorResponse {
-  const code: QuestionEngineErrorCode = error.code || 'INVALID_RESPONSE_PAYLOAD';
+interface RawEngineError {
+  code?: QuestionEngineErrorCode;
+  message?: string;
+}
+
+export function toHttpError(error: unknown): HttpErrorResponse {
+  const typed = (typeof error === 'object' && error !== null ? error : {}) as RawEngineError;
+  const code: QuestionEngineErrorCode = typed.code || 'INVALID_RESPONSE_PAYLOAD';
   const statusCode = mapErrorCodeToStatus(code);
   return {
     statusCode,
     errorCode: code,
-    message: error.message || 'An unexpected question engine error occurred',
+    message: typed.message || 'An unexpected question engine error occurred',
   };
 }
