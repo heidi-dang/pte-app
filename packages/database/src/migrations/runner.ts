@@ -12,7 +12,11 @@ export async function loadMigration(version: string, name: string): Promise<Migr
 }
 
 export async function loadMigrations(): Promise<Migration[]> {
-  return [await loadMigration('0001', 'initial')];
+  return [
+    await loadMigration('0001', 'initial'),
+    await loadMigration('0002', 'content_provenance'),
+    await loadMigration('0003', 'provenance_ext'),
+  ];
 }
 
 export async function runMigrations(

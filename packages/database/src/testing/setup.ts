@@ -27,6 +27,7 @@ export async function resetTestDatabase(config: DatabaseConfig): Promise<void> {
         END LOOP;
       END $$;
     `);
+    await connection.pool.query('DROP TABLE IF EXISTS migration_history CASCADE');
     await runMigrations(connection);
   } finally {
     await connection.close();

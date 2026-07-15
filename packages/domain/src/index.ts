@@ -1,32 +1,46 @@
 export {
-  Question,
   createQuestion,
   questionTaskType,
   questionSection,
   questionHasTimeLimit,
   questionHasPreparation,
 } from './question.js';
+export type { Question } from './question.js';
 
-export { Exam, createExam, examTaskCount, examSectionCount } from './exam.js';
+export { createExam, examTaskCount, examSectionCount } from './exam.js';
+export type { Exam } from './exam.js';
 
-export { Session, createSession, sessionIsActive, sessionIsCompleted, sessionIsTerminal } from './session.js';
+export { createSession, sessionIsActive, sessionIsCompleted, sessionIsTerminal } from './session.js';
+export type { Session } from './session.js';
 
-export { UserProfile, createUserProfile, userProfileHasRole, userProfileIsStudent } from './user.js';
+export { createUserProfile, userProfileHasRole, userProfileIsStudent } from './user.js';
+export type { UserProfile } from './user.js';
 
-export { Course, createCourse, courseLessonCount, courseHasLesson } from './course.js';
+export { createCourse, courseLessonCount, courseHasLesson } from './course.js';
+export type { Course } from './course.js';
 
-export { Lesson, createLesson, lessonTaskCount } from './lesson.js';
+export { createLesson, lessonTaskCount } from './lesson.js';
+export type { Lesson } from './lesson.js';
 
-export { Progress, createProgress, progressIsComplete, progressHasScore } from './progress.js';
+export { createProgress, progressIsComplete, progressHasScore } from './progress.js';
+export type { Progress } from './progress.js';
 
-export { Media, createMedia, mediaHasDuration, mediaIsAudio } from './media.js';
+export { createMedia, mediaHasDuration, mediaIsAudio } from './media.js';
+export type { Media } from './media.js';
 
-export { Upload, createUpload, uploadIsComplete, uploadIsFailed } from './upload.js';
+export { createUpload, uploadIsComplete, uploadIsFailed } from './upload.js';
+export type { Upload } from './upload.js';
 
-export { Attempt, createAttempt, attemptResponseCount, attemptIsScored } from './attempt.js';
+export { createAttempt, attemptResponseCount, attemptIsScored } from './attempt.js';
+export type { Attempt } from './attempt.js';
 
-export { Result, createResult, resultScorePercentage, resultSectionCount } from './result.js';
+export { createResult, resultScorePercentage, resultSectionCount } from './result.js';
+export type { Result } from './result.js';
 
-export { Feedback, createFeedback, feedbackHasScore, feedbackIsScoring } from './feedback.js';
+export { createFeedback, feedbackHasScore, feedbackIsScoring } from './feedback.js';
+export type { Feedback } from './feedback.js';
 
-export { AuditEvent, createAuditEvent, auditEventIsCreate, auditEventIsDelete } from './audit-event.js';
+export { createAuditEvent, auditEventIsCreate, auditEventIsDelete } from './audit-event.js';
+export type { AuditEvent } from './audit-event.js';
+
+export * from './content-provenance/index.js';

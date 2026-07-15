@@ -68,14 +68,14 @@ describe('database integration', () => {
       await resetTestDatabase(baseConfig);
       const applied = await getAppliedMigrations(connection);
       const versions = applied.map((m) => m.version);
-      assert.deepEqual(versions, ['0001']);
+      assert.deepEqual(versions, ['0001', '0002', '0003']);
     });
 
     pgIt('is idempotent across repeated runs', async () => {
       await runMigrations(connection);
       await runMigrations(connection);
       const applied = await getAppliedMigrations(connection);
-      assert.equal(applied.length, 1);
+      assert.equal(applied.length, 3);
     });
 
     pgIt('rejects checksum mismatch on reapplication', async () => {
@@ -96,19 +96,19 @@ describe('database integration', () => {
       const beforeChecksums = journalBefore.map((m) => m.checksum);
 
       const badMigration: Migration = {
-        version: '0002',
+        version: '9999',
         name: 'broken',
         sql: 'CREATE TABLE IF NOT EXISTS broken (id INT PRIMARY KEY);',
       };
 
-      // Apply 0002 successfully first time
+      // Apply 9999 successfully first time
       await applyMigration(connection, badMigration);
       const journalMid = await getAppliedMigrations(connection);
       assert.equal(journalMid.length, journalBefore.length + 1);
 
       // Re-apply with different checksum should roll back and not change journal
       const modifiedMigration: Migration = {
-        version: '0002',
+        version: '9999',
         name: 'broken',
         sql: 'CREATE TABLE IF NOT EXISTS broken (id INT PRIMARY KEY, extra TEXT);',
       };
