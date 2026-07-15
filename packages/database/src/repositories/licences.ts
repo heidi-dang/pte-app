@@ -27,8 +27,8 @@ export async function createLicence(
                attribution_required as "attributionRequired", commercial_use_allowed as "commercialUseAllowed",
                modification_allowed as "modificationAllowed", redistribution_allowed as "redistributionAllowed",
                valid_from as "validFrom", valid_until as "validUntil", jurisdiction, status,
-               evidence_ids as "evidenceIds", supersedes, created_by as "createdBy",
-               created_at as "createdAt", updated_at as "updatedAt", version`,
+                supersedes, created_by as "createdBy",
+                created_at as "createdAt", updated_at as "updatedAt", version`,
     [
       input.id,
       input.licenceType,
@@ -59,7 +59,7 @@ export async function getLicenceById(
             attribution_required as "attributionRequired", commercial_use_allowed as "commercialUseAllowed",
             modification_allowed as "modificationAllowed", redistribution_allowed as "redistributionAllowed",
             valid_from as "validFrom", valid_until as "validUntil", jurisdiction, status,
-            evidence_ids as "evidenceIds", supersedes, created_by as "createdBy",
+            supersedes, created_by as "createdBy",
             created_at as "createdAt", updated_at as "updatedAt", version
      FROM content_licences WHERE id = $1`,
     [id],
@@ -127,8 +127,8 @@ export async function updateLicence(
                attribution_required as "attributionRequired", commercial_use_allowed as "commercialUseAllowed",
                modification_allowed as "modificationAllowed", redistribution_allowed as "redistributionAllowed",
                valid_from as "validFrom", valid_until as "validUntil", jurisdiction, status,
-               evidence_ids as "evidenceIds", supersedes, created_by as "createdBy",
-               created_at as "createdAt", updated_at as "updatedAt", version`,
+                supersedes, created_by as "createdBy",
+                created_at as "createdAt", updated_at as "updatedAt", version`,
     [...values, id, expectedVersion],
   );
   if (!result.rows[0]) return undefined;
@@ -141,7 +141,7 @@ export async function listLicences(connection: DatabaseConnection): Promise<Lice
             attribution_required as "attributionRequired", commercial_use_allowed as "commercialUseAllowed",
             modification_allowed as "modificationAllowed", redistribution_allowed as "redistributionAllowed",
             valid_from as "validFrom", valid_until as "validUntil", jurisdiction, status,
-            evidence_ids as "evidenceIds", supersedes, created_by as "createdBy",
+            supersedes, created_by as "createdBy",
             created_at as "createdAt", updated_at as "updatedAt", version
      FROM content_licences ORDER BY created_at DESC`,
   );
@@ -168,8 +168,8 @@ export async function revokeLicence(connection: DatabaseConnection, id: LicenceI
                attribution_required as "attributionRequired", commercial_use_allowed as "commercialUseAllowed",
                modification_allowed as "modificationAllowed", redistribution_allowed as "redistributionAllowed",
                valid_from as "validFrom", valid_until as "validUntil", jurisdiction, status,
-               evidence_ids as "evidenceIds", supersedes, created_by as "createdBy",
-               created_at as "createdAt", updated_at as "updatedAt", version`,
+                supersedes, created_by as "createdBy",
+                created_at as "createdAt", updated_at as "updatedAt", version`,
     [id],
   );
   if (!result.rows[0]) return undefined;
