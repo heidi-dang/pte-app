@@ -1,49 +1,25 @@
 'use client';
 
 import React from 'react';
-import type { QuestionRendererProps } from '../../question-engine/types.js';
-import type {
-  SummarizeGroupDiscussionQuestion,
-  SummarizeGroupDiscussionResponse,
-  RecordingProfile,
-  ScoringProfileId,
-} from '@pte-app/contracts';
 import { SpeakingRecorder } from './speaking-recorder.js';
-
-function buildProfile(q: { preparationTimeSeconds: number; recordingTimeSeconds: number }): RecordingProfile {
-  return {
-    id: 'runtime' as ScoringProfileId,
-    version: 1,
-    preparationPolicy: {
-      countdownSeconds: q.preparationTimeSeconds,
-      autoStartRecording: true,
-      allowSkip: true,
-    },
-    recordingPolicy: {
-      maxDurationSeconds: q.recordingTimeSeconds,
-      permittedAttempts: 1,
-      allowPause: false,
-    },
-    uploadPolicy: { chunkSizeBytes: 512 * 1024, maxRetryCount: 3, resumeSupport: true },
-    playbackPolicy: { allowPlaybackAfterUpload: false, maxPlaybackPlays: 0 },
-    mockRestrictions: { singleAttempt: false, noRetake: false, noReview: false },
-  };
-}
+import type { QuestionRendererProps } from '../../question-engine/types.js';
+import type { SummarizeGroupDiscussionQuestion, SummarizeGroupDiscussionResponse } from '@pte-app/contracts';
 
 export function SummarizeGroupDiscussionRenderer({
   question,
   response,
   onChange,
   disabled,
+  recordingProfile,
 }: QuestionRendererProps<SummarizeGroupDiscussionQuestion, SummarizeGroupDiscussionResponse>) {
-  if (!question) return null;
+  if (!question || !recordingProfile) return null;
 
   return (
     <div role="group" aria-label="Summarize Group Discussion">
       <p>{question.instructions}</p>
       {!disabled && !response?.recordingId && (
         <SpeakingRecorder
-          recordingProfile={buildProfile(question)}
+          recordingProfile={recordingProfile}
           onComplete={(recordingId) =>
             onChange({ recordingId }, response?.writtenSummary !== undefined ? 'incomplete' : 'complete')
           }
