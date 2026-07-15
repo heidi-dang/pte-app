@@ -59,7 +59,7 @@ export async function startTestHarness(): Promise<TestHarness> {
 
   const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
   const child: ChildProcess = spawn(npmCmd, ['run', 'start'], {
-    cwd: new URL('../../../', import.meta.url).pathname,
+    cwd: new URL('../../', import.meta.url).pathname,
     stdio: 'pipe',
     env: testEnv,
     detached: true,
