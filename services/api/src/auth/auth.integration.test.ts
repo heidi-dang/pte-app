@@ -423,4 +423,106 @@ describe('auth integration', () => {
       assert.ok(list.json().sessions.length <= 10);
     });
   });
+
+  describe('authentication scope (parent hook)', () => {
+    let userToken: string;
+    const scopeEmail = `auth-scope-${Date.now()}@example.com`;
+
+    before(async () => {
+      const reg = await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload: { email: scopeEmail, password: testPassword, displayName: 'AuthScope' },
+      });
+      userToken = reg.json().token;
+    });
+
+    it('valid cookie populates request.auth', async () => {
+      const login = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email: scopeEmail, password: testPassword },
+      });
+      const cookies = login.cookies;
+      const sessionCookie = cookies.find((c: { name: string }) => c.name === 'pte_session');
+      assert.ok(sessionCookie);
+
+      const meRes = await app.inject({
+        method: 'GET',
+        url: '/auth/me',
+        headers: { cookie: `${sessionCookie.name}=${sessionCookie.value}` },
+      });
+      assert.equal(meRes.statusCode, 200);
+      assert.ok(meRes.json().user);
+    });
+
+    it('valid Bearer token populates request.auth', async () => {
+      const meRes = await app.inject({
+        method: 'GET',
+        url: '/auth/me',
+        headers: { authorization: `Bearer ${userToken}` },
+      });
+      assert.equal(meRes.statusCode, 200);
+      assert.ok(meRes.json().user.roles.includes('student'));
+    });
+
+    it('malformed Bearer header returns 401 from protected routes', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/auth/me',
+        headers: { authorization: 'NotBearer token' },
+      });
+      assert.equal(res.statusCode, 401);
+    });
+
+    it('invalid Bearer token returns 401', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/auth/me',
+        headers: { authorization: 'Bearer invalid-token-abc' },
+      });
+      assert.equal(res.statusCode, 401);
+    });
+
+    it('unauthenticated request returns 401 for protected routes', async () => {
+      const res = await app.inject({ method: 'GET', url: '/auth/me' });
+      assert.equal(res.statusCode, 401);
+    });
+
+    it('public routes remain accessible without auth', async () => {
+      const res = await app.inject({ method: 'GET', url: '/health/live' });
+      assert.equal(res.statusCode, 200);
+    });
+
+    it('expired cookie returns 401', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/auth/me',
+        headers: { cookie: 'pte_session=expired-token-value' },
+      });
+      assert.equal(res.statusCode, 401);
+    });
+
+    it('revoked session returns 401', async () => {
+      const login = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email: scopeEmail, password: testPassword },
+      });
+      const tempToken = login.json().token;
+
+      await app.inject({
+        method: 'POST',
+        url: '/auth/logout',
+        headers: { authorization: `Bearer ${tempToken}` },
+      });
+
+      const meRes = await app.inject({
+        method: 'GET',
+        url: '/auth/me',
+        headers: { authorization: `Bearer ${tempToken}` },
+      });
+      assert.equal(meRes.statusCode, 401);
+    });
+  });
 });

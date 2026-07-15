@@ -1,9 +1,11 @@
-import Fastify, { FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import { createConnection, checkHealth, runMigrations } from '@pte-app/database';
 import { Config } from './env.js';
-import { authPlugin } from './auth/plugin.js';
+import { authPlugin, getSessionToken } from './auth/plugin.js';
+import { validateSession } from './auth/sessions.js';
+import { getAccountById } from './auth/accounts.js';
 import { contentProvenancePlugin } from './content-provenance/plugin.js';
 
 export type App = FastifyInstance;
@@ -56,6 +58,25 @@ export async function buildApp(config: Config, options: { skipDb?: boolean } = {
   });
 
   if (dbConnection) {
+    app.decorateRequest('auth', undefined);
+
+    app.addHook('onRequest', async (request: FastifyRequest) => {
+      const token = getSessionToken(request);
+      if (!token) return;
+
+      const session = await validateSession(dbConnection, token);
+      if (!session) return;
+
+      const account = await getAccountById(dbConnection, session.userId);
+      if (!account || account.disabled) return;
+
+      request.auth = {
+        userId: session.userId,
+        sessionId: session.sessionId,
+        roles: account.roles,
+      };
+    });
+
     await app.register(authPlugin, { db: dbConnection });
     await app.register(contentProvenancePlugin, { db: dbConnection });
   }

@@ -2,14 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { DatabaseConnection } from '@pte-app/database';
 import { loadAuthConfig } from './config.js';
 import { registerAccount, authenticateAccount, getAccountById } from './accounts.js';
-import {
-  createSession,
-  validateSession,
-  revokeSession,
-  revokeOtherSessions,
-  listUserSessions,
-  cleanupOldSessions,
-} from './sessions.js';
+import { createSession, revokeSession, revokeOtherSessions, listUserSessions, cleanupOldSessions } from './sessions.js';
 import { hasPermission, type UserRole, ALL_ROLES } from './rbac.js';
 
 export interface AuthContext {
@@ -42,28 +35,11 @@ function getSessionToken(request: FastifyRequest): string | undefined {
   return undefined;
 }
 
+export { getSessionToken };
+
 export async function authPlugin(app: FastifyInstance, options: AuthPluginOptions): Promise<void> {
   const config = loadAuthConfig();
   const { db } = options;
-
-  app.decorateRequest('auth', undefined);
-
-  app.addHook('onRequest', async (request: FastifyRequest) => {
-    const token = getSessionToken(request);
-    if (!token) return;
-
-    const session = await validateSession(db, token);
-    if (!session) return;
-
-    const account = await getAccountById(db, session.userId);
-    if (!account || account.disabled) return;
-
-    request.auth = {
-      userId: session.userId,
-      sessionId: session.sessionId,
-      roles: account.roles,
-    };
-  });
 
   app.post('/auth/register', async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as { email?: string; password?: string; displayName?: string };

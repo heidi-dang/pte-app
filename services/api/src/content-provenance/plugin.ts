@@ -85,12 +85,6 @@ export async function contentProvenancePlugin(
 ): Promise<void> {
   const { db } = options;
 
-  app.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!request.auth) {
-      reply.status(401).send({ error: 'Unauthorized' });
-    }
-  });
-
   // ─── SOURCES ──────────────────────────────────────────────
   app.get('/content-provenance/sources', async (request, reply) => {
     const auth = getAuth(request, reply);

@@ -7,6 +7,7 @@ ALTER TABLE content_publication_decisions ADD CONSTRAINT uq_pub_decision_request
   UNIQUE (request_id, content_id, content_version_id);
 ALTER TABLE content_reverification_jobs ADD COLUMN IF NOT EXISTS attempt INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE content_reverification_jobs ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
+ALTER TABLE content_sources ADD COLUMN IF NOT EXISTS evidence_ids UUID[] NOT NULL DEFAULT '{}';
 
 CREATE TABLE content_policies (
   id UUID PRIMARY KEY,
