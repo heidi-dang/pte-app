@@ -179,7 +179,7 @@ function isFiniteNumber(v: number): boolean {
   return Number.isFinite(v);
 }
 
-function classifyEvidenceForMastery(e: MasteryEvidence, mode: 'skill' | 'task'): EvidenceClassification {
+function classifyEvidenceForMastery(e: MasteryEvidence, _mode: 'skill' | 'task'): EvidenceClassification {
   // 1. Non-finite numeric checks — throw typed error (corrupt data cannot be preserved)
   if (!isFiniteNumber(e.estimatedTrainingScore)) {
     throw new MasteryValidationError(
@@ -306,7 +306,7 @@ function evaluateEvidence(
     if (e.completenessStatus === 'failed') failedCount++;
     const compat = isCompatible(e, policy);
     if (!compat.compatible) {
-      excluded.push({ evidence: e, reason: compat.reason! });
+      excluded.push({ evidence: e, reason: compat.reason ?? 'incompatible-result-profile' });
       continue;
     }
     const pc = computeProfileCompatibility(e, policy);
