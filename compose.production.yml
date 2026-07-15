@@ -119,6 +119,9 @@ services:
       context: .
       dockerfile: Dockerfile
       target: web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_SCORING_URL: ${NEXT_PUBLIC_SCORING_URL}
     image: pte-production-web:${RELEASE_COMMIT}
     container_name: pte-prod-web
     env_file:

@@ -56,7 +56,7 @@ if [ -f "${backup_dir}/database.sql.gz" ]; then
     echo "DROP SCHEMA public CASCADE;"
     echo "CREATE SCHEMA public;"
     gunzip -c "${backup_dir}/database.sql.gz"
-  } | docker compose -f compose.production.yml exec -T postgres psql -U "$db_user" -d "$db_name" > /dev/null 2>&1
+  } | docker compose -f compose.production.yml exec -T postgres psql -U "$db_user" -d "$db_name" > /dev/null
   echo "  Database restored from ${backup_dir}/database.sql.gz"
 elif [ -f "${backup_dir}/database.sql" ]; then
   echo "Restoring PostgreSQL database..."
@@ -64,7 +64,7 @@ elif [ -f "${backup_dir}/database.sql" ]; then
     echo "DROP SCHEMA public CASCADE;"
     echo "CREATE SCHEMA public;"
     cat "${backup_dir}/database.sql"
-  } | docker compose -f compose.production.yml exec -T postgres psql -U "$db_user" -d "$db_name" > /dev/null 2>&1
+  } | docker compose -f compose.production.yml exec -T postgres psql -U "$db_user" -d "$db_name" > /dev/null
   echo "  Database restored from ${backup_dir}/database.sql"
 else
   echo "  No database backup found in $backup_dir"
@@ -73,16 +73,16 @@ fi
 # Restore Redis
 if [ -f "${backup_dir}/redis.rdb" ]; then
   echo "Restoring Redis data..."
-  if ! docker compose -f compose.production.yml stop redis 2>/dev/null; then
+  if ! docker compose -f compose.production.yml stop redis; then
     echo "ERROR: Failed to stop Redis for restore" >&2
     exit 1
   fi
-  if ! docker cp "${backup_dir}/redis.rdb" pte-prod-redis:/data/dump.rdb 2>/dev/null; then
+  if ! docker cp "${backup_dir}/redis.rdb" pte-prod-redis:/data/dump.rdb; then
     echo "ERROR: Redis restore copy failed" >&2
-    docker compose -f compose.production.yml start redis > /dev/null 2>&1
+    docker compose -f compose.production.yml start redis || true
     exit 1
   fi
-  if ! docker compose -f compose.production.yml start redis 2>/dev/null; then
+  if ! docker compose -f compose.production.yml start redis; then
     echo "ERROR: Failed to start Redis after restore" >&2
     exit 1
   fi

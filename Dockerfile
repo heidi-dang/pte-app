@@ -17,6 +17,10 @@ COPY packages/typescript-config/package.json packages/typescript-config/package.
 RUN npm ci --ignore-scripts
 
 FROM base AS build
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SCORING_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_SCORING_URL=${NEXT_PUBLIC_SCORING_URL}
 COPY . .
 RUN mkdir -p apps/web/public
 RUN npm run build

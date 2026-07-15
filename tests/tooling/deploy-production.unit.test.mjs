@@ -8,6 +8,7 @@ const ROOT = resolve(import.meta.dirname, '../..');
 const SCRIPT = `${ROOT}/scripts/deploy-production.sh`;
 const ROLLBACK_SCRIPT = `${ROOT}/scripts/rollback-production.sh`;
 const BACKUP_SCRIPT = `${ROOT}/scripts/backup-production.sh`;
+const RESTORE_SCRIPT = `${ROOT}/scripts/restore-production.sh`;
 
 function hasPattern(file, pattern) {
   return readFileSync(file, 'utf-8').includes(pattern);
@@ -142,6 +143,47 @@ describe('deploy-production.sh gates', () => {
     assert.ok(content.includes('caddy validate'), 'Must run caddy validate');
     assert.ok(content.includes('caddy adapt'), 'Must run caddy adapt');
   });
+
+  it('python3 is in the required commands check', () => {
+    const content = readFileSync(SCRIPT, 'utf-8');
+    assert.ok(content.includes('python3'), 'python3 must be in required commands');
+  });
+
+  it('successful deployment leaves checkout at RELEASE_COMMIT', () => {
+    const content = readFileSync(SCRIPT, 'utf-8');
+    assert.ok(content.includes('deployment_succeeded'), 'Must track deployment success');
+    assert.ok(content.includes('trap - EXIT'), 'Must remove trap on success');
+    assert.ok(!content.includes('git checkout main'), 'Must not checkout main on success');
+  });
+
+  it('failed deployment restores original ref via trap', () => {
+    const content = readFileSync(SCRIPT, 'utf-8');
+    assert.ok(content.includes('original_ref'), 'Must capture original ref');
+    assert.ok(content.includes('cleanup()'), 'Must define cleanup function');
+    assert.ok(content.includes('trap cleanup EXIT'), 'Must set EXIT trap');
+    assert.ok(content.includes('" != true'), 'Must check success flag');
+  });
+
+  it('image metadata parsing handles json array format', () => {
+    const content = readFileSync(SCRIPT, 'utf-8');
+    assert.ok(content.includes('isinstance(data, list)'), 'Must handle array format');
+    assert.ok(content.includes('isinstance(data, dict)'), 'Must handle single object format');
+    assert.ok(content.includes('JSONDecodeError'), 'Must handle NDJSON line-by-line');
+    assert.ok(content.includes('malformed image line'), 'Must log malformed lines');
+    assert.ok(content.includes('metadata_warning'), 'Must record parse failure warnings');
+  });
+
+  it('backup commands do not silence stderr', () => {
+    const content = readFileSync(SCRIPT, 'utf-8');
+    const pgDumpLines = content.split('\n').filter((l) => l.includes('pg_dump') && l.includes('backup_file'));
+    for (const line of pgDumpLines) {
+      assert.ok(!line.includes('2>/dev/null'), 'pg_dump must not silence stderr');
+    }
+    const redisSaveLines = content.split('\n').filter((l) => l.includes('SAVE'));
+    for (const line of redisSaveLines) {
+      assert.ok(!line.includes('2>&1'), 'redis SAVE must not silence stderr');
+    }
+  });
 });
 
 describe('rollback-production.sh', () => {
@@ -197,5 +239,63 @@ describe('backup-production.sh', () => {
   it('records backup metadata', () => {
     const content = readFileSync(BACKUP_SCRIPT, 'utf-8');
     assert.ok(content.includes('backup-metadata.txt'), 'Must write metadata file');
+  });
+
+  it('pg_dump does not silence stderr', () => {
+    const content = readFileSync(BACKUP_SCRIPT, 'utf-8');
+    const lines = content.split('\n').filter((l) => l.includes('pg_dump'));
+    for (const line of lines) {
+      assert.ok(!line.includes('2>/dev/null'), 'pg_dump must not silence stderr');
+    }
+  });
+
+  it('redis SAVE and copy do not silence stderr', () => {
+    const content = readFileSync(BACKUP_SCRIPT, 'utf-8');
+    const saveLine = content.split('\n').filter((l) => l.includes('SAVE'));
+    for (const line of saveLine) {
+      assert.ok(!line.includes('2>&1'), 'redis SAVE must not silence stderr');
+    }
+    const cpLines = content
+      .split('\n')
+      .filter((l) => l.includes('docker compose') && l.includes('cp') && l.includes('redis'));
+    for (const line of cpLines) {
+      assert.ok(!line.includes('2>/dev/null'), 'redis cp must not silence stderr');
+    }
+  });
+});
+
+describe('restore-production.sh', () => {
+  it('exists and is executable', () => {
+    assert.ok(existsSync(RESTORE_SCRIPT), 'restore-production.sh must exist');
+    const mode = execSync(`stat -c '%A' ${RESTORE_SCRIPT}`, { encoding: 'utf8' }).trim();
+    assert.ok(mode.includes('x'), 'restore-production.sh must be executable');
+  });
+
+  it('psql restore does not silence stderr', () => {
+    const content = readFileSync(RESTORE_SCRIPT, 'utf-8');
+    const psqlLines = content.split('\n').filter((l) => l.includes('psql'));
+    for (const line of psqlLines) {
+      assert.ok(!line.includes('2>&1'), 'psql restore must not silence stderr');
+    }
+  });
+
+  it('redis stop/start do not silence stderr', () => {
+    const content = readFileSync(RESTORE_SCRIPT, 'utf-8');
+    const stopLines = content.split('\n').filter((l) => l.includes('stop redis'));
+    for (const line of stopLines) {
+      assert.ok(!line.includes('2>/dev/null'), 'redis stop must not silence stderr');
+    }
+    const startLines = content.split('\n').filter((l) => l.includes('start redis'));
+    for (const line of startLines) {
+      assert.ok(!line.includes('2>/dev/null'), 'redis start must not silence stderr');
+    }
+  });
+
+  it('redis cp does not silence stderr', () => {
+    const content = readFileSync(RESTORE_SCRIPT, 'utf-8');
+    const cpLines = content.split('\n').filter((l) => l.includes('docker cp') && l.includes('redis'));
+    for (const line of cpLines) {
+      assert.ok(!line.includes('2>/dev/null'), 'redis cp must not silence stderr');
+    }
   });
 });

@@ -96,4 +96,35 @@ describe('Cloudflare DNS script — record management', () => {
     const exitCount = countOccurrences(SCRIPT, 'exit 1');
     assert.ok(exitCount >= 3, 'Script must fail on API errors');
   });
+
+  it('rollback file is generated as valid JSON and validated', () => {
+    const content = readFileSync(SCRIPT, 'utf-8');
+    assert.ok(content.includes('rollback_file'), 'Must define rollback_file');
+    assert.ok(content.includes('json.load'), 'Must parse rollback file with json parser');
+    assert.ok(content.includes('is not valid JSON'), 'Must validate JSON structure');
+    assert.ok(content.includes('rollback_size'), 'Must check file size is non-empty');
+    assert.ok(content.includes('record_count'), 'Must count records in rollback file');
+    assert.ok(content.includes('only ${record_count} records'), 'Must fail if fewer than 3 records');
+  });
+
+  it('rollback JSON generation does not use triple-quoted Bash inline Python', () => {
+    const content = readFileSync(SCRIPT, 'utf-8');
+    const rollbackSection = content.split('=== Rollback data saved')[1]?.split('DNS sync complete')[0] || '';
+    assert.ok(!rollbackSection.includes("'''"), 'Rollback section must not use triple-quoted Bash-inline Python');
+  });
+
+  it('each API response is parsed in a single python3 invocation', () => {
+    const content = readFileSync(SCRIPT, 'utf-8');
+    const sections = content.split('# Reading existing records');
+    if (sections.length > 1) {
+      const readSection = sections[1].split('# Change Plan')[0] || '';
+      assert.ok(readSection.includes('parsed='), 'Read records must use single parse variable');
+    }
+  });
+
+  it('apply and verify sections use single-invocation parsing', () => {
+    const content = readFileSync(SCRIPT, 'utf-8');
+    const applySection = content.split('=== Applying Changes')[1]?.split('=== Verification')[0] || '';
+    assert.ok(applySection.includes('result='), 'Apply section must use single result variable');
+  });
 });

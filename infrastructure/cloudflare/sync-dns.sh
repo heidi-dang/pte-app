@@ -75,20 +75,46 @@ for name in "${!records[@]}"; do
   response=$(curl -s -X GET "$base_url?name=${name}&type=${type}" \
     -H "Authorization: Bearer $api_token" \
     -H "Content-Type: application/json")
-  success=$(echo "$response" | python3 -c "import json,sys; print(json.load(sys.stdin).get('success', False))" 2>/dev/null || echo "false")
+
+  parsed=$(echo "$response" | python3 -c "
+import json, sys
+r = json.load(sys.stdin)
+res = {}
+res['success'] = r.get('success', False)
+if not res['success']:
+    errs = r.get('errors', [])
+    res['error'] = errs[0].get('message', 'unknown') if errs else 'unknown'
+    print(json.dumps(res))
+    sys.exit(0)
+res['total_count'] = r.get('result_info', {}).get('total_count', 0)
+if res['total_count'] > 0:
+    rr = r.get('result', [])
+    if rr:
+        rec = rr[0]
+        res['id'] = rec.get('id', '')
+        res['content'] = rec.get('content', '')
+        res['proxied'] = rec.get('proxied', False)
+print(json.dumps(res))
+" 2>/dev/null || echo '{"success":false,"error":"json parse failed"}')
+
+  success=$(echo "$parsed" | python3 -c "import json,sys; print(json.load(sys.stdin)['success'])")
   if [ "$success" != "True" ]; then
-    err_msg=$(echo "$response" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('errors',[{}])[0].get('message','unknown'))" 2>/dev/null || echo "unknown error")
+    err_msg=$(echo "$parsed" | python3 -c "import json,sys; print(json.load(sys.stdin).get('error','unknown'))")
     echo "ERROR: Failed to read records for $name: $err_msg" >&2
     exit 1
   fi
-  count=$(echo "$response" | python3 -c "import json,sys; print(json.load(sys.stdin).get('result_info',{}).get('total_count',0))" 2>/dev/null || echo "0")
+
+  count=$(echo "$parsed" | python3 -c "import json,sys; print(json.load(sys.stdin)['total_count'])")
   if [ "$count" -gt 0 ]; then
-    record_id=$(echo "$response" | python3 -c "import json,sys; r=json.load(sys.stdin)['result'][0]; print(r['id'])" 2>/dev/null || echo "")
-    record_content=$(echo "$response" | python3 -c "import json,sys; r=json.load(sys.stdin)['result'][0]; print(r['content'])" 2>/dev/null || echo "")
-    record_proxied=$(echo "$response" | python3 -c "import json,sys; r=json.load(sys.stdin)['result'][0]; print(r['proxied'])" 2>/dev/null || echo "")
+    record_id=$(echo "$parsed" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+    record_content=$(echo "$parsed" | python3 -c "import json,sys; print(json.load(sys.stdin)['content'])")
+    record_proxied=$(echo "$parsed" | python3 -c "import json,sys; print(json.load(sys.stdin)['proxied'])")
     existing[$name]="$record_content"
     existing_ids[$name]="$record_id"
-    rollback_data[$name]=$(python3 -c "import json; print(json.dumps({'id':'$record_id','content':'$record_content','proxied':$record_proxied}))" 2>/dev/null || echo '{}')
+    rollback_data[$name]=$(python3 -c "
+import json
+print(json.dumps({'id':'$record_id','content':'$record_content','proxied':json.loads('$record_proxied'.lower())}))
+")
     echo "  $name ($type): $record_content (proxied: $record_proxied, id: ${record_id:0:8}...)"
   else
     echo "  $name ($type): (not found)"
@@ -154,11 +180,20 @@ for name in "${!records[@]}"; do
 }
 EOF
 )")
-    success=$(echo "$response" | python3 -c "import json,sys; print(json.load(sys.stdin).get('success', False))" 2>/dev/null || echo "false")
-    if [ "$success" = "True" ]; then
+    result=$(echo "$response" | python3 -c "
+import json, sys
+r = json.load(sys.stdin)
+out = {}
+out['success'] = r.get('success', False)
+if not out['success']:
+    errs = r.get('errors', [])
+    out['error'] = errs[0].get('message', 'unknown') if errs else 'unknown'
+print(json.dumps(out))
+" 2>/dev/null || echo '{"success":false,"error":"parse failed"}')
+    if [ "$(echo "$result" | python3 -c "import json,sys; print(json.load(sys.stdin)['success'])")" = "True" ]; then
       echo "  $name ($type): Updated → $record_content"
     else
-      err_msg=$(echo "$response" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('errors',[{}])[0].get('message','unknown'))" 2>/dev/null || echo "unknown error")
+      err_msg=$(echo "$result" | python3 -c "import json,sys; print(json.load(sys.stdin).get('error','unknown'))")
       echo "ERROR: Failed to update $name: $err_msg" >&2
       exit 1
     fi
@@ -176,12 +211,26 @@ EOF
 }
 EOF
 )")
-    success=$(echo "$response" | python3 -c "import json,sys; print(json.load(sys.stdin).get('success', False))" 2>/dev/null || echo "false")
-    if [ "$success" = "True" ]; then
-      result_id=$(echo "$response" | python3 -c "import json,sys; print(json.load(sys.stdin)['result']['id'])" 2>/dev/null || echo "")
+    result=$(echo "$response" | python3 -c "
+import json, sys
+r = json.load(sys.stdin)
+out = {}
+out['success'] = r.get('success', False)
+if not out['success']:
+    errs = r.get('errors', [])
+    out['error'] = errs[0].get('message', 'unknown') if errs else 'unknown'
+else:
+    out['id'] = r.get('result', {}).get('id', '')
+print(json.dumps(out))
+" 2>/dev/null || echo '{"success":false,"error":"parse failed"}')
+    if [ "$(echo "$result" | python3 -c "import json,sys; print(json.load(sys.stdin)['success'])")" = "True" ]; then
+      result_id=$(echo "$result" | python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))")
       echo "  $name ($type): Created (id: ${result_id:0:8}...)"
     else
-      err_msg=$(echo "$response" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('errors',[{}])[0].get('message','unknown'))" 2>/dev/null || echo "unknown error")
+      err_msg=$(echo "$result" | python3 -c "import json,sys; print(json.load(sys.stdin).get('error','unknown'))")
+      echo "ERROR: Failed to create $name: $err_msg" >&2
+      exit 1
+    fi
       echo "ERROR: Failed to create $name: $err_msg" >&2
       exit 1
     fi
@@ -195,18 +244,54 @@ for name in "${!records[@]}"; do
   response=$(curl -s -X GET "$base_url?name=${name}&type=${type}" \
     -H "Authorization: Bearer $api_token" \
     -H "Content-Type: application/json")
-  content=$(echo "$response" | python3 -c "import json,sys; r=json.load(sys.stdin)['result']; print(r[0]['content'] if r else 'N/A')" 2>/dev/null || echo "N/A")
-  proxied=$(echo "$response" | python3 -c "import json,sys; r=json.load(sys.stdin)['result']; print(r[0]['proxied'] if r else 'N/A')" 2>/dev/null || echo "N/A")
+  parsed=$(echo "$response" | python3 -c "
+import json, sys
+r = json.load(sys.stdin)
+results = r.get('result', [])
+if results:
+    rec = results[0]
+    print(json.dumps({'content': rec.get('content','N/A'), 'proxied': rec.get('proxied','N/A')}))
+else:
+    print(json.dumps({'content':'N/A','proxied':'N/A'}))
+" 2>/dev/null || echo '{"content":"N/A","proxied":"N/A"}')
+  content=$(echo "$parsed" | python3 -c "import json,sys; print(json.load(sys.stdin)['content'])")
+  proxied=$(echo "$parsed" | python3 -c "import json,sys; print(json.load(sys.stdin)['proxied'])")
   echo "  $name ($type): $content (proxied: $proxied)"
 done
 
 echo ""
 echo "=== Rollback data saved to $rollback_file ==="
-python3 -c "
-import json, os
-data = {}
-$(for key in "${!rollback_data[@]}"; do echo "data['$key'] = json.loads('''${rollback_data[$key]}''')"; done)
-with open('$rollback_file', 'w') as f:
-    json.dump(data, f, indent=2)
-" 2>/dev/null || true
+{
+  echo "{"
+  first=true
+  for key in "${!rollback_data[@]}"; do
+    if [ "$first" = true ]; then
+      first=false
+    else
+      echo ","
+    fi
+    printf '  "%s": %s' "$key" "${rollback_data[$key]}"
+  done
+  echo ""
+  echo "}"
+} > "$rollback_file"
+
+rollback_size=$(wc -c < "$rollback_file" 2>/dev/null || echo 0)
+if [ "$rollback_size" -lt 10 ]; then
+  echo "ERROR: Rollback file generation failed (${rollback_size} bytes)" >&2
+  exit 1
+fi
+
+if ! python3 -c "import json; json.load(open('$rollback_file'))" 2>/dev/null; then
+  echo "ERROR: Rollback file is not valid JSON" >&2
+  exit 1
+fi
+
+record_count=$(python3 -c "import json; print(len(json.load(open('$rollback_file'))))" 2>/dev/null || echo 0)
+if [ "$record_count" -lt 3 ]; then
+  echo "ERROR: Rollback file contains only ${record_count} records (expected at least 3)" >&2
+  exit 1
+fi
+
+echo "  Saved $record_count records"
 echo "DNS sync complete."

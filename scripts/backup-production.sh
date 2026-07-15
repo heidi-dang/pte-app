@@ -30,7 +30,7 @@ db_name="${POSTGRES_DATABASE:-pte_prod}"
 # Database backup
 echo "Backing up PostgreSQL database..."
 backup_file="${backup_dir}/database.sql"
-if ! docker compose -f compose.production.yml exec -T postgres pg_dump -U "$db_user" "$db_name" > "$backup_file" 2>/dev/null; then
+if ! docker compose -f compose.production.yml exec -T postgres pg_dump -U "$db_user" "$db_name" > "$backup_file"; then
   echo "ERROR: Database backup failed" >&2
   rm -rf "$backup_dir"
   exit 1
@@ -51,13 +51,13 @@ echo "  Checksum (SHA256): $db_checksum"
 
 # Redis backup
 echo "Backing up Redis data..."
-if ! docker compose -f compose.production.yml exec -T redis redis-cli SAVE > /dev/null 2>&1; then
+if ! docker compose -f compose.production.yml exec -T redis redis-cli SAVE > /dev/null; then
   echo "ERROR: Redis save failed" >&2
   rm -rf "$backup_dir"
   exit 1
 fi
 
-if ! docker compose -f compose.production.yml cp redis:/data/dump.rdb "${backup_dir}/redis.rdb" 2>/dev/null; then
+if ! docker compose -f compose.production.yml cp redis:/data/dump.rdb "${backup_dir}/redis.rdb"; then
   echo "ERROR: Redis backup copy failed" >&2
   rm -rf "$backup_dir"
   exit 1

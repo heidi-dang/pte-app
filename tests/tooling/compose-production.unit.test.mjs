@@ -153,4 +153,25 @@ describe('Compose production configuration', () => {
       'worker must depend on redis: service_healthy',
     );
   });
+
+  it('web build includes NEXT_PUBLIC_API_URL and NEXT_PUBLIC_SCORING_URL args', () => {
+    const composeRaw = readFileSync(COMPOSE_FILE, 'utf-8');
+    assert.ok(composeRaw.includes('NEXT_PUBLIC_API_URL'), 'compose must reference NEXT_PUBLIC_API_URL build arg');
+    assert.ok(
+      composeRaw.includes('NEXT_PUBLIC_SCORING_URL'),
+      'compose must reference NEXT_PUBLIC_SCORING_URL build arg',
+    );
+  });
+
+  it('Dockerfile build stage declares NEXT_PUBLIC_ env vars before npm run build', () => {
+    const dockerfile = readFileSync(`${ROOT}/Dockerfile`, 'utf-8');
+    assert.ok(dockerfile.includes('NEXT_PUBLIC_API_URL'), 'Dockerfile must declare NEXT_PUBLIC_API_URL ARG');
+    assert.ok(dockerfile.includes('NEXT_PUBLIC_SCORING_URL'), 'Dockerfile must declare NEXT_PUBLIC_SCORING_URL ARG');
+    const buildSection = dockerfile.split('FROM base AS build')[1]?.split('\nFROM ')[0] || '';
+    assert.ok(buildSection.includes('NEXT_PUBLIC_API_URL'), 'NEXT_PUBLIC_API_URL must be in build stage');
+    assert.ok(buildSection.includes('NEXT_PUBLIC_SCORING_URL'), 'NEXT_PUBLIC_SCORING_URL must be in build stage');
+    const argApiIdx = buildSection.indexOf('NEXT_PUBLIC_API_URL');
+    const buildIdx = buildSection.indexOf('npm run build');
+    assert.ok(argApiIdx < buildIdx, 'NEXT_PUBLIC_ vars must appear before npm run build');
+  });
 });

@@ -16,7 +16,7 @@ echo ""
 
 # 1. Verify required commands
 echo "[1] Verifying required commands..."
-for cmd in git docker curl openssl sha256sum; do
+for cmd in git docker curl openssl sha256sum python3; do
   if ! command -v "$cmd" &>/dev/null; then
     echo "ERROR: Required command '$cmd' not found" >&2
     exit 1
@@ -61,8 +61,19 @@ echo "  OK"
 
 # 6. Check out the exact commit and verify
 echo "[6] Checking out release commit..."
+original_ref="$(git symbolic-ref --quiet --short HEAD || git rev-parse HEAD)"
+deployment_succeeded=false
+
+cleanup() {
+  if [ "$deployment_succeeded" != true ]; then
+    echo "  Restoring original ref ($original_ref)..."
+    git checkout "$original_ref" 2>/dev/null || true
+  fi
+}
+
+trap cleanup EXIT
+
 git checkout --detach "$release_commit"
-trap 'echo "  Restoring main branch..."; git checkout main 2>/dev/null || true' EXIT
 checked_out=$(git rev-parse HEAD)
 if [ "$checked_out" != "$release_commit" ]; then
   echo "ERROR: Checked out commit $checked_out does not match RELEASE_COMMIT $release_commit" >&2
@@ -227,7 +238,7 @@ if [ "$db_running" = true ]; then
   db_name="${POSTGRES_DATABASE}"
   backup_file="${backup_dir}/database.sql"
   echo "  Backing up database..."
-  if ! docker compose -f compose.production.yml exec -T postgres pg_dump -U "$db_user" "$db_name" > "$backup_file" 2>/dev/null; then
+  if ! docker compose -f compose.production.yml exec -T postgres pg_dump -U "$db_user" "$db_name" > "$backup_file"; then
     echo "ERROR: Database backup command failed" >&2
     rm -rf "$backup_dir"
     exit 1
@@ -244,8 +255,8 @@ if [ "$db_running" = true ]; then
   echo "  Checksum (SHA256): $backup_checksum"
 
   echo "  Backing up Redis..."
-  if docker compose -f compose.production.yml exec -T redis redis-cli SAVE > /dev/null 2>&1; then
-    if ! docker compose -f compose.production.yml cp redis:/data/dump.rdb "${backup_dir}/redis.rdb" 2>/dev/null; then
+  if docker compose -f compose.production.yml exec -T redis redis-cli SAVE > /dev/null; then
+    if ! docker compose -f compose.production.yml cp redis:/data/dump.rdb "${backup_dir}/redis.rdb"; then
       echo "ERROR: Redis backup copy failed" >&2
       rm -rf "$backup_dir"
       exit 1
@@ -371,12 +382,48 @@ mkdir -p "$(dirname "$DEPLOY_LOG")"
   echo "backup_checksum: ${backup_checksum:-none}"
   echo "previous_commit: ${prev_commit:-none}"
   echo "images:"
-  docker compose -f compose.production.yml images --format json 2>/dev/null | python3 -c "
-import json,sys
-for line in sys.stdin:
-    d=json.loads(line.strip())
-    print(f'  {d.get('Repository','unknown')}:{d.get('Tag','unknown')}')
-" 2>/dev/null || echo "  (image listing unavailable)"
+  image_output=$(docker compose -f compose.production.yml images --format json 2>/dev/null || echo "")
+  if [ -z "$image_output" ]; then
+    echo "  (image listing unavailable)"
+    echo "metadata_warning: image listing was empty or failed"
+  else
+    echo "$image_output" | python3 -c "
+import json, sys
+raw = sys.stdin.read().strip()
+if not raw:
+    print('  (image listing unavailable)')
+    sys.exit(0)
+try:
+    data = json.loads(raw)
+    if isinstance(data, list):
+        for d in data:
+            repo = d.get('Repository', 'unknown')
+            tag = d.get('Tag', 'unknown')
+            print(f'  {repo}:{tag}')
+    elif isinstance(data, dict):
+        repo = data.get('Repository', 'unknown')
+        tag = data.get('Tag', 'unknown')
+        print(f'  {repo}:{tag}')
+    else:
+        print('  (unexpected image metadata format)')
+except json.JSONDecodeError:
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            d = json.loads(line)
+            repo = d.get('Repository', 'unknown')
+            tag = d.get('Tag', 'unknown')
+            print(f'  {repo}:{tag}')
+        except json.JSONDecodeError:
+            print(f'  (malformed image line: {line})')
+            continue
+" || {
+    echo "  (image listing unavailable)"
+    echo "metadata_warning: image metadata parsing failed"
+  }
+  fi
 } >> "$DEPLOY_LOG"
 
 echo ""
@@ -384,3 +431,6 @@ echo "=== Deployment complete ==="
 echo "Commit: $release_commit"
 echo "Backup: ${backup_dir}"
 echo "Deployed at: $(date -u)"
+
+deployment_succeeded=true
+trap - EXIT
