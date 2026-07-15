@@ -77,17 +77,18 @@ function evaluateProfileRules(input: ScoringInput, profile: ScoringProfile): Rul
 }
 
 function evaluateRule(ruleDef: ScoringRuleDefinition, input: ScoringInput): RuleEvaluation {
-  switch (ruleDef.ruleType) {
-    case 'binary-correct-incorrect':
-      return evaluateBinary(ruleDef.params, input);
-    case 'multiple-answer-negative-marking':
-      return evaluateMultipleAnswer(ruleDef.params, input);
+  const { params } = ruleDef;
+  switch (params.kind) {
+    case 'binary':
+      return evaluateBinary(params, input);
+    case 'multiple-answer':
+      return evaluateMultipleAnswer(params, input);
     case 'per-blank':
-      return evaluatePerBlank(ruleDef.params, input);
+      return evaluatePerBlank(params, input);
     case 'per-word':
-      return evaluatePerWord(ruleDef.params, input);
+      return evaluatePerWord(params, input);
     case 'adjacent-pair':
-      return evaluateAdjacentPair(ruleDef.params, input);
+      return evaluateAdjacentPair(params, input);
   }
 }
 
@@ -301,7 +302,8 @@ function evaluateAdjacentPair(
 
   const correctIndex: Record<string, number> = {};
   for (let i = 0; i < correct.length; i++) {
-    correctIndex[correct[i]] = i;
+    const item = correct[i];
+    if (item !== undefined) correctIndex[item] = i;
   }
 
   let score = 0;

@@ -1,9 +1,8 @@
-import type { RecordingProfile } from '@pte-app/contracts';
-import type { ScoringProfileId } from '@pte-app/contracts';
+import type { RecordingProfile, RecordingProfileId } from '@pte-app/contracts';
 
 export function createDefaultRecordingProfile(overrides: Partial<RecordingProfile> = {}): RecordingProfile {
   return {
-    id: 'rp_default' as ScoringProfileId,
+    id: 'rp_default' as RecordingProfileId,
     version: 1,
     preparationPolicy: {
       countdownSeconds: 30,
