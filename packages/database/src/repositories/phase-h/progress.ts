@@ -23,16 +23,17 @@ export async function upsertProgress(
 ): Promise<LessonProgressRecord> {
   const id = randomUUID() as LessonProgressId;
 
+  const progressPercentage = Math.round(update.progressPercentage);
   const result = await connection.pool.query<Record<string, unknown>>(
     `INSERT INTO lesson_progress (id, user_id, enrolment_id, course_id, module_id, lesson_id,
       lesson_version_id, last_block_id, block_position, progress_percentage, status,
       started_at, last_activity_at, mutation_id, version)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-       CASE WHEN $10 >= 100 THEN 'completed' WHEN $10 > 0 THEN 'in_progress' ELSE 'not_started' END,
-       CASE WHEN $10 > 0 THEN COALESCE(
-         (SELECT started_at FROM lesson_progress WHERE user_id = $2 AND lesson_id = $6 AND mutation_id = $15), NOW()
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::int,
+       CASE WHEN $10::int >= 100 THEN 'completed' WHEN $10::int > 0 THEN 'in_progress' ELSE 'not_started' END,
+       CASE WHEN $10::int > 0 THEN COALESCE(
+         (SELECT started_at FROM lesson_progress WHERE user_id = $2 AND lesson_id = $6 ORDER BY last_activity_at DESC LIMIT 1), NOW()
        ) ELSE NULL END,
-       NOW(), $15, 1)
+       NOW(), $11, 1)
      ON CONFLICT (user_id, lesson_id, mutation_id) DO UPDATE SET
        last_block_id = EXCLUDED.last_block_id,
        block_position = EXCLUDED.block_position,
@@ -58,11 +59,7 @@ export async function upsertProgress(
       lessonVersionId,
       update.blockId,
       update.blockPosition,
-      update.progressPercentage,
-      update.blockId,
-      lessonId,
-      update.blockId,
-      lessonId,
+      progressPercentage,
       update.mutationId,
     ],
   );
