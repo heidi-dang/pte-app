@@ -26,6 +26,7 @@ export type {
   ProfileCompatibility,
   InclusionReason,
   EvidencePolicy,
+  LinearDirection,
   ScoreNormalisationPolicy,
   MasteryLevelDefinition,
   ExcludedEvidence,

@@ -48,9 +48,18 @@ export interface WeightedContribution {
   profileCompatibility: ProfileCompatibility;
 }
 
+export type LinearDirection = 'ascending' | 'descending';
+
 export type ScoreNormalisationPolicy =
   | { method: 'none' }
-  | { method: 'linear'; inputMinimum: number; inputMaximum: number; outputMinimum: number; outputMaximum: number }
+  | {
+      method: 'linear';
+      direction: LinearDirection;
+      inputMinimum: number;
+      inputMaximum: number;
+      outputMinimum: number;
+      outputMaximum: number;
+    }
   | { method: 'z-score'; referenceMean: number; referenceStandardDeviation: number };
 
 export interface EvidencePolicy {

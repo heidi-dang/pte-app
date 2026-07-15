@@ -13,10 +13,15 @@ import type {
   InclusionReason,
   ProfileCompatibility,
   UnassignedMasteryEvidence,
+  LinearDirection,
 } from '@pte-app/contracts';
 
 export class MasteryValidationError extends Error {
-  code: 'INVALID_LINEAR_NORMALISATION_RANGE' | 'INVALID_Z_SCORE_STANDARD_DEVIATION' | 'NO_MASTERY_LEVEL_MATCH';
+  code:
+    | 'INVALID_LINEAR_NORMALISATION_RANGE'
+    | 'INVALID_LINEAR_DIRECTION'
+    | 'INVALID_Z_SCORE_STANDARD_DEVIATION'
+    | 'NO_MASTERY_LEVEL_MATCH';
   constructor(code: MasteryValidationError['code'], message: string) {
     super(message);
     this.name = 'MasteryValidationError';
@@ -24,34 +29,42 @@ export class MasteryValidationError extends Error {
   }
 }
 
-function validateNormalisationPolicy(policy: ScoreNormalisationPolicy): void {
-  if (policy.method === 'linear' && policy.inputMaximum <= policy.inputMinimum) {
+function validateLinearPolicy(d: {
+  inputMinimum: number;
+  inputMaximum: number;
+  direction: LinearDirection;
+  outputMinimum: number;
+  outputMaximum: number;
+}): void {
+  if (d.inputMaximum <= d.inputMinimum)
     throw new MasteryValidationError(
       'INVALID_LINEAR_NORMALISATION_RANGE',
       'inputMaximum must be greater than inputMinimum',
     );
-  }
-  if (policy.method === 'z-score' && policy.referenceStandardDeviation <= 0) {
-    throw new MasteryValidationError(
-      'INVALID_Z_SCORE_STANDARD_DEVIATION',
-      'referenceStandardDeviation must be greater than zero',
-    );
-  }
+  if (d.direction === 'ascending' && d.outputMaximum <= d.outputMinimum)
+    throw new MasteryValidationError('INVALID_LINEAR_DIRECTION', 'ascending requires outputMaximum > outputMinimum');
+  if (d.direction === 'descending' && d.outputMaximum >= d.outputMinimum)
+    throw new MasteryValidationError('INVALID_LINEAR_DIRECTION', 'descending requires outputMaximum < outputMinimum');
 }
 
 function normaliseScore(value: number, policy: ScoreNormalisationPolicy): number {
-  validateNormalisationPolicy(policy);
   switch (policy.method) {
     case 'none':
       return value;
     case 'linear': {
-      const range = policy.inputMaximum - policy.inputMinimum;
-      return (
-        policy.outputMinimum + ((value - policy.inputMinimum) / range) * (policy.outputMaximum - policy.outputMinimum)
-      );
+      validateLinearPolicy(policy);
+      const ratio = (value - policy.inputMinimum) / (policy.inputMaximum - policy.inputMinimum);
+      const range = policy.outputMaximum - policy.outputMinimum;
+      return policy.outputMinimum + ratio * range;
     }
-    case 'z-score':
+    case 'z-score': {
+      if (policy.referenceStandardDeviation <= 0)
+        throw new MasteryValidationError(
+          'INVALID_Z_SCORE_STANDARD_DEVIATION',
+          'referenceStandardDeviation must be greater than zero',
+        );
       return (value - policy.referenceMean) / policy.referenceStandardDeviation;
+    }
   }
 }
 
@@ -90,7 +103,10 @@ function computeProfileCompatibility(e: MasteryEvidence, policy: EvidencePolicy)
     e.evaluationProfileVersion !== policy.referenceEvaluationProfileVersion
   )
     mismatches.push('evaluation-profile-version');
-  if (policy.referenceEvaluationProfileId !== null && e.evaluationProfileId === null)
+  if (
+    policy.referenceEvaluationProfileId !== null &&
+    (e.evaluationProfileId === null || e.evaluationProfileVersion === null)
+  )
     mismatches.push('evaluation-profile-missing');
   if (mismatches.length > 0) return { status: 'included-with-disclosure', mismatches } as ProfileCompatibility;
   return { status: 'matched' } as ProfileCompatibility;
@@ -140,7 +156,10 @@ function isCompatible(
       e.evaluationProfileVersion !== policy.referenceEvaluationProfileVersion
     )
       return { compatible: false, reason: 'invalid-profile-version' };
-    if (policy.referenceEvaluationProfileId !== null && e.evaluationProfileId === null)
+    if (
+      policy.referenceEvaluationProfileId !== null &&
+      (e.evaluationProfileId === null || e.evaluationProfileVersion === null)
+    )
       return { compatible: false, reason: 'missing-reference-evaluation-profile' };
   }
   return { compatible: true };
@@ -188,11 +207,20 @@ function validateEvidence(e: MasteryEvidence): boolean {
   );
 }
 
+function isValidEvidence(e: MasteryEvidence): boolean {
+  if (!validateEvidence(e)) return false;
+  if (e.scoringProfileVersion < 1) return false;
+  if (e.evaluationProfileId !== null && e.evaluationProfileVersion === null) return false;
+  if (e.evaluationProfileId === null && e.evaluationProfileVersion !== null) return false;
+  if (e.evaluationProfileVersion !== null && e.evaluationProfileVersion < 1) return false;
+  return true;
+}
+
 function classifyEvidence(
   e: MasteryEvidence,
   policy: EvidencePolicy,
 ): { eligible: boolean; weight: number; excludedReason?: ExcludedEvidence['reason'] } {
-  if (!validateEvidence(e)) return { eligible: false, excludedReason: 'missing-required-field', weight: 0 };
+  if (!isValidEvidence(e)) return { eligible: false, excludedReason: 'missing-required-field', weight: 0 };
   if (e.completenessStatus === 'failed') {
     if (policy.failedResultPolicy === 'include-with-disclosure')
       return { eligible: true, weight: policy.failedResultWeight };
@@ -233,16 +261,13 @@ function evaluateEvidence(
   for (const e of evidence) {
     if (e.completenessStatus === 'partial') partialCount++;
     if (e.completenessStatus === 'failed') failedCount++;
-
     const compat = isCompatible(e, policy);
     if (!compat.compatible) {
       excluded.push({ evidence: e, reason: compat.reason ?? 'missing-required-field' });
       continue;
     }
-
     const pc = computeProfileCompatibility(e, policy);
     if (pc.status === 'included-with-disclosure') hasDisclosedMismatch = true;
-
     const cls = classifyEvidence(e, policy);
     if (cls.eligible) {
       const w = cls.weight;
@@ -295,8 +320,7 @@ function computeLevel(profile: MasteryProfile, subject: MasterySubject, items: M
     hasDisclosedMismatch,
   } = evaluateEvidence(items, policy);
   const hasMinimum = eligibleCount >= policy.minimumEvidence;
-
-  if (!hasMinimum || totalAppliedWeight === 0) {
+  if (!hasMinimum || totalAppliedWeight === 0)
     return {
       subject,
       status: 'insufficient',
@@ -314,15 +338,12 @@ function computeLevel(profile: MasteryProfile, subject: MasterySubject, items: M
       excludedEvidenceCount: excluded.length,
       warnings: ['Insufficient eligible evidence'],
     };
-  }
-
   const weightedMean = weightedSum / totalAppliedWeight;
   const weightedMeanConfidence = weightedConfidenceSum / totalAppliedWeight;
   const normalised = normaliseScore(weightedMean, policy.scoreNormalisationPolicy);
   const adjusted = policy.confidenceWeightingPolicy === 'weighted' ? normalised * weightedMeanConfidence : normalised;
   const levelResult = assignLevel(profile, adjusted);
-
-  if (levelResult === null) {
+  if (levelResult === null)
     return {
       subject,
       status: 'insufficient',
@@ -340,8 +361,6 @@ function computeLevel(profile: MasteryProfile, subject: MasterySubject, items: M
       excludedEvidenceCount: excluded.length,
       warnings: ['No mastery level matches the calculated score'],
     };
-  }
-
   let status: 'partial' | 'sufficient';
   if (weightedMeanConfidence < policy.minimumConfidence || partialCount > 0) {
     status = 'partial';
@@ -361,10 +380,8 @@ function computeLevel(profile: MasteryProfile, subject: MasterySubject, items: M
   } else {
     status = 'sufficient';
   }
-
   if (policy.failedResultPolicy === 'include-with-disclosure' && failedCount > 0)
     warnings.push('Failed results included with disclosure — not treated as ordinary performance');
-
   return {
     subject,
     status,
@@ -403,16 +420,14 @@ export function calculateSkillMastery(
   const unassigned: UnassignedMasteryEvidence[] = [];
   const valid: MasteryEvidence[] = [];
   for (const e of evidence) {
-    if (isSkillEvidenceValid(e)) {
-      valid.push(e);
-    } else {
+    if (isSkillEvidenceValid(e)) valid.push(e);
+    else
       unassigned.push({
         evidence: e,
         intendedMasteryType: 'skill',
         reason: 'malformed-identity',
         missingFields: missingSkillFields(e),
       });
-    }
   }
   const groups = groupBy(valid, (e) => e.skillId);
   const levels = Object.entries(groups).map(([skillId, items]) =>
@@ -432,16 +447,14 @@ export function calculateTaskMastery(
   const unassigned: UnassignedMasteryEvidence[] = [];
   const valid: MasteryEvidence[] = [];
   for (const e of evidence) {
-    if (isTaskEvidenceValid(e)) {
-      valid.push(e);
-    } else {
+    if (isTaskEvidenceValid(e)) valid.push(e);
+    else
       unassigned.push({
         evidence: e,
         intendedMasteryType: 'task',
         reason: 'malformed-identity',
         missingFields: missingTaskFields(e),
       });
-    }
   }
   const groups = groupBy(valid, (e) => e.taskId);
   const levels = Object.entries(groups).map(([taskId, items]) =>
@@ -491,7 +504,6 @@ export function buildMasterySnapshot(
       mode === 'task' ? 'Some tasks have insufficient evidence' : 'Some skills have insufficient evidence',
     );
   for (const l of levels) collectedWarnings.push(...l.warnings);
-
   return {
     id: idGenerator() as MasterySnapshotId,
     profileId: profile.id as unknown as MasteryId,

@@ -3,12 +3,8 @@ import { z } from 'zod';
 const NonEmpty = z.string().min(1);
 const PositiveInt = z.number().int().min(1);
 
-export const MasterySubjectSchema: z.ZodType<unknown> = z.discriminatedUnion('subjectType', [
-  z.object({ subjectType: z.literal('skill'), subjectId: NonEmpty, subjectName: NonEmpty }),
-  z.object({ subjectType: z.literal('task'), subjectId: NonEmpty, subjectName: NonEmpty, taskType: NonEmpty }),
-]);
-
-export const MasteryEvidenceSchema = z.object({
+// Raw evidence schema — accepts potentially empty fields for malformed input
+export const RawMasteryEvidenceSchema = z.object({
   attemptId: z.string(),
   resultId: z.string(),
   questionVersionId: z.string(),
@@ -20,12 +16,46 @@ export const MasteryEvidenceSchema = z.object({
   estimatedTrainingScore: z.number(),
   confidence: z.number().min(0).max(1),
   scoringProfileId: z.string(),
-  scoringProfileVersion: PositiveInt,
+  scoringProfileVersion: z.number().int().min(0),
   evaluationProfileId: z.string().nullable(),
   evaluationProfileVersion: z.number().int().nullable(),
   completenessStatus: z.enum(['complete', 'partial', 'failed']),
   timestamp: z.string(),
 });
+
+// Valid evidence schema — strict non-empty for all identity fields, positive versions
+export const ValidMasteryEvidenceSchema = z
+  .object({
+    attemptId: NonEmpty,
+    resultId: NonEmpty,
+    questionVersionId: NonEmpty,
+    taskId: NonEmpty,
+    taskType: NonEmpty,
+    taskName: NonEmpty,
+    skillId: NonEmpty,
+    skillName: NonEmpty,
+    estimatedTrainingScore: z.number(),
+    confidence: z.number().min(0).max(1),
+    scoringProfileId: NonEmpty,
+    scoringProfileVersion: PositiveInt,
+    evaluationProfileId: z.string().nullable(),
+    evaluationProfileVersion: z.number().int().nullable(),
+    completenessStatus: z.enum(['complete', 'partial', 'failed']),
+    timestamp: NonEmpty,
+  })
+  .refine(
+    (d) => {
+      if (d.evaluationProfileId !== null && d.evaluationProfileVersion === null) return false;
+      if (d.evaluationProfileId === null && d.evaluationProfileVersion !== null) return false;
+      return true;
+    },
+    { message: 'evaluationProfileId and evaluationProfileVersion must be supplied together' },
+  );
+
+export const MasterySubjectSchema: z.ZodType<unknown> = z.discriminatedUnion('subjectType', [
+  z.object({ subjectType: z.literal('skill'), subjectId: NonEmpty, subjectName: NonEmpty }),
+  z.object({ subjectType: z.literal('task'), subjectId: NonEmpty, subjectName: NonEmpty, taskType: NonEmpty }),
+]);
 
 const ProfileCompatibilitySchema: z.ZodType<unknown> = z.discriminatedUnion('status', [
   z.object({ status: z.literal('matched') }),
@@ -45,8 +75,9 @@ const ProfileCompatibilitySchema: z.ZodType<unknown> = z.discriminatedUnion('sta
   }),
 ]);
 
+// Weighted contribution uses validated evidence
 export const WeightedContributionSchema = z.object({
-  evidence: MasteryEvidenceSchema,
+  evidence: ValidMasteryEvidenceSchema,
   appliedWeight: z.number().gt(0),
   weightedScore: z.number(),
   inclusionReason: z.enum([
@@ -58,21 +89,49 @@ export const WeightedContributionSchema = z.object({
   profileCompatibility: ProfileCompatibilitySchema,
 });
 
-export const ScoreNormalisationPolicySchema: z.ZodType<unknown> = z.discriminatedUnion('method', [
-  z.object({ method: z.literal('none') }),
-  z.object({
-    method: z.literal('linear'),
-    inputMinimum: z.number(),
-    inputMaximum: z.number(),
-    outputMinimum: z.number(),
-    outputMaximum: z.number(),
-  }),
-  z.object({
-    method: z.literal('z-score'),
-    referenceMean: z.number(),
-    referenceStandardDeviation: z.number().positive(),
-  }),
-]);
+const LinearNormalisationSchema = z.object({
+  method: z.literal('linear'),
+  direction: z.enum(['ascending', 'descending']),
+  inputMinimum: z.number(),
+  inputMaximum: z.number(),
+  outputMinimum: z.number(),
+  outputMaximum: z.number(),
+});
+
+export const ScoreNormalisationPolicySchema = z
+  .discriminatedUnion('method', [
+    z.object({ method: z.literal('none') }),
+    LinearNormalisationSchema,
+    z.object({
+      method: z.literal('z-score'),
+      referenceMean: z.number(),
+      referenceStandardDeviation: z.number().positive(),
+    }),
+  ])
+  .superRefine((d, ctx) => {
+    if (d.method !== 'linear') return;
+    if (d.inputMaximum <= d.inputMinimum) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'inputMaximum must be greater than inputMinimum',
+        path: ['inputMaximum'],
+      });
+    }
+    if (d.direction === 'ascending' && d.outputMaximum <= d.outputMinimum) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'ascending requires outputMaximum > outputMinimum',
+        path: ['outputMaximum'],
+      });
+    }
+    if (d.direction === 'descending' && d.outputMaximum >= d.outputMinimum) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'descending requires outputMaximum < outputMinimum',
+        path: ['outputMaximum'],
+      });
+    }
+  });
 
 export const EvidencePolicySchema = z
   .object({
@@ -85,14 +144,14 @@ export const EvidencePolicySchema = z
     minimumConfidence: z.number().min(0).max(1),
     scoreNormalisationPolicy: ScoreNormalisationPolicySchema,
     confidenceWeightingPolicy: z.enum(['none', 'weighted']),
-    referenceScoringProfileId: z.string().nullable(),
-    referenceScoringProfileVersion: z.number().int().nullable(),
-    referenceEvaluationProfileId: z.string().nullable(),
-    referenceEvaluationProfileVersion: z.number().int().nullable(),
+    referenceScoringProfileId: NonEmpty.nullable(),
+    referenceScoringProfileVersion: PositiveInt.nullable(),
+    referenceEvaluationProfileId: NonEmpty.nullable(),
+    referenceEvaluationProfileVersion: PositiveInt.nullable(),
     allowedScoringProfileIds: z.array(z.string()),
     allowedScoringProfileVersions: z.array(PositiveInt),
     allowedEvaluationProfileIds: z.array(z.string()),
-    allowedEvaluationProfileVersions: z.array(z.number().int()),
+    allowedEvaluationProfileVersions: z.array(PositiveInt),
     mixedProfilePolicy: z.enum(['allow', 'exclude-mismatched', 'disclose-mismatched']),
   })
   .refine(
@@ -101,7 +160,7 @@ export const EvidencePolicySchema = z
       if (d.referenceScoringProfileVersion !== null && d.referenceScoringProfileId === null) return false;
       return true;
     },
-    { message: 'referenceScoringProfileId and referenceScoringProfileVersion must be supplied together' },
+    { message: 'referenceScoringProfileId and referenceScoringProfileVersion must be both null or both non-null' },
   )
   .refine(
     (d) => {
@@ -109,7 +168,9 @@ export const EvidencePolicySchema = z
       if (d.referenceEvaluationProfileVersion !== null && d.referenceEvaluationProfileId === null) return false;
       return true;
     },
-    { message: 'referenceEvaluationProfileId and referenceEvaluationProfileVersion must be supplied together' },
+    {
+      message: 'referenceEvaluationProfileId and referenceEvaluationProfileVersion must be both null or both non-null',
+    },
   )
   .refine(
     (d) => {
@@ -123,15 +184,7 @@ export const EvidencePolicySchema = z
         return false;
       return true;
     },
-    { message: 'exclude-mismatched and disclose-mismatched require at least one complete reference pair' },
-  )
-  .refine(
-    (d) => {
-      if (d.referenceScoringProfileVersion !== null && d.referenceScoringProfileVersion <= 0) return false;
-      if (d.referenceEvaluationProfileVersion !== null && d.referenceEvaluationProfileVersion <= 0) return false;
-      return true;
-    },
-    { message: 'reference versions must be positive integers' },
+    { message: 'mixed profile policies require at least one complete reference pair' },
   );
 
 export const MasteryLevelDefinitionSchema = z.object({
@@ -142,7 +195,7 @@ export const MasteryLevelDefinitionSchema = z.object({
 });
 
 export const ExcludedEvidenceSchema = z.object({
-  evidence: MasteryEvidenceSchema,
+  evidence: ValidMasteryEvidenceSchema,
   reason: z.enum([
     'partial-policy-excluded',
     'failed-policy-excluded',
@@ -155,8 +208,9 @@ export const ExcludedEvidenceSchema = z.object({
   ]),
 });
 
+// Unassigned evidence uses raw schema — malformed input must remain recoverable
 export const UnassignedMasteryEvidenceSchema = z.object({
-  evidence: MasteryEvidenceSchema,
+  evidence: RawMasteryEvidenceSchema,
   intendedMasteryType: z.enum(['skill', 'task']),
   reason: z.enum(['malformed-identity', 'missing-required-field']),
   missingFields: z.array(z.string()).min(1),
