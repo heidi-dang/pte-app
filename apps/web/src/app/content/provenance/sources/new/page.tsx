@@ -57,9 +57,9 @@ export default function NewSourceForm() {
     <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
       <Container>
         <h1 style={{ marginBottom: '1.5rem' }}>New Source</h1>
-        {error && <Alert>{error}</Alert>}
+        {error && <Alert data-testid="source-error">{error}</Alert>}
         {success && (
-          <Alert>
+          <Alert data-testid="source-success">
             Source created.{' '}
             <a href={`/content/provenance/sources/${createdId}`} data-testid="view-source-link">
               View source
