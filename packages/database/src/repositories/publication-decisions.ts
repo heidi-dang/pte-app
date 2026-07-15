@@ -105,6 +105,38 @@ export async function getPublicationDecisionById(
   };
 }
 
+export async function getPublicationDecisionByRequestId(
+  connection: DatabaseConnection,
+  requestId: RequestId,
+  contentId: ContentId,
+): Promise<PublicationDecision | undefined> {
+  const result = await connection.pool.query<Record<string, unknown>>(
+    `SELECT id, content_id as "contentId", content_version_id as "contentVersionId",
+            provenance_id as "provenanceRecordId", policy_version as "policyVersion",
+            eligible, blockers, warnings, actor_id as "actor", request_id as "requestId",
+            evaluated_at as "evaluatedAt"
+     FROM content_publication_decisions
+     WHERE request_id = $1 AND content_id = $2`,
+    [requestId, contentId],
+  );
+  if (!result.rows[0]) return undefined;
+  const row = result.rows[0];
+  return {
+    id: row.id as PublicationDecisionId,
+    contentId: row.contentId as ContentId,
+    contentVersionId: row.contentVersionId as ContentVersionId,
+    provenanceRecordId: (row.provenanceRecordId as ProvenanceId) ?? null,
+    policyId: '' as PolicyId,
+    policyVersion: row.policyVersion as PolicyVersion,
+    eligible: row.eligible as boolean,
+    blockers: row.blockers as PublicationBlocker[],
+    warnings: row.warnings as string[],
+    actor: row.actor as UserId,
+    requestId: row.requestId as RequestId,
+    evaluatedAt: row.evaluatedAt as string,
+  };
+}
+
 export async function listDecisionsForContent(
   connection: DatabaseConnection,
   contentId: ContentId,

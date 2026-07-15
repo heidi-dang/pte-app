@@ -692,13 +692,14 @@ export async function contentProvenancePlugin(
         auth.userId as UserId,
         body.contentId as ContentId,
         body.contentVersionId as ContentVersionId,
-        reqId(request),
+        (body.requestId ?? reqId(request)) as RequestId,
       );
       return reply.status(200).send({
         eligible: result.eligible,
         decisionId: result.decisionId,
         blockers: result.blockers,
         warnings: result.warnings,
+        requestId: body.requestId ?? reqId(request),
       });
     } catch (err: any) {
       return reply.status(500).send({ error: err.message });

@@ -50,7 +50,14 @@ export function evaluatePublicationEligibility(input: {
   if (!input.licence) {
     blockers.push({ code: 'LICENCE_MISSING', message: 'No licence record found' });
   } else {
-    if (input.licence.status === 'expired' || (input.licence.validUntil && input.licence.validUntil <= now)) {
+    let licenceExpired = false;
+    if (input.licence.status === 'expired') {
+      licenceExpired = true;
+    }
+    if (input.licence.validUntil && input.licence.validUntil <= now) {
+      licenceExpired = true;
+    }
+    if (licenceExpired) {
       blockers.push({ code: 'LICENCE_EXPIRED', message: 'Licence has expired' });
     }
     if (input.licence.status === 'revoked') {
@@ -65,15 +72,11 @@ export function evaluatePublicationEligibility(input: {
     if (input.licence.attributionRequired && !input.provenance?.attribution) {
       blockers.push({ code: 'ATTRIBUTION_REQUIRED', message: 'Attribution is required but missing' });
     }
-    if (input.licence.validUntil) {
+    if (input.licence.validUntil && !licenceExpired) {
       const validUntilDate = new Date(input.licence.validUntil);
-      if (validUntilDate <= new Date()) {
-        blockers.push({ code: 'LICENCE_EXPIRED', message: 'Licence has expired' });
-      } else {
-        const daysUntilExpiry = Math.ceil((validUntilDate.getTime() - Date.now()) / 86400000);
-        if (daysUntilExpiry <= input.policy.expiryWarningDays) {
-          warnings.push(`Licence expires in ${daysUntilExpiry} days`);
-        }
+      const daysUntilExpiry = Math.ceil((validUntilDate.getTime() - Date.now()) / 86400000);
+      if (daysUntilExpiry <= input.policy.expiryWarningDays) {
+        warnings.push(`Licence expires in ${daysUntilExpiry} days`);
       }
     }
   }

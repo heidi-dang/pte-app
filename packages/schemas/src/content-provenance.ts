@@ -265,6 +265,7 @@ export const RejectProvenanceBodySchema = z.object({
 export const PublicationCheckBodySchema = z.object({
   contentId: z.string().min(1).max(128),
   contentVersionId: z.string().min(1).max(128),
+  requestId: z.string().uuid().optional(),
 });
 
 export const SimilarityCheckCreateBodySchema = z.object({

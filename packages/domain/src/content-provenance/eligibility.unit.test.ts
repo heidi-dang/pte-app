@@ -510,4 +510,85 @@ describe('publication eligibility', () => {
     assert.equal(result.eligible, true);
     assert.ok(result.warnings.some((w) => w.includes('exceeds review threshold')));
   });
+
+  it('produces exactly one LICENCE_EXPIRED blocker for expired status', () => {
+    const result = evaluatePublicationEligibility({
+      provenance: makeProvenance(),
+      source: makeSource(),
+      licence: makeLicence({ status: 'expired', validUntil: null }),
+      similarity: null,
+      policy: validPolicy,
+      contentVersionId: 'v1',
+      prohibitedMatches: [],
+    });
+    const expiredBlockers = result.blockers.filter((b) => b.code === 'LICENCE_EXPIRED');
+    assert.equal(expiredBlockers.length, 1);
+  });
+
+  it('produces exactly one LICENCE_EXPIRED blocker for past validUntil', () => {
+    const pastDate = new Date(Date.now() - 86400000).toISOString();
+    const result = evaluatePublicationEligibility({
+      provenance: makeProvenance(),
+      source: makeSource(),
+      licence: makeLicence({ status: 'active', validUntil: pastDate }),
+      similarity: null,
+      policy: validPolicy,
+      contentVersionId: 'v1',
+      prohibitedMatches: [],
+    });
+    const expiredBlockers = result.blockers.filter((b) => b.code === 'LICENCE_EXPIRED');
+    assert.equal(expiredBlockers.length, 1);
+  });
+
+  it('produces exactly one LICENCE_EXPIRED when both status and date expired', () => {
+    const pastDate = new Date(Date.now() - 86400000).toISOString();
+    const result = evaluatePublicationEligibility({
+      provenance: makeProvenance(),
+      source: makeSource(),
+      licence: makeLicence({ status: 'expired', validUntil: pastDate }),
+      similarity: null,
+      policy: validPolicy,
+      contentVersionId: 'v1',
+      prohibitedMatches: [],
+    });
+    const expiredBlockers = result.blockers.filter((b) => b.code === 'LICENCE_EXPIRED');
+    assert.equal(expiredBlockers.length, 1);
+  });
+
+  it('produces warning not blocker for upcoming expiry', () => {
+    const nearFuture = new Date(Date.now() + 5 * 86400000).toISOString();
+    const result = evaluatePublicationEligibility({
+      provenance: makeProvenance(),
+      source: makeSource(),
+      licence: makeLicence({ validUntil: nearFuture }),
+      similarity: null,
+      policy: validPolicy,
+      contentVersionId: 'v1',
+      prohibitedMatches: [],
+    });
+    assert.ok(result.warnings.length > 0);
+    const expiredBlockers = result.blockers.filter((b) => b.code === 'LICENCE_EXPIRED');
+    assert.equal(expiredBlockers.length, 0);
+  });
+
+  it('has no duplicate blocker codes', () => {
+    const pastDate = new Date(Date.now() - 86400000).toISOString();
+    const result = evaluatePublicationEligibility({
+      provenance: makeProvenance({ attribution: '' }),
+      source: makeSource(),
+      licence: makeLicence({
+        status: 'expired',
+        validUntil: pastDate,
+        commercialUseAllowed: false,
+        attributionRequired: true,
+      }),
+      similarity: null,
+      policy: validPolicy,
+      contentVersionId: 'v1',
+      prohibitedMatches: [makeMatch()],
+    });
+    const codes = result.blockers.map((b) => b.code);
+    const uniqueCodes = new Set(codes);
+    assert.equal(codes.length, uniqueCodes.size, 'no duplicate blocker codes');
+  });
 });

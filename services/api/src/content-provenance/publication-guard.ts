@@ -7,6 +7,7 @@ import {
   prohibitedMatchRepo,
   policyRepo,
   similarityRepo,
+  publicationDecisionRepo,
 } from '@pte-app/database';
 import type {
   ContentId,
@@ -140,6 +141,16 @@ export async function requirePublicationEligibility(
   contentVersionId: ContentVersionId,
   requestId: RequestId,
 ): Promise<PublicationGuardResult> {
+  const existing = await publicationDecisionRepo.getPublicationDecisionByRequestId(db, requestId, contentId);
+  if (existing) {
+    return {
+      eligible: existing.eligible,
+      decisionId: existing.id,
+      blockers: existing.blockers,
+      warnings: existing.warnings,
+    };
+  }
+
   const policy = await policyRepo.getActivePolicy(db);
   if (!policy) {
     throw new Error('No active provenance policy found');

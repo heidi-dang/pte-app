@@ -3,6 +3,8 @@ ALTER TABLE content_publication_decisions ADD CONSTRAINT ck_pub_decision_prov_re
   CHECK (provenance_id IS NOT NULL OR eligible = false);
 ALTER TABLE content_publication_decisions ADD COLUMN IF NOT EXISTS actor_id UUID;
 ALTER TABLE content_publication_decisions ADD COLUMN IF NOT EXISTS request_id UUID;
+ALTER TABLE content_publication_decisions ADD CONSTRAINT uq_pub_decision_request_content
+  UNIQUE (request_id, content_id);
 ALTER TABLE content_reverification_jobs ADD COLUMN IF NOT EXISTS attempt INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE content_reverification_jobs ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
 
