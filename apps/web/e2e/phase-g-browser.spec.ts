@@ -12,11 +12,21 @@ async function loginAs(context: { page: Page }, email: string, role: string): Pr
   return token;
 }
 
-async function logout(page: Page): Promise<void> {
+async function logout(page: Page): Promise<string> {
+  const cookies = await page.context().cookies();
+  const sessionCookie = cookies.find((c) => c.name === cfg.sessionCookieName);
+  const oldToken = sessionCookie?.value ?? '';
+  expect(oldToken).toBeTruthy();
+
   await page.request.post(`${cfg.apiUrl}/auth/logout`, {
-    headers: await getAuthHeaders(page),
+    headers: { authorization: `Bearer ${oldToken}`, 'content-type': 'application/json' },
   });
-  await page.context().clearCookies();
+
+  const cookiesAfter = await page.context().cookies();
+  const sessionAfter = cookiesAfter.find((c) => c.name === cfg.sessionCookieName);
+  expect(sessionAfter).toBeUndefined();
+
+  return oldToken;
 }
 
 async function getAuthHeaders(page: Page): Promise<Record<string, string>> {
@@ -136,16 +146,13 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     await expect(page.locator('[data-testid="btn-verify"]')).not.toBeVisible();
 
     // ── 14: Log out using the application logout endpoint ──
-    await logout(page);
+    const editorOldToken = await logout(page);
 
-    // Verify logout: old token rejected
-    try {
-      const headers = await getAuthHeaders(page);
-      const meRes = await page.request.get(`${cfg.apiUrl}/auth/me`, { headers });
-      expect(meRes.status()).toBe(401);
-    } catch {
-      // Session invalidated — expected after real logout
-    }
+    // Verify old token is rejected — exactly 401
+    const meRes = await page.request.get(`${cfg.apiUrl}/auth/me`, {
+      headers: { authorization: `Bearer ${editorOldToken}` },
+    });
+    expect(meRes.status()).toBe(401);
 
     // Verify protected page redirects
     const redirectRes = await page.request.get(`${cfg.webUrl}/content/provenance`, {
@@ -296,12 +303,12 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     await expect(page.locator('[data-testid="audit-sequence"]')).toBeVisible();
   });
 
-  test('idempotent publication check with same requestId', async ({ request }) => {
-    const email = `idem-${Date.now()}@test.com`;
+  test('sequential duplicate with same key returns same decision ID', async ({ request }) => {
+    const email = `idem-seq-${Date.now()}@test.com`;
     const token = await createUserWithRole(email, pw, 'admin');
     const auth = { headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' } };
-    const testContentId = `idem-test-${Date.now()}`;
-    const requestId = `req-idem-${Date.now()}`;
+    const testContentId = `idem-seq-${Date.now()}`;
+    const requestId = `req-seq-${Date.now()}`;
 
     const res1 = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
       ...auth,
@@ -318,6 +325,51 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     expect(res2.status()).toBe(200);
     const body2 = await res2.json();
     expect(body2.decisionId).toBe(body1.decisionId);
+  });
+
+  test('different requestId creates separate decisions', async ({ request }) => {
+    const email = `idem-diff-${Date.now()}@test.com`;
+    const token = await createUserWithRole(email, pw, 'admin');
+    const auth = { headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' } };
+    const testContentId = `idem-diff-${Date.now()}`;
+
+    const res1 = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
+      ...auth,
+      data: { contentId: testContentId, contentVersionId: 'v1', requestId: `req-diff-1-${Date.now()}` },
+    });
+    expect(res1.status()).toBe(200);
+    const body1 = await res1.json();
+
+    const res2 = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
+      ...auth,
+      data: { contentId: testContentId, contentVersionId: 'v1', requestId: `req-diff-2-${Date.now()}` },
+    });
+    expect(res2.status()).toBe(200);
+    const body2 = await res2.json();
+    expect(body2.decisionId).not.toBe(body1.decisionId);
+  });
+
+  test('same requestId with different contentVersion creates separate decisions', async ({ request }) => {
+    const email = `idem-ver-${Date.now()}@test.com`;
+    const token = await createUserWithRole(email, pw, 'admin');
+    const auth = { headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' } };
+    const testContentId = `idem-ver-${Date.now()}`;
+    const requestId = `req-ver-${Date.now()}`;
+
+    const res1 = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
+      ...auth,
+      data: { contentId: testContentId, contentVersionId: 'v1', requestId },
+    });
+    expect(res1.status()).toBe(200);
+    const body1 = await res1.json();
+
+    const res2 = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
+      ...auth,
+      data: { contentId: testContentId, contentVersionId: 'v2', requestId },
+    });
+    expect(res2.status()).toBe(200);
+    const body2 = await res2.json();
+    expect(body2.decisionId).not.toBe(body1.decisionId);
   });
 
   test('student receives 403 on provenance routes', async ({ request }) => {

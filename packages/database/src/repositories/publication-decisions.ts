@@ -109,6 +109,7 @@ export async function getPublicationDecisionByRequestId(
   connection: DatabaseConnection,
   requestId: RequestId,
   contentId: ContentId,
+  contentVersionId: ContentVersionId,
 ): Promise<PublicationDecision | undefined> {
   const result = await connection.pool.query<Record<string, unknown>>(
     `SELECT id, content_id as "contentId", content_version_id as "contentVersionId",
@@ -116,8 +117,8 @@ export async function getPublicationDecisionByRequestId(
             eligible, blockers, warnings, actor_id as "actor", request_id as "requestId",
             evaluated_at as "evaluatedAt"
      FROM content_publication_decisions
-     WHERE request_id = $1 AND content_id = $2`,
-    [requestId, contentId],
+     WHERE request_id = $1 AND content_id = $2 AND content_version_id = $3`,
+    [requestId, contentId, contentVersionId],
   );
   if (!result.rows[0]) return undefined;
   const row = result.rows[0];

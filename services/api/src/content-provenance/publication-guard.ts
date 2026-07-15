@@ -141,7 +141,12 @@ export async function requirePublicationEligibility(
   contentVersionId: ContentVersionId,
   requestId: RequestId,
 ): Promise<PublicationGuardResult> {
-  const existing = await publicationDecisionRepo.getPublicationDecisionByRequestId(db, requestId, contentId);
+  const existing = await publicationDecisionRepo.getPublicationDecisionByRequestId(
+    db,
+    requestId,
+    contentId,
+    contentVersionId,
+  );
   if (existing) {
     return {
       eligible: existing.eligible,
@@ -227,53 +232,57 @@ async function executeAtomicDecision(
   const decisionId = crypto.randomUUID() as PublicationDecisionId;
   const auditId = crypto.randomUUID();
 
-  return withTransaction(db, async (client: DatabaseClient) => {
-    await client.query(
-      `INSERT INTO content_publication_decisions
+  const PG_UNIQUE_VIOLATION = '23505';
+
+  try {
+    await withTransaction(db, async (client: DatabaseClient) => {
+      await client.query(
+        `INSERT INTO content_publication_decisions
        (id, provenance_id, content_id, content_version_id, eligible, policy_version,
         blockers, warnings, decision_snapshot, actor_id, request_id)
        VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9::jsonb,$10,$11)`,
-      [
-        decisionId,
-        provenanceRecordId,
-        contentId,
-        contentVersionId,
-        eligible,
-        policy.version,
-        JSON.stringify(blockers),
-        JSON.stringify(warnings),
-        JSON.stringify({
-          policyId: policy.id,
-          policyVersion: policy.version,
+        [
+          decisionId,
+          provenanceRecordId,
+          contentId,
+          contentVersionId,
           eligible,
-          blockers,
-          warnings,
-        }),
-        actor,
-        requestId,
-      ],
-    );
+          policy.version,
+          JSON.stringify(blockers),
+          JSON.stringify(warnings),
+          JSON.stringify({
+            policyId: policy.id,
+            policyVersion: policy.version,
+            eligible,
+            blockers,
+            warnings,
+          }),
+          actor,
+          requestId,
+        ],
+      );
 
-    await client.query(
-      `INSERT INTO content_audit_events
+      await client.query(
+        `INSERT INTO content_audit_events
        (id, event_type, actor_id, request_id, entity_type, entity_id,
         previous_version, new_version, reason, policy_id, policy_version, result)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-      [
-        auditId,
-        eventType,
-        actor,
-        requestId,
-        'content',
-        contentId as string,
-        null,
-        null,
-        null,
-        policy.id,
-        policy.version,
-        auditResult,
-      ],
-    );
+        [
+          auditId,
+          eventType,
+          actor,
+          requestId,
+          'content',
+          contentId as string,
+          null,
+          null,
+          null,
+          policy.id,
+          policy.version,
+          auditResult,
+        ],
+      );
+    });
 
     return {
       eligible,
@@ -281,5 +290,24 @@ async function executeAtomicDecision(
       blockers,
       warnings,
     };
-  });
+  } catch (err: unknown) {
+    if (err instanceof Error && 'code' in err && (err as { code: string }).code === PG_UNIQUE_VIOLATION) {
+      const existing = await publicationDecisionRepo.getPublicationDecisionByRequestId(
+        db,
+        requestId,
+        contentId,
+        contentVersionId,
+      );
+      if (existing) {
+        return {
+          eligible: existing.eligible,
+          decisionId: existing.id,
+          blockers: existing.blockers,
+          warnings: existing.warnings,
+        };
+      }
+      throw new Error('Concurrent idempotency conflict — existing decision not found', { cause: err });
+    }
+    throw new Error('Publication decision persistence failed', { cause: err });
+  }
 }

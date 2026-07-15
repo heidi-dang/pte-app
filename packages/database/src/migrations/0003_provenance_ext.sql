@@ -4,7 +4,7 @@ ALTER TABLE content_publication_decisions ADD CONSTRAINT ck_pub_decision_prov_re
 ALTER TABLE content_publication_decisions ADD COLUMN IF NOT EXISTS actor_id UUID;
 ALTER TABLE content_publication_decisions ADD COLUMN IF NOT EXISTS request_id UUID;
 ALTER TABLE content_publication_decisions ADD CONSTRAINT uq_pub_decision_request_content
-  UNIQUE (request_id, content_id);
+  UNIQUE (request_id, content_id, content_version_id);
 ALTER TABLE content_reverification_jobs ADD COLUMN IF NOT EXISTS attempt INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE content_reverification_jobs ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
 
@@ -60,3 +60,6 @@ CREATE INDEX idx_content_prohibited_content ON content_prohibited_matches(conten
 CREATE INDEX idx_content_audit_entity ON content_audit_events(entity_type, entity_id);
 CREATE INDEX idx_content_audit_event_type ON content_audit_events(event_type);
 CREATE INDEX idx_content_audit_occurred ON content_audit_events(occurred_at);
+CREATE INDEX IF NOT EXISTS idx_content_provenance_source ON content_provenance(source_id);
+CREATE INDEX IF NOT EXISTS idx_content_provenance_licence ON content_provenance(licence_id);
+CREATE INDEX IF NOT EXISTS idx_pub_decision_idempotency ON content_publication_decisions(request_id, content_id, content_version_id);

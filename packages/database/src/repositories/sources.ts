@@ -77,7 +77,7 @@ export async function updateSource(
                source_date as "sourceDate", access_date as "accessDate", description, status,
                evidence_ids as "evidenceIds", created_by as "createdBy",
                created_at as "createdAt", updated_at as "updatedAt", version`,
-    [...values, id, expectedVersion],
+    values,
   );
   return result.rows[0];
 }

@@ -22,7 +22,8 @@ export function evaluatePublicationEligibility(input: {
   const warnings: string[] = [];
   const requiredActions: string[] = [];
 
-  const now = new Date().toISOString();
+  const nowDate = new Date();
+  const now = nowDate.toISOString();
 
   if (!input.provenance) {
     blockers.push({ code: 'PROVENANCE_MISSING', message: 'No provenance record exists for this content' });
@@ -74,7 +75,7 @@ export function evaluatePublicationEligibility(input: {
     }
     if (input.licence.validUntil && !licenceExpired) {
       const validUntilDate = new Date(input.licence.validUntil);
-      const daysUntilExpiry = Math.ceil((validUntilDate.getTime() - Date.now()) / 86400000);
+      const daysUntilExpiry = Math.ceil((validUntilDate.getTime() - nowDate.getTime()) / 86400000);
       if (daysUntilExpiry <= input.policy.expiryWarningDays) {
         warnings.push(`Licence expires in ${daysUntilExpiry} days`);
       }
