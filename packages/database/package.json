@@ -20,7 +20,7 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r src/migrations/*.sql dist/migrations/",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts",
     "test:unit": "tsx --test 'src/**/*.unit.test.ts'",
