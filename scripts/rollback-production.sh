@@ -79,7 +79,7 @@ fi
 echo ""
 echo "Verifying rollback health..."
 rollback_ok=true
-for service in postgres redis api scoring web worker; do
+for service in postgres redis api scoring web worker caddy; do
   container_name="pte-prod-${service}"
   attempt=1
   while [ $attempt -le $HEALTH_MAX_RETRIES ]; do

@@ -8,7 +8,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$SCRIPT_DIR"
 
 DEPLOY_LOG="${DEPLOY_ROOT:-/tmp}/deploy.log"
-VERIFICATION_MODE="${PUBLIC_VERIFICATION_MODE:-production}"
 HEALTH_MAX_RETRIES="${HEALTH_MAX_RETRIES:-30}"
 HEALTH_RETRY_DELAY="${HEALTH_RETRY_DELAY:-2}"
 
@@ -145,16 +144,17 @@ for var in $required_vars; do
       fi
       ;;
     DEPLOYMENT_ENV)
-      if [ "$value" != "production" ] && [ "$value" != "test" ]; then
-        echo "  FAIL: DEPLOYMENT_ENV must be 'production' or 'test' (got: $value)"
+      if [ "$value" != "production" ]; then
+        echo "  FAIL: DEPLOYMENT_ENV must be 'production' (got: $value)"
         validation_failed=true
       fi
       ;;
   esac
 done
 
-if [ "$DEPLOYMENT_ENV" = "production" ] && [ "$VERIFICATION_MODE" != "production" ] && [ "$VERIFICATION_MODE" != "deferred" ]; then
-  echo "  FAIL: PUBLIC_VERIFICATION_MODE must be 'production' or 'deferred' (got: $VERIFICATION_MODE)"
+verification_mode="${PUBLIC_VERIFICATION_MODE:-production}"
+if [ "$DEPLOYMENT_ENV" = "production" ] && [ "$verification_mode" != "production" ]; then
+  echo "  FAIL: PUBLIC_VERIFICATION_MODE must be 'production' (got: $verification_mode). Deferred mode is for Phase Y only."
   validation_failed=true
 fi
 
@@ -245,7 +245,11 @@ if [ "$db_running" = true ]; then
 
   echo "  Backing up Redis..."
   if docker compose -f compose.production.yml exec -T redis redis-cli SAVE > /dev/null 2>&1; then
-    docker compose -f compose.production.yml cp redis:/data/dump.rdb "${backup_dir}/redis.rdb" 2>/dev/null || true
+    if ! docker compose -f compose.production.yml cp redis:/data/dump.rdb "${backup_dir}/redis.rdb" 2>/dev/null; then
+      echo "ERROR: Redis backup copy failed" >&2
+      rm -rf "$backup_dir"
+      exit 1
+    fi
   fi
 else
   echo "  No running database found. Skipping backup (first deployment)."
@@ -260,7 +264,7 @@ echo "  OK"
 # 15. Wait for health checks with visible progress
 echo "[15] Waiting for health checks..."
 service_health_ok=true
-for service in postgres redis api scoring web worker; do
+for service in postgres redis api scoring web worker caddy; do
   container_name="pte-prod-${service}"
   attempt=1
   while [ $attempt -le $HEALTH_MAX_RETRIES ]; do
@@ -316,49 +320,40 @@ fi
 
 # 17. Run public HTTPS verification
 echo "[17] Running public HTTPS verification..."
-if [ "$VERIFICATION_MODE" = "deferred" ]; then
-  echo "  PUBLIC_VERIFICATION_MODE=deferred: HTTPS checks skipped (will run in Phase Y)"
-  echo "VERIFICATION_MODE=deferred" >> "${backup_dir}/deployment-metadata.txt" 2>/dev/null || true
-else
-  https_ok=true
-  for domain in "$WEB_DOMAIN" "$API_DOMAIN" "$SCORING_DOMAIN"; do
-    if curl --fail --silent --show-error --location --max-time 10 "https://$domain/" > /dev/null 2>&1; then
-      echo "  https://$domain/: OK"
-    else
-      echo "  https://$domain/: FAILED"
-      https_ok=false
-    fi
-  done
-  if [ "$https_ok" = false ]; then
-    echo "ERROR: HTTPS verification failed." >&2
-    if [ -f scripts/rollback-production.sh ]; then
-      bash scripts/rollback-production.sh
-    fi
-    exit 1
+https_ok=true
+for domain in "$WEB_DOMAIN" "$API_DOMAIN" "$SCORING_DOMAIN"; do
+  if curl --fail --silent --show-error --location --max-time 10 "https://$domain/" > /dev/null 2>&1; then
+    echo "  https://$domain/: OK"
+  else
+    echo "  https://$domain/: FAILED"
+    https_ok=false
   fi
+done
+if [ "$https_ok" = false ]; then
+  echo "ERROR: HTTPS verification failed." >&2
+  if [ -f scripts/rollback-production.sh ]; then
+    bash scripts/rollback-production.sh
+  fi
+  exit 1
 fi
 
 # 18. Verify TLS certificate
 echo "[18] Verifying TLS certificate..."
-if [ "$VERIFICATION_MODE" = "deferred" ]; then
-  echo "  PUBLIC_VERIFICATION_MODE=deferred: TLS checks skipped"
-else
-  tls_ok=true
-  for domain in "$WEB_DOMAIN" "$API_DOMAIN" "$SCORING_DOMAIN"; do
-    if echo | timeout 10 openssl s_client -connect "${domain}:443" -servername "$domain" 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null; then
-      echo "  $domain: certificate OK"
-    else
-      echo "  $domain: FAILED"
-      tls_ok=false
-    fi
-  done
-  if [ "$tls_ok" = false ]; then
-    echo "ERROR: TLS certificate verification failed." >&2
-    if [ -f scripts/rollback-production.sh ]; then
-      bash scripts/rollback-production.sh
-    fi
-    exit 1
+tls_ok=true
+for domain in "$WEB_DOMAIN" "$API_DOMAIN" "$SCORING_DOMAIN"; do
+  if echo | timeout 10 openssl s_client -connect "${domain}:443" -servername "$domain" 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null; then
+    echo "  $domain: certificate OK"
+  else
+    echo "  $domain: FAILED"
+    tls_ok=false
   fi
+done
+if [ "$tls_ok" = false ]; then
+  echo "ERROR: TLS certificate verification failed." >&2
+  if [ -f scripts/rollback-production.sh ]; then
+    bash scripts/rollback-production.sh
+  fi
+  exit 1
 fi
 
 # 19. Record deployment metadata
@@ -371,7 +366,7 @@ mkdir -p "$(dirname "$DEPLOY_LOG")"
   echo "author: $(git log -1 --format='%an <%ae>' "$release_commit")"
   echo "message: $(git log -1 --format='%s' "$release_commit")"
   echo "deployed_by: ${DEPLOY_USER:-$(whoami)}"
-  echo "verification_mode: $VERIFICATION_MODE"
+  echo "verification_mode: production"
   echo "backup_path: ${backup_dir}"
   echo "backup_checksum: ${backup_checksum:-none}"
   echo "previous_commit: ${prev_commit:-none}"

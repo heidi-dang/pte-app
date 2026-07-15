@@ -24,3 +24,7 @@
 	encode zstd gzip
 	reverse_proxy {$SCORING_UPSTREAM:scoring:5000}
 }
+
+:80 {
+	respond /health "OK" 200
+}

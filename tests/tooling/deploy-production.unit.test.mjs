@@ -56,10 +56,27 @@ describe('deploy-production.sh gates', () => {
     assert.ok(hasPattern(SCRIPT, 'exit 1'), 'TLS failure must exit');
   });
 
-  it('deferred verification requires explicit mode', () => {
+  it('rejects deferred verification in production', () => {
     const content = readFileSync(SCRIPT, 'utf-8');
     assert.ok(content.includes('VERIFICATION_MODE'), 'Must check verification mode');
-    assert.ok(content.includes('deferred'), 'Must support deferred mode');
+    assert.ok(content.includes('Phase Y'), 'Deferred mode must reference Phase Y');
+    assert.ok(!content.includes('deferred.*will run in Phase Y'), 'Must not silently skip HTTPS');
+  });
+
+  it('rejects DEPLOYMENT_ENV=test for production', () => {
+    const content = readFileSync(SCRIPT, 'utf-8');
+    assert.ok(content.includes("'production' (got:"), 'Must reject non-production env');
+  });
+
+  it('health loop includes caddy', () => {
+    const content = readFileSync(SCRIPT, 'utf-8');
+    assert.ok(content.includes('caddy'), 'Health loop must include caddy');
+  });
+
+  it('redis backup copy failure blocks deployment', () => {
+    const content = readFileSync(SCRIPT, 'utf-8');
+    assert.ok(content.includes('Redis backup copy failed'), 'Redis copy failure must have error message');
+    assert.ok(!content.match(/redis-cli.*\|\| true/), 'Must not ignore Redis copy failure');
   });
 
   it('wrong release SHA blocks deployment', () => {
@@ -144,6 +161,7 @@ describe('rollback-production.sh', () => {
     const content = readFileSync(ROLLBACK_SCRIPT, 'utf-8');
     assert.ok(content.includes('Verifying rollback health'), 'Must verify health');
     assert.ok(content.includes('health_status'), 'Must check health status');
+    assert.ok(content.includes('caddy'), 'Rollback health loop must include caddy');
   });
 
   it('fails loudly if rollback itself fails', () => {

@@ -69,13 +69,16 @@ fi
 # 5. Public HTTPS endpoints
 echo ""
 echo "[5] Public HTTPS endpoints..."
-for domain in "${WEB_DOMAIN:-pte.tnaprovider.com.au}" "${API_DOMAIN:-api.tnaprovider.com.au}" "${SCORING_DOMAIN:-scoring.tnaprovider.com.au}"; do
-  if curl --fail --silent --show-error --location --max-time 10 "https://$domain/" > /dev/null 2>&1; then
-    echo "  https://$domain/: OK"
-  elif curl --fail --silent --show-error --location --max-time 10 "https://$domain/health/live" > /dev/null 2>&1; then
-    echo "  https://$domain/health/live: OK"
+for entry in \
+  "${WEB_DOMAIN:-pte.tnaprovider.com.au}:/" \
+  "${API_DOMAIN:-api.tnaprovider.com.au}:/health/ready" \
+  "${SCORING_DOMAIN:-scoring.tnaprovider.com.au}:/health/ready"; do
+  domain="${entry%%:*}"
+  path="${entry#*:}"
+  if curl --fail --silent --show-error --location --max-time 10 "https://${domain}${path}" > /dev/null 2>&1; then
+    echo "  https://${domain}${path}: OK"
   else
-    echo "  https://$domain/: UNREACHABLE (may not resolve)"
+    echo "  https://${domain}${path}: UNREACHABLE (may not resolve)"
     failures=$((failures + 1))
   fi
 done

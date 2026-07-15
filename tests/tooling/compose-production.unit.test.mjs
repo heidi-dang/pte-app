@@ -94,6 +94,12 @@ describe('Compose production configuration', () => {
     assert.ok(!compose.includes(':latest'), 'Compose must not reference :latest tag');
   });
 
+  it('Caddy has a health check', () => {
+    const caddy = getCompose().services.caddy;
+    assert.ok(caddy, 'caddy service must exist');
+    assert.ok(caddy.healthcheck, 'caddy must have a healthcheck');
+  });
+
   it('Caddy depends on web, api, scoring with service_started condition', () => {
     const caddy = getCompose().services.caddy;
     assert.ok(caddy, 'caddy service must exist');
