@@ -7,6 +7,9 @@ import { authPlugin, getSessionToken } from './auth/plugin.js';
 import { validateSession } from './auth/sessions.js';
 import { getAccountById } from './auth/accounts.js';
 import { contentProvenancePlugin } from './content-provenance/plugin.js';
+import { questionEnginePlugin } from './question-engine/plugin.js';
+import { buildDefaultHandlerRegistry } from './question-engine/handler-registry.js';
+
 
 export type App = FastifyInstance;
 
@@ -79,6 +82,7 @@ export async function buildApp(config: Config, options: { skipDb?: boolean } = {
 
     await app.register(authPlugin, { db: dbConnection });
     await app.register(contentProvenancePlugin, { db: dbConnection });
+    await app.register(questionEnginePlugin, { db: dbConnection, registry: buildDefaultHandlerRegistry() });
   }
 
   return app;
