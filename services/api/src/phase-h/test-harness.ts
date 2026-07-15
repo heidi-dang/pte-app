@@ -60,24 +60,14 @@ export async function startTestHarness(): Promise<TestHarness> {
   const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
   const child: ChildProcess = spawn(npmCmd, ['run', 'start'], {
     cwd: new URL('../../', import.meta.url).pathname,
-    stdio: 'pipe',
+    stdio: 'inherit',
     env: testEnv,
     detached: true,
   });
 
-  const logs: string[] = [];
-  const capture = (data: Buffer) => {
-    const line = data.toString();
-    logs.push(line);
-    if (logs.length > 200) logs.shift();
-  };
-  child.stdout?.on('data', capture);
-  child.stderr?.on('data', capture);
-
   const ready = await waitForUrl(`${apiUrl}/health/live`, 60000);
   if (!ready) {
     child.kill('SIGKILL');
-    process.stderr.write(logs.join(''));
     throw new Error(`API did not become ready at ${apiUrl}`);
   }
 

@@ -123,8 +123,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     } else {
       decision = await getEntitlementDecision(db, auth.userId, course.accessLevel || 'free', course.id);
     }
-    if (!decision.allowed && !decision.historicalReadAllowed) {
-      return reply.status(403).send({ error: 'Forbidden', reason: decision.reason });
+    if (!decision.newActivityAllowed) {
+      return reply.status(403).send({ error: 'Forbidden', ...decision });
     }
 
     const modules = await repo.modules.listModulesForCourse(db, course.id);
@@ -204,7 +204,9 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     } else {
       decision = { allowed: true, newActivityAllowed: true };
     }
-    if (!decision.allowed) return reply.status(403).send({ error: 'Forbidden', reason: decision.reason });
+    if (!decision.newActivityAllowed) {
+      return reply.status(403).send({ error: 'Forbidden', ...decision });
+    }
 
     const prereq = await repo.prerequisites.checkPrerequisites(db, lesson.id, auth.userId);
     if (prereq.locked) {
