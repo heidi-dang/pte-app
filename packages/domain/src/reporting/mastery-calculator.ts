@@ -160,8 +160,10 @@ function isCompatible(
 }
 
 // ----------------------------------------------------------------
-// Evidence classifier: returns either valid or unassigned
+// Evidence classifier using ValidMasteryEvidenceSchema as authority
 // ----------------------------------------------------------------
+import { ValidMasteryEvidenceSchema } from '@pte-app/schemas';
+
 type EvidenceClassification =
   | { status: 'valid'; evidence: MasteryEvidence }
   | {
@@ -171,60 +173,85 @@ type EvidenceClassification =
       invalidFields: string[];
     };
 
+function isFiniteNumber(v: number): boolean {
+  return Number.isFinite(v);
+}
+
 function classifyEvidenceForMastery(e: MasteryEvidence, mode: 'skill' | 'task'): EvidenceClassification {
+  // 1. Non-finite numeric checks (Zod won't catch NaN in coerce mode)
+  if (!isFiniteNumber(e.estimatedTrainingScore)) {
+    return { status: 'unassigned', evidence: e, reason: 'invalid-score', invalidFields: ['estimatedTrainingScore'] };
+  }
+  if (!isFiniteNumber(e.confidence)) {
+    return { status: 'unassigned', evidence: e, reason: 'invalid-confidence', invalidFields: ['confidence'] };
+  }
+
+  // 2. Integer checks (Zod's .int() won't validate on raw number input without schema)
+  if (!Number.isInteger(e.scoringProfileVersion)) {
+    return {
+      status: 'unassigned',
+      evidence: e,
+      reason: 'invalid-profile-reference',
+      invalidFields: ['scoringProfileVersion'],
+    };
+  }
+  if (e.evaluationProfileVersion !== null && !Number.isInteger(e.evaluationProfileVersion)) {
+    return {
+      status: 'unassigned',
+      evidence: e,
+      reason: 'invalid-evaluation-pair',
+      invalidFields: ['evaluationProfileVersion'],
+    };
+  }
+
+  // 3. Range checks not covered by safeParse (confidence 0-1)
+  if (e.confidence < 0 || e.confidence > 1) {
+    return { status: 'unassigned', evidence: e, reason: 'invalid-confidence', invalidFields: ['confidence'] };
+  }
+
+  // 4. ValidMasteryEvidenceSchema as authoritative structural validator
+  const result = ValidMasteryEvidenceSchema.safeParse(e);
+  if (result.success) return { status: 'valid', evidence: e };
+
+  // 5. Map schema errors to structured unassigned reasons
   const invalidFields: string[] = [];
-  const check = (cond: boolean, field: string) => {
-    if (!cond) invalidFields.push(field);
-  };
-
-  // Common required fields
-  check(!!e.attemptId, 'attemptId');
-  check(!!e.resultId, 'resultId');
-  check(!!e.questionVersionId, 'questionVersionId');
-  check(!!e.scoringProfileId, 'scoringProfileId');
-  check(!!e.timestamp, 'timestamp');
-  check(e.scoringProfileVersion >= 1, 'scoringProfileVersion');
-
-  // Mode-specific identity
-  if (mode === 'task') {
-    check(!!e.taskId, 'taskId');
-    check(!!e.taskType, 'taskType');
-    check(!!e.taskName, 'taskName');
-  } else {
-    check(!!e.skillId, 'skillId');
-    check(!!e.skillName, 'skillName');
+  for (const issue of result.error.issues) {
+    if (issue.path.length > 0) {
+      const field = issue.path.join('.');
+      if (!invalidFields.includes(field)) invalidFields.push(field);
+    } else {
+      // Refine errors have empty paths — infer from message
+      const msg = issue.message.toLowerCase();
+      if (msg.includes('evaluation')) {
+        if (!invalidFields.includes('evaluationProfileId')) invalidFields.push('evaluationProfileId');
+      }
+    }
   }
 
-  // Evaluation pairing
-  const evalIdPresent = e.evaluationProfileId !== null && e.evaluationProfileId !== '';
-  const evalVerPresent = e.evaluationProfileVersion !== null && e.evaluationProfileVersion >= 1;
+  const fields = invalidFields.join(' ');
+  if (fields.includes('evaluation'))
+    return { status: 'unassigned', evidence: e, reason: 'invalid-evaluation-pair', invalidFields };
+  if (fields.includes('scoringProfile'))
+    return { status: 'unassigned', evidence: e, reason: 'invalid-profile-reference', invalidFields };
+  if (fields.includes('confidence'))
+    return { status: 'unassigned', evidence: e, reason: 'invalid-confidence', invalidFields };
+  if (fields.includes('estimatedTrainingScore'))
+    return { status: 'unassigned', evidence: e, reason: 'invalid-score', invalidFields };
 
-  if (evalIdPresent && !evalVerPresent) {
-    invalidFields.push('evaluationProfileId/evaluationProfileVersion');
-  }
-  if (!evalIdPresent && evalVerPresent) {
-    invalidFields.push('evaluationProfileId/evaluationProfileVersion');
-  }
-  if (evalIdPresent && evalVerPresent && e.evaluationProfileVersion! < 1) {
-    invalidFields.push('evaluationProfileVersion');
-  }
-  if (evalIdPresent && !e.evaluationProfileId) {
-    invalidFields.push('evaluationProfileId');
-  }
+  const identFields = [
+    'attemptId',
+    'resultId',
+    'questionVersionId',
+    'taskId',
+    'taskType',
+    'taskName',
+    'skillId',
+    'skillName',
+    'timestamp',
+  ];
+  if (invalidFields.some((f) => identFields.includes(f)))
+    return { status: 'unassigned', evidence: e, reason: 'malformed-identity', invalidFields };
 
-  if (invalidFields.length === 0) return { status: 'valid', evidence: e };
-
-  const identMissing = invalidFields.some((f) =>
-    ['attemptId', 'resultId', 'questionVersionId', 'taskId', 'taskType', 'taskName', 'skillId', 'skillName'].includes(
-      f,
-    ),
-  );
-  const profInvalid = invalidFields.some((f) => f.includes('scoringProfile'));
-  const evalInvalid = invalidFields.some((f) => f.includes('evaluation'));
-
-  if (evalInvalid) return { status: 'unassigned', evidence: e, reason: 'invalid-evaluation-pair', invalidFields };
-  if (profInvalid) return { status: 'unassigned', evidence: e, reason: 'invalid-profile-reference', invalidFields };
-  if (identMissing) return { status: 'unassigned', evidence: e, reason: 'malformed-identity', invalidFields };
   return { status: 'unassigned', evidence: e, reason: 'missing-required-field', invalidFields };
 }
 

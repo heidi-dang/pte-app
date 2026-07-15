@@ -3,7 +3,7 @@ import { z } from 'zod';
 const NonEmpty = z.string().min(1);
 const PositiveInt = z.number().int().min(1);
 
-// Raw evidence — accepts empty/potentially invalid fields for malformed input recovery
+// Raw evidence — fully permissive for preserving malformed input recovery
 export const RawMasteryEvidenceSchema = z.object({
   attemptId: z.string(),
   resultId: z.string(),
@@ -14,11 +14,11 @@ export const RawMasteryEvidenceSchema = z.object({
   skillId: z.string(),
   skillName: z.string(),
   estimatedTrainingScore: z.number(),
-  confidence: z.number().min(0).max(1),
+  confidence: z.number(),
   scoringProfileId: z.string(),
-  scoringProfileVersion: z.number().int().min(0),
+  scoringProfileVersion: z.number(),
   evaluationProfileId: z.string().nullable(),
-  evaluationProfileVersion: z.number().int().nullable(),
+  evaluationProfileVersion: z.number().nullable(),
   completenessStatus: z.enum(['complete', 'partial', 'failed']),
   timestamp: z.string(),
 });
@@ -211,6 +211,8 @@ export const UnassignedMasteryEvidenceSchema = z.object({
     'missing-required-field',
     'invalid-profile-reference',
     'invalid-evaluation-pair',
+    'invalid-confidence',
+    'invalid-score',
   ]),
   invalidFields: z.array(z.string()).min(1),
 });

@@ -106,7 +106,13 @@ export interface ExcludedEvidence {
 export interface UnassignedMasteryEvidence {
   evidence: MasteryEvidence;
   intendedMasteryType: 'skill' | 'task';
-  reason: 'malformed-identity' | 'missing-required-field' | 'invalid-profile-reference' | 'invalid-evaluation-pair';
+  reason:
+    | 'malformed-identity'
+    | 'missing-required-field'
+    | 'invalid-profile-reference'
+    | 'invalid-evaluation-pair'
+    | 'invalid-confidence'
+    | 'invalid-score';
   invalidFields: string[];
 }
 
