@@ -18,6 +18,7 @@ RUN npm ci --ignore-scripts
 
 FROM base AS build
 COPY . .
+RUN mkdir -p apps/web/public
 RUN npm run build
 
 FROM base AS deps-prod
@@ -47,7 +48,7 @@ COPY packages/types/package.json /app/packages/types/package.json
 FROM packages-layer AS web
 COPY --from=build /app/apps/web/.next/standalone /app
 COPY --from=build /app/apps/web/.next/static /app/apps/web/.next/static
-COPY --from=build /app/apps/web/public /app/apps/web/public 2>/dev/null || true
+COPY --from=build /app/apps/web/public /app/apps/web/public
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 EXPOSE 3000
