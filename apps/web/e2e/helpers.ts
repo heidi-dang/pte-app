@@ -30,6 +30,17 @@ export async function register(email: string, password: string): Promise<string>
   return data.token;
 }
 
+export async function login(email: string, password: string): Promise<string> {
+  const res = await fetch(`${cfg.apiUrl}/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error(`Login failed: ${res.status} ${await res.text()}`);
+  const data = await res.json();
+  return data.token;
+}
+
 export async function createUserWithRole(email: string, password: string, role: string): Promise<string> {
   const token = await register(email, password);
   const meRes = await fetch(`${cfg.apiUrl}/auth/me`, {
@@ -37,6 +48,7 @@ export async function createUserWithRole(email: string, password: string, role: 
   });
   if (!meRes.ok) throw new Error('Failed to get user');
   const me = await meRes.json();
+
   const { Client } = await import('pg');
   const client = new Client({
     host: cfg.dbHost,
@@ -47,10 +59,28 @@ export async function createUserWithRole(email: string, password: string, role: 
   });
   await client.connect();
   try {
-    await client.query('DELETE FROM user_roles WHERE user_id = $1', [me.user.id]);
-    await client.query('INSERT INTO user_roles (user_id, role) VALUES ($1, $2)', [me.user.id, role]);
+    // Verify we connected to the correct E2E test database
+    const { rows } = await client.query('SELECT current_database() AS db');
+    const actualDb = rows[0]?.db;
+    if (actualDb !== cfg.dbName) {
+      throw new Error(`Connected to wrong database: ${actualDb}, expected ${cfg.dbName}`);
+    }
+
+    // Verify user_roles table exists
+    const { rows: tableCheck } = await client.query("SELECT to_regclass('public.user_roles')::text AS exists");
+    if (!tableCheck[0] || tableCheck[0].exists === null) {
+      throw new Error('public.user_roles table does not exist');
+    }
+
+    // Idempotent role assignment
+    await client.query(
+      'INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT (user_id, role) DO NOTHING',
+      [me.user.id, role],
+    );
   } finally {
     await client.end();
   }
-  return token;
+
+  // Obtain a fresh login token so roles are not cached from original session
+  return login(email, password);
 }

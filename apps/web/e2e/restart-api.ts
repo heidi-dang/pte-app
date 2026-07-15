@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { loadEnvLocal } from '@pte-app/database/testing/env';
@@ -30,6 +30,9 @@ async function waitForUrl(url: string, timeoutMs: number, expectedOk: boolean): 
 }
 
 export async function restartApi(apiUrl: string): Promise<number> {
+  const testDbName = process.env.E2E_DATABASE_NAME;
+  if (!testDbName) throw new Error('E2E_DATABASE_NAME is not set in environment');
+
   let oldPid: number | undefined;
   if (existsSync(PIDS_PATH)) {
     try {
@@ -47,7 +50,7 @@ export async function restartApi(apiUrl: string): Promise<number> {
       process.kill(oldPid, 'SIGTERM');
     }
     const stopped = await waitForUrl(`${apiUrl}/health/live`, 10000, false);
-    if (!stopped) throw new Error('API did not stop after SIGTERM');
+    if (!stopped) throw new Error(`API (PID ${oldPid}) did not stop after SIGTERM`);
     if (isAlive(oldPid)) {
       try {
         process.kill(-oldPid, 'SIGKILL');
@@ -60,10 +63,11 @@ export async function restartApi(apiUrl: string): Promise<number> {
   const apiPort = new URL(apiUrl).port;
   const env = loadEnvLocal();
   const serviceEnv = {
-    ...process.env,
     ...env,
-    API_PORT: apiPort,
+    ...process.env,
     API_HOST: '127.0.0.1',
+    API_PORT: apiPort,
+    POSTGRES_DATABASE: testDbName,
     NEXT_PUBLIC_API_URL: apiUrl,
   };
   const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
@@ -85,6 +89,17 @@ export async function restartApi(apiUrl: string): Promise<number> {
     );
   }
   if (child.pid == null) throw new Error('Restarted API has no PID');
+
+  // Update PID record for teardown
+  if (existsSync(PIDS_PATH)) {
+    try {
+      const pids = JSON.parse(readFileSync(PIDS_PATH, 'utf-8'));
+      pids.api = { pid: child.pid, service: 'api', port: apiPort, startedAt: new Date().toISOString() };
+      writeFileSync(PIDS_PATH, JSON.stringify(pids, null, 2));
+    } catch {
+      // ignore
+    }
+  }
 
   return child.pid;
 }

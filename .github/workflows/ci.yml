@@ -52,6 +52,9 @@ jobs:
       - run: node --check scripts/local-smoke.mjs
       - run: cp .env.example .env.local
 
+      - name: Prepare E2E runtime environment
+        run: node scripts/prepare-e2e-runtime.mjs
+
       - run: npm run generate:pte-blueprints
       - run: node scripts/generate-pte-blueprints.mjs --validate
 
@@ -64,9 +67,6 @@ jobs:
       - run: npm run test:unit
       - run: npm run test:integration
       - run: npm run test:api
-
-      - name: Prepare E2E runtime environment
-        run: node scripts/prepare-e2e-runtime.mjs
 
       - run: npm run build
 

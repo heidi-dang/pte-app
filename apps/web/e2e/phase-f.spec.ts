@@ -152,7 +152,6 @@ test.describe('Phase F browser E2E', () => {
   });
 
   test('16. API outage shows recoverable error', async ({ page }) => {
-    await page.route('**/api/**', (route) => route.abort());
     await page.route(`${cfg.apiUrl}/**`, (route) => route.abort());
 
     const token = await register(`outage-${Date.now()}@test.com`, pw);
@@ -160,7 +159,6 @@ test.describe('Phase F browser E2E', () => {
     await page.goto(`${cfg.webUrl}/dashboard`);
     await expect(page.locator('body')).toBeAttached();
 
-    await page.unroute('**/api/**');
     await page.unroute(`${cfg.apiUrl}/**`);
     await page.goto(`${cfg.webUrl}/dashboard`);
     await expect(page.locator('body')).toBeAttached();

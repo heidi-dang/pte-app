@@ -16,6 +16,7 @@ export interface E2EState {
   runId: string;
   apiUrl: string;
   webUrl: string;
+  databaseName: string;
   apiPid: number;
   webPid: number;
   adminEmail: string;
@@ -57,9 +58,23 @@ function writeLog(label: string, line: string) {
 
 function getRequiredEnv(key: string): string {
   const val = process.env[key];
-  if (!val)
-    throw new Error(`Required environment variable ${key} is not set. Run scripts/prepare-e2e-runtime.mjs first.`);
+  if (!val) throw new Error(`Required environment variable ${key} is not set`);
   return val;
+}
+
+const REQUIRED_TABLES = ['users', 'user_roles', 'sessions', 'courses', 'course_versions', 'lessons', 'lesson_versions'];
+
+async function verifyTestDatabase(db: DatabaseConnection, testDbName: string): Promise<void> {
+  const { rows: dbRow } = await db.pool.query<{ current_database: string }>(`SELECT current_database()`);
+  if (!dbRow[0] || dbRow[0].current_database !== testDbName) {
+    throw new Error(`Connected to ${dbRow[0]?.current_database} instead of ${testDbName}`);
+  }
+  for (const table of REQUIRED_TABLES) {
+    const { rows } = await db.pool.query<{ count: string }>(`SELECT to_regclass('public.${table}')::text AS count`);
+    if (!rows[0] || rows[0].count === null) {
+      throw new Error(`Required table public.${table} does not exist in ${testDbName}`);
+    }
+  }
 }
 
 async function waitForUrl(url: string, timeoutMs: number): Promise<boolean> {
@@ -69,7 +84,7 @@ async function waitForUrl(url: string, timeoutMs: number): Promise<boolean> {
       const res = await fetch(url, { signal: AbortSignal.timeout(1000) });
       if (res.ok) return true;
     } catch {
-      // ignore transient health check failures
+      // ignore
     }
     await new Promise((r) => setTimeout(r, 250));
   }
@@ -117,10 +132,11 @@ async function startServices(
   const parsedWebUrl = new URL(webUrl);
   if (parsedWebUrl.port !== webPort) throw new Error(`E2E_WEB_URL port ${parsedWebUrl.port} ≠ WEB_PORT ${webPort}`);
 
+  // Build service environment: .env.local as base, process.env overrides, explicit keys win
   const env = loadEnvLocal();
   const serviceEnv = {
-    ...process.env,
     ...env,
+    ...process.env,
     API_HOST: apiHost,
     API_PORT: apiPort,
     WEB_HOST: webHost,
@@ -151,7 +167,6 @@ async function startServices(
     );
   }
 
-  // Verify the compiled client can reach the API
   const catalogueRes = await fetch(`${webUrl}/learn/catalogue`);
   if (!catalogueRes.ok) {
     throw new Error(`Web catalogue unreachable at ${webUrl}: ${catalogueRes.status}`);
@@ -201,22 +216,27 @@ async function fetchLesson(apiUrl: string, token: string, lessonId: string): Pro
 async function main(): Promise<void> {
   ensureDir(RUNTIME_DIR);
 
-  // Verify required environment
   getRequiredEnv('E2E_API_URL');
   getRequiredEnv('E2E_WEB_URL');
+  const testDbName = getRequiredEnv('E2E_DATABASE_NAME');
   console.log(`Using E2E_API_URL=${process.env.E2E_API_URL}`);
   console.log(`Using E2E_WEB_URL=${process.env.E2E_WEB_URL}`);
+  console.log(`Using E2E_DATABASE_NAME=${testDbName}`);
 
   const baseConfig = loadDatabaseConfig();
-  const testDbName = `${baseConfig.database}_test`;
+  if (testDbName !== `${baseConfig.database}_test`) {
+    throw new Error(`E2E_DATABASE_NAME ${testDbName} !== ${baseConfig.database}_test`);
+  }
+
   await setupTestDatabase(baseConfig);
 
   const { apiUrl, webUrl, api, web } = await startServices(testDbName);
 
   const testConfig = { ...baseConfig, database: testDbName };
   const db = await createConnection(testConfig);
-
   try {
+    await verifyTestDatabase(db, testDbName);
+
     const runId = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const fixtures = await buildFixtures(db, { runId });
     await createEntitlement(db, fixtures.student.id, fixtures.paidCourse.id);
@@ -231,6 +251,7 @@ async function main(): Promise<void> {
       runId,
       apiUrl,
       webUrl,
+      databaseName: testDbName,
       apiPid: api.pid ?? 0,
       webPid: web.pid ?? 0,
       adminEmail: fixtures.admin.email,

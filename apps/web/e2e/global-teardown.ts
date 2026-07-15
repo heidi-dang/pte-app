@@ -68,7 +68,18 @@ async function main(): Promise<void> {
   console.log('Tearing down E2E services...');
   const state = loadState();
   if (state) {
-    await stopProcess(state.apiPid, 'API');
+    // Check for restarted API PID in pids.json
+    const pidsPath = resolve(process.cwd(), '.local-runtime', 'pids.json');
+    let apiPid = state.apiPid;
+    if (existsSync(pidsPath)) {
+      try {
+        const pids = JSON.parse(readFileSync(pidsPath, 'utf-8'));
+        if (pids.api?.pid) apiPid = pids.api.pid;
+      } catch {
+        // ignore
+      }
+    }
+    await stopProcess(apiPid, 'API');
     await stopProcess(state.webPid, 'Web');
   }
   try {
