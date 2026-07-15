@@ -22,6 +22,8 @@ export type { ScoreTrendPoint, ScoreTrendConfig, ScoreTrendSet } from './score-t
 export type {
   MasterySubject,
   MasteryEvidence,
+  WeightedContribution,
+  InclusionReason,
   EvidencePolicy,
   ScoreNormalisationPolicy,
   MasteryLevelDefinition,

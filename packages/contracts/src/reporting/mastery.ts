@@ -2,17 +2,8 @@ import type { MasteryId, MasterySnapshotId } from './identifiers.js';
 import type { DataFreshnessStatus } from './data-freshness.js';
 
 export type MasterySubject =
-  | {
-      subjectType: 'skill';
-      subjectId: string;
-      subjectName: string;
-    }
-  | {
-      subjectType: 'task';
-      subjectId: string;
-      subjectName: string;
-      taskType: string;
-    };
+  | { subjectType: 'skill'; subjectId: string; subjectName: string }
+  | { subjectType: 'task'; subjectId: string; subjectName: string; taskType: string };
 
 export interface MasteryEvidence {
   attemptId: string;
@@ -33,20 +24,20 @@ export interface MasteryEvidence {
   timestamp: string;
 }
 
+export type InclusionReason =
+  'complete-included' | 'partial-included' | 'partial-discounted' | 'failed-included-with-disclosure';
+
+export interface WeightedContribution {
+  evidence: MasteryEvidence;
+  appliedWeight: number;
+  weightedScore: number;
+  inclusionReason: InclusionReason;
+}
+
 export type ScoreNormalisationPolicy =
   | { method: 'none' }
-  | {
-      method: 'linear';
-      inputMinimum: number;
-      inputMaximum: number;
-      outputMinimum: number;
-      outputMaximum: number;
-    }
-  | {
-      method: 'z-score';
-      referenceMean: number;
-      referenceStandardDeviation: number;
-    };
+  | { method: 'linear'; inputMinimum: number; inputMaximum: number; outputMinimum: number; outputMaximum: number }
+  | { method: 'z-score'; referenceMean: number; referenceStandardDeviation: number };
 
 export interface EvidencePolicy {
   completeResultPolicy: 'include';
@@ -58,6 +49,10 @@ export interface EvidencePolicy {
   minimumConfidence: number;
   scoreNormalisationPolicy: ScoreNormalisationPolicy;
   confidenceWeightingPolicy: 'none' | 'weighted';
+  referenceScoringProfileId: string | null;
+  referenceScoringProfileVersion: number | null;
+  referenceEvaluationProfileId: string | null;
+  referenceEvaluationProfileVersion: number | null;
   allowedScoringProfileIds: string[];
   allowedScoringProfileVersions: number[];
   allowedEvaluationProfileIds: string[];
@@ -93,7 +88,7 @@ export type MasteryLevel =
       evidenceCount: number;
       minimumRequired: number;
       lastUpdated: string;
-      contributingEvidence: MasteryEvidence[];
+      contributingEvidence: WeightedContribution[];
       excludedEvidence: ExcludedEvidence[];
       totalEvidence: number;
       eligibleEvidence: number;
@@ -110,7 +105,7 @@ export type MasteryLevel =
       evidenceCount: number;
       minimumRequired: number;
       lastUpdated: string;
-      contributingEvidence: MasteryEvidence[];
+      contributingEvidence: WeightedContribution[];
       excludedEvidence: ExcludedEvidence[];
       totalEvidence: number;
       eligibleEvidence: number;
@@ -139,4 +134,5 @@ export interface MasterySnapshot {
   dataFreshness: DataFreshnessStatus;
   partialData: boolean;
   warnings: string[];
+  masteryType: 'skill' | 'task';
 }

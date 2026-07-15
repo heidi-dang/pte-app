@@ -24,6 +24,18 @@ export const MasteryEvidenceSchema = z.object({
   timestamp: z.string(),
 });
 
+export const WeightedContributionSchema = z.object({
+  evidence: MasteryEvidenceSchema,
+  appliedWeight: z.number().min(0),
+  weightedScore: z.number(),
+  inclusionReason: z.enum([
+    'complete-included',
+    'partial-included',
+    'partial-discounted',
+    'failed-included-with-disclosure',
+  ]),
+});
+
 export const ScoreNormalisationPolicySchema: z.ZodType<unknown> = z.discriminatedUnion('method', [
   z.object({ method: z.literal('none') }),
   z.object({
@@ -50,6 +62,10 @@ export const EvidencePolicySchema = z.object({
   minimumConfidence: z.number().min(0).max(1),
   scoreNormalisationPolicy: ScoreNormalisationPolicySchema,
   confidenceWeightingPolicy: z.enum(['none', 'weighted']),
+  referenceScoringProfileId: z.string().nullable(),
+  referenceScoringProfileVersion: z.number().int().nullable(),
+  referenceEvaluationProfileId: z.string().nullable(),
+  referenceEvaluationProfileVersion: z.number().int().nullable(),
   allowedScoringProfileIds: z.array(z.string()),
   allowedScoringProfileVersions: z.array(z.number().int()),
   allowedEvaluationProfileIds: z.array(z.string()),
@@ -83,7 +99,7 @@ const InsufficientLevelSchema = z.object({
   evidenceCount: z.number().int().min(0),
   minimumRequired: z.number().int().min(1),
   lastUpdated: z.string(),
-  contributingEvidence: z.array(MasteryEvidenceSchema),
+  contributingEvidence: z.array(WeightedContributionSchema),
   excludedEvidence: z.array(ExcludedEvidenceSchema),
   totalEvidence: z.number().int().min(0),
   eligibleEvidence: z.number().int().min(0),
@@ -101,7 +117,7 @@ const PartialSufficientLevelSchema = z.object({
   evidenceCount: z.number().int().min(0),
   minimumRequired: z.number().int().min(1),
   lastUpdated: z.string(),
-  contributingEvidence: z.array(MasteryEvidenceSchema),
+  contributingEvidence: z.array(WeightedContributionSchema),
   excludedEvidence: z.array(ExcludedEvidenceSchema),
   totalEvidence: z.number().int().min(0),
   eligibleEvidence: z.number().int().min(0),
@@ -135,4 +151,5 @@ export const MasterySnapshotSchema = z.object({
   dataFreshness: z.enum(['fresh', 'stale', 'unknown']),
   partialData: z.boolean(),
   warnings: z.array(z.string()),
+  masteryType: z.enum(['skill', 'task']),
 });
