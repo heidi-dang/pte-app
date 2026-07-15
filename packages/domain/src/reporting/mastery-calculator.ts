@@ -21,7 +21,9 @@ export class MasteryValidationError extends Error {
     | 'INVALID_LINEAR_NORMALISATION_RANGE'
     | 'INVALID_LINEAR_DIRECTION'
     | 'INVALID_Z_SCORE_STANDARD_DEVIATION'
-    | 'NO_MASTERY_LEVEL_MATCH';
+    | 'NO_MASTERY_LEVEL_MATCH'
+    | 'NON_FINITE_ESTIMATED_SCORE'
+    | 'NON_FINITE_CONFIDENCE';
   constructor(code: MasteryValidationError['code'], message: string) {
     super(message);
     this.name = 'MasteryValidationError';
@@ -181,12 +183,12 @@ function classifyEvidenceForMastery(e: MasteryEvidence, mode: 'skill' | 'task'):
   // 1. Non-finite numeric checks — throw typed error (corrupt data cannot be preserved)
   if (!isFiniteNumber(e.estimatedTrainingScore)) {
     throw new MasteryValidationError(
-      'NO_MASTERY_LEVEL_MATCH',
+      'NON_FINITE_ESTIMATED_SCORE',
       `Non-finite estimatedTrainingScore: ${e.estimatedTrainingScore}`,
     );
   }
   if (!isFiniteNumber(e.confidence)) {
-    throw new MasteryValidationError('NO_MASTERY_LEVEL_MATCH', `Non-finite confidence: ${e.confidence}`);
+    throw new MasteryValidationError('NON_FINITE_CONFIDENCE', `Non-finite confidence: ${e.confidence}`);
   }
 
   // 2. Integer checks (Zod's .int() won't validate on raw number input without schema)

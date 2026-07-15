@@ -479,56 +479,56 @@ describe('Phase R — Domain Routing', () => {
     assert.doesNotThrow(() => RawMasteryEvidenceSchema.parse(ev));
   });
 
-  it('NaN score throws', () => {
+  it('NaN score throws NON_FINITE_ESTIMATED_SCORE', () => {
     assert.throws(
       () =>
         calculateSkillMastery(mkProf({ evidencePolicy: mkPol({ minimumEvidence: 1 }) }), [
           mkEv({ estimatedTrainingScore: NaN }),
         ]),
-      MasteryValidationError,
+      (e: unknown) => e instanceof MasteryValidationError && e.code === 'NON_FINITE_ESTIMATED_SCORE',
     );
   });
-  it('Infinity score throws', () => {
+  it('Infinity score throws NON_FINITE_ESTIMATED_SCORE', () => {
     assert.throws(
       () =>
         calculateSkillMastery(mkProf({ evidencePolicy: mkPol({ minimumEvidence: 1 }) }), [
           mkEv({ estimatedTrainingScore: Infinity }),
         ]),
-      MasteryValidationError,
+      (e: unknown) => e instanceof MasteryValidationError && e.code === 'NON_FINITE_ESTIMATED_SCORE',
     );
   });
-  it('Negative Infinity score throws', () => {
+  it('Negative Infinity score throws NON_FINITE_ESTIMATED_SCORE', () => {
     assert.throws(
       () =>
         calculateSkillMastery(mkProf({ evidencePolicy: mkPol({ minimumEvidence: 1 }) }), [
           mkEv({ estimatedTrainingScore: -Infinity }),
         ]),
-      MasteryValidationError,
+      (e: unknown) => e instanceof MasteryValidationError && e.code === 'NON_FINITE_ESTIMATED_SCORE',
     );
   });
-  it('NaN confidence throws', () => {
+  it('NaN confidence throws NON_FINITE_CONFIDENCE', () => {
     assert.throws(
       () =>
         calculateSkillMastery(mkProf({ evidencePolicy: mkPol({ minimumEvidence: 1 }) }), [mkEv({ confidence: NaN })]),
-      MasteryValidationError,
+      (e: unknown) => e instanceof MasteryValidationError && e.code === 'NON_FINITE_CONFIDENCE',
     );
   });
-  it('Infinity confidence throws', () => {
+  it('Infinity confidence throws NON_FINITE_CONFIDENCE', () => {
     assert.throws(
       () =>
         calculateSkillMastery(mkProf({ evidencePolicy: mkPol({ minimumEvidence: 1 }) }), [
           mkEv({ confidence: Infinity }),
         ]),
-      MasteryValidationError,
+      (e: unknown) => e instanceof MasteryValidationError && e.code === 'NON_FINITE_CONFIDENCE',
     );
   });
-  it('Negative Infinity confidence throws', () => {
+  it('Negative Infinity confidence throws NON_FINITE_CONFIDENCE', () => {
     assert.throws(
       () =>
         calculateSkillMastery(mkProf({ evidencePolicy: mkPol({ minimumEvidence: 1 }) }), [
           mkEv({ confidence: -Infinity }),
         ]),
-      MasteryValidationError,
+      (e: unknown) => e instanceof MasteryValidationError && e.code === 'NON_FINITE_CONFIDENCE',
     );
   });
   it('non-finite never contributes', () => {
