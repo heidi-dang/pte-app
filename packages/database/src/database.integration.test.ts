@@ -68,14 +68,14 @@ describe('database integration', () => {
       await resetTestDatabase(baseConfig);
       const applied = await getAppliedMigrations(connection);
       const versions = applied.map((m) => m.version);
-      assert.deepEqual(versions, ['0001', '0002', '0003']);
+      assert.deepEqual(versions, ['0001', '0002', '0003', '0004']);
     });
 
     pgIt('is idempotent across repeated runs', async () => {
       await runMigrations(connection);
       await runMigrations(connection);
       const applied = await getAppliedMigrations(connection);
-      assert.equal(applied.length, 3);
+      assert.equal(applied.length, 4);
     });
 
     pgIt('rejects checksum mismatch on reapplication', async () => {
