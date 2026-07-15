@@ -32,6 +32,7 @@ export type {
   MasteryLevel,
   MasteryProfile,
   MasterySnapshot,
+  UnassignedMasteryEvidence,
 } from './mastery.js';
 export type { TraitResult, TraitAnalysis } from './trait-analysis.js';
 export type { WeaknessReport } from './weakness-report.js';

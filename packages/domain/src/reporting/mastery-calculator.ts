@@ -12,6 +12,7 @@ import type {
   WeightedContribution,
   InclusionReason,
   ProfileCompatibility,
+  UnassignedMasteryEvidence,
 } from '@pte-app/contracts';
 
 export class MasteryValidationError extends Error {
@@ -64,7 +65,11 @@ function inclusionReasonFor(evidence: MasteryEvidence, policy: EvidencePolicy): 
 function computeProfileCompatibility(e: MasteryEvidence, policy: EvidencePolicy): ProfileCompatibility {
   if (policy.mixedProfilePolicy !== 'disclose-mismatched') return { status: 'matched' };
   const mismatches: Array<
-    'scoring-profile-id' | 'scoring-profile-version' | 'evaluation-profile-id' | 'evaluation-profile-version'
+    | 'scoring-profile-id'
+    | 'scoring-profile-version'
+    | 'evaluation-profile-id'
+    | 'evaluation-profile-version'
+    | 'evaluation-profile-missing'
   > = [];
   if (policy.referenceScoringProfileId !== null && e.scoringProfileId !== policy.referenceScoringProfileId)
     mismatches.push('scoring-profile-id');
@@ -85,6 +90,8 @@ function computeProfileCompatibility(e: MasteryEvidence, policy: EvidencePolicy)
     e.evaluationProfileVersion !== policy.referenceEvaluationProfileVersion
   )
     mismatches.push('evaluation-profile-version');
+  if (policy.referenceEvaluationProfileId !== null && e.evaluationProfileId === null)
+    mismatches.push('evaluation-profile-missing');
   if (mismatches.length > 0) return { status: 'included-with-disclosure', mismatches } as ProfileCompatibility;
   return { status: 'matched' } as ProfileCompatibility;
 }
@@ -133,6 +140,8 @@ function isCompatible(
       e.evaluationProfileVersion !== policy.referenceEvaluationProfileVersion
     )
       return { compatible: false, reason: 'invalid-profile-version' };
+    if (policy.referenceEvaluationProfileId !== null && e.evaluationProfileId === null)
+      return { compatible: false, reason: 'missing-reference-evaluation-profile' };
   }
   return { compatible: true };
 }
@@ -143,6 +152,27 @@ function isSkillEvidenceValid(e: MasteryEvidence): boolean {
 
 function isTaskEvidenceValid(e: MasteryEvidence): boolean {
   return !!(e.taskId && e.taskType && e.taskName && e.questionVersionId && e.attemptId && e.resultId);
+}
+
+function missingSkillFields(e: MasteryEvidence): string[] {
+  const f: string[] = [];
+  if (!e.skillId) f.push('skillId');
+  if (!e.skillName) f.push('skillName');
+  if (!e.questionVersionId) f.push('questionVersionId');
+  if (!e.attemptId) f.push('attemptId');
+  if (!e.resultId) f.push('resultId');
+  return f;
+}
+
+function missingTaskFields(e: MasteryEvidence): string[] {
+  const f: string[] = [];
+  if (!e.taskId) f.push('taskId');
+  if (!e.taskType) f.push('taskType');
+  if (!e.taskName) f.push('taskName');
+  if (!e.questionVersionId) f.push('questionVersionId');
+  if (!e.attemptId) f.push('attemptId');
+  if (!e.resultId) f.push('resultId');
+  return f;
 }
 
 function validateEvidence(e: MasteryEvidence): boolean {
@@ -236,7 +266,6 @@ function evaluateEvidence(
       excluded.push({ evidence: e, reason: cls.excludedReason });
     }
   }
-
   return {
     weightedSum,
     totalAppliedWeight,
@@ -254,7 +283,6 @@ function computeLevel(profile: MasteryProfile, subject: MasterySubject, items: M
   const policy = profile.evidencePolicy;
   const totalEvidence = items.length;
   const warnings: string[] = [];
-
   const {
     weightedSum,
     totalAppliedWeight,
@@ -292,10 +320,8 @@ function computeLevel(profile: MasteryProfile, subject: MasterySubject, items: M
   const weightedMeanConfidence = weightedConfidenceSum / totalAppliedWeight;
   const normalised = normaliseScore(weightedMean, policy.scoreNormalisationPolicy);
   const adjusted = policy.confidenceWeightingPolicy === 'weighted' ? normalised * weightedMeanConfidence : normalised;
-
   const levelResult = assignLevel(profile, adjusted);
 
-  let status: 'partial' | 'sufficient';
   if (levelResult === null) {
     return {
       subject,
@@ -316,6 +342,7 @@ function computeLevel(profile: MasteryProfile, subject: MasterySubject, items: M
     };
   }
 
+  let status: 'partial' | 'sufficient';
   if (weightedMeanConfidence < policy.minimumConfidence || partialCount > 0) {
     status = 'partial';
     warnings.push('Partial evidence present');
@@ -335,9 +362,8 @@ function computeLevel(profile: MasteryProfile, subject: MasterySubject, items: M
     status = 'sufficient';
   }
 
-  if (policy.failedResultPolicy === 'include-with-disclosure' && failedCount > 0) {
+  if (policy.failedResultPolicy === 'include-with-disclosure' && failedCount > 0)
     warnings.push('Failed results included with disclosure — not treated as ordinary performance');
-  }
 
   return {
     subject,
@@ -370,9 +396,24 @@ function latestTimestamp(items: MasteryEvidence[]): string {
   return items.reduce((latest, e) => (e.timestamp > latest ? e.timestamp : latest), '');
 }
 
-export function calculateSkillMastery(profile: MasteryProfile, evidence: MasteryEvidence[]): MasteryLevel[] {
-  const valid = evidence.filter(isSkillEvidenceValid);
-  const excluded = evidence.filter((e) => !isSkillEvidenceValid(e));
+export function calculateSkillMastery(
+  profile: MasteryProfile,
+  evidence: MasteryEvidence[],
+): { levels: MasteryLevel[]; unassigned: UnassignedMasteryEvidence[] } {
+  const unassigned: UnassignedMasteryEvidence[] = [];
+  const valid: MasteryEvidence[] = [];
+  for (const e of evidence) {
+    if (isSkillEvidenceValid(e)) {
+      valid.push(e);
+    } else {
+      unassigned.push({
+        evidence: e,
+        intendedMasteryType: 'skill',
+        reason: 'malformed-identity',
+        missingFields: missingSkillFields(e),
+      });
+    }
+  }
   const groups = groupBy(valid, (e) => e.skillId);
   const levels = Object.entries(groups).map(([skillId, items]) =>
     computeLevel(
@@ -381,31 +422,27 @@ export function calculateSkillMastery(profile: MasteryProfile, evidence: Mastery
       items,
     ),
   );
-  for (const e of excluded) {
-    levels.push({
-      subject: { subjectType: 'skill', subjectId: '__malformed__', subjectName: 'Malformed evidence' },
-      status: 'insufficient',
-      level: null,
-      confidence: 0,
-      evidenceCount: 0,
-      minimumRequired: 1,
-      lastUpdated: '',
-      contributingEvidence: [],
-      excludedEvidence: [{ evidence: e, reason: 'malformed-identity' }],
-      totalEvidence: 1,
-      eligibleEvidence: 0,
-      partialEvidence: 0,
-      failedEvidence: 0,
-      excludedEvidenceCount: 1,
-      warnings: ['Evidence has malformed identity fields'],
-    });
-  }
-  return levels;
+  return { levels, unassigned };
 }
 
-export function calculateTaskMastery(profile: MasteryProfile, evidence: MasteryEvidence[]): MasteryLevel[] {
-  const valid = evidence.filter(isTaskEvidenceValid);
-  const excluded = evidence.filter((e) => !isTaskEvidenceValid(e));
+export function calculateTaskMastery(
+  profile: MasteryProfile,
+  evidence: MasteryEvidence[],
+): { levels: MasteryLevel[]; unassigned: UnassignedMasteryEvidence[] } {
+  const unassigned: UnassignedMasteryEvidence[] = [];
+  const valid: MasteryEvidence[] = [];
+  for (const e of evidence) {
+    if (isTaskEvidenceValid(e)) {
+      valid.push(e);
+    } else {
+      unassigned.push({
+        evidence: e,
+        intendedMasteryType: 'task',
+        reason: 'malformed-identity',
+        missingFields: missingTaskFields(e),
+      });
+    }
+  }
   const groups = groupBy(valid, (e) => e.taskId);
   const levels = Object.entries(groups).map(([taskId, items]) =>
     computeLevel(
@@ -419,26 +456,7 @@ export function calculateTaskMastery(profile: MasteryProfile, evidence: MasteryE
       items,
     ),
   );
-  for (const e of excluded) {
-    levels.push({
-      subject: { subjectType: 'task', subjectId: '__malformed__', subjectName: 'Malformed evidence', taskType: '' },
-      status: 'insufficient',
-      level: null,
-      confidence: 0,
-      evidenceCount: 0,
-      minimumRequired: 1,
-      lastUpdated: '',
-      contributingEvidence: [],
-      excludedEvidence: [{ evidence: e, reason: 'malformed-identity' }],
-      totalEvidence: 1,
-      eligibleEvidence: 0,
-      partialEvidence: 0,
-      failedEvidence: 0,
-      excludedEvidenceCount: 1,
-      warnings: ['Evidence has malformed identity fields'],
-    });
-  }
-  return levels;
+  return { levels, unassigned };
 }
 
 function groupBy<T>(items: T[], keyFn: (item: T) => string): Record<string, T[]> {
@@ -461,9 +479,13 @@ export function buildMasterySnapshot(
   timestampGenerator: () => string = () => new Date().toISOString(),
   mode: 'skill' | 'task' = 'skill',
 ): MasterySnapshot {
-  const levels = mode === 'task' ? calculateTaskMastery(profile, evidence) : calculateSkillMastery(profile, evidence);
-  const partialData = levels.some((l) => l.status === 'insufficient');
+  const calc = mode === 'task' ? calculateTaskMastery(profile, evidence) : calculateSkillMastery(profile, evidence);
+  const levels = calc.levels;
+  const unassignedEvidence = calc.unassigned;
+  const partialData = levels.some((l) => l.status === 'insufficient') || unassignedEvidence.length > 0;
   const collectedWarnings: string[] = [];
+  if (unassignedEvidence.length > 0)
+    collectedWarnings.push(`${unassignedEvidence.length} evidence record(s) could not be assigned to a valid subject`);
   if (partialData)
     collectedWarnings.push(
       mode === 'task' ? 'Some tasks have insufficient evidence' : 'Some skills have insufficient evidence',
@@ -476,6 +498,7 @@ export function buildMasterySnapshot(
     profileVersion: profile.version,
     userId,
     levels,
+    unassignedEvidence,
     calculatedAt: timestampGenerator(),
     dataFreshness,
     partialData,

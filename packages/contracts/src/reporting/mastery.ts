@@ -32,7 +32,11 @@ export type ProfileCompatibility =
   | {
       status: 'included-with-disclosure';
       mismatches: Array<
-        'scoring-profile-id' | 'scoring-profile-version' | 'evaluation-profile-id' | 'evaluation-profile-version'
+        | 'scoring-profile-id'
+        | 'scoring-profile-version'
+        | 'evaluation-profile-id'
+        | 'evaluation-profile-version'
+        | 'evaluation-profile-missing'
       >;
     };
 
@@ -88,7 +92,15 @@ export interface ExcludedEvidence {
     | 'invalid-profile-version'
     | 'incompatible-result-profile'
     | 'missing-required-field'
+    | 'missing-reference-evaluation-profile'
     | 'malformed-identity';
+}
+
+export interface UnassignedMasteryEvidence {
+  evidence: MasteryEvidence;
+  intendedMasteryType: 'skill' | 'task';
+  reason: 'malformed-identity' | 'missing-required-field';
+  missingFields: string[];
 }
 
 export type MasteryLevel =
@@ -142,6 +154,7 @@ export interface MasterySnapshot {
   profileVersion: number;
   userId: string;
   levels: MasteryLevel[];
+  unassignedEvidence: UnassignedMasteryEvidence[];
   calculatedAt: string;
   dataFreshness: DataFreshnessStatus;
   partialData: boolean;
