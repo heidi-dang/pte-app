@@ -4,21 +4,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { TimerDisplayProfile } from '@pte-app/contracts';
 
 export interface QuestionTimerProps {
-  /**
-   * The authoritative server deadline expressed as an ISO-8601 string.
-   * The timer derives its countdown from this value, NOT from local Date.now(),
-   * to avoid clock skew issues. The skew offset is computed once at mount using
-   * serverNowAtCreation vs. local clock.
-   */
   serverDeadline: string;
-  /**
-   * The server's "now" at the moment the timer state was created.
-   * Used to compute the initial clock-skew offset.
-   */
   serverNowAtCreation: string;
-  /** Timer display profile driving refresh interval and warning thresholds. */
-  displayProfile?: TimerDisplayProfile;
-  onWarning?: () => void;
+  displayProfile: TimerDisplayProfile;
+  onWarning?: (thresholdMs: number) => void;
   onExpired?: () => void;
   className?: string;
 }
@@ -31,12 +20,17 @@ function formatDuration(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+function sortedThresholdsKey(thresholds: readonly number[]): string {
+  return [...thresholds].sort((a, b) => a - b).join(',');
+}
+
 /**
  * QuestionTimer derives countdown from the server deadline to avoid client
  * clock skew. It computes a one-time skew offset at mount and applies it
  * on every tick so all subsequent calculations reference server time.
  *
- * The refresh interval and warning thresholds are driven by a TimerDisplayProfile.
+ * The refresh interval and warning thresholds are driven by a required
+ * TimerDisplayProfile. No fallback values exist in this component.
  */
 export function QuestionTimer({
   serverDeadline,
@@ -46,11 +40,11 @@ export function QuestionTimer({
   onExpired,
   className,
 }: QuestionTimerProps) {
-  const refreshIntervalMs = displayProfile?.refreshIntervalMs ?? 1000;
-  const warningThresholdsMs = displayProfile?.warningThresholdsMs ?? [60_000];
+  const { refreshIntervalMs, warningThresholdsMs } = displayProfile;
+  const sortedThresholds = [...warningThresholdsMs].sort((a, b) => a - b);
 
   const skewOffsetMs = useRef<number>(0);
-  const warningFiredRef = useRef(false);
+  const firedWarningsRef = useRef<Set<number>>(new Set());
   const expiredFiredRef = useRef(false);
 
   const computeRemaining = (): number => {
@@ -59,27 +53,28 @@ export function QuestionTimer({
     return Math.max(0, deadline - nowServer);
   };
 
-  // Compute skew once on mount
   useEffect(() => {
     const localNow = Date.now();
     const serverNow = new Date(serverNowAtCreation).getTime();
     skewOffsetMs.current = localNow - serverNow;
-    warningFiredRef.current = false;
+    firedWarningsRef.current = new Set();
     expiredFiredRef.current = false;
-  }, [serverNowAtCreation]);
+  }, [serverNowAtCreation, sortedThresholdsKey(sortedThresholds)]);
 
   const [remainingMs, setRemainingMs] = useState<number>(computeRemaining);
 
   useEffect(() => {
+    firedWarningsRef.current = new Set();
+    expiredFiredRef.current = false;
+
     const tick = () => {
       const remaining = computeRemaining();
       setRemainingMs(remaining);
 
-      if (!warningFiredRef.current) {
-        const shouldWarn = warningThresholdsMs.some((threshold) => remaining <= threshold && remaining > 0);
-        if (shouldWarn) {
-          warningFiredRef.current = true;
-          onWarning?.();
+      for (const threshold of sortedThresholds) {
+        if (!firedWarningsRef.current.has(threshold) && remaining <= threshold && remaining > 0) {
+          firedWarningsRef.current.add(threshold);
+          onWarning?.(threshold);
         }
       }
 
@@ -92,10 +87,10 @@ export function QuestionTimer({
     const id = setInterval(tick, refreshIntervalMs);
     tick();
     return () => clearInterval(id);
-  }, [serverDeadline, refreshIntervalMs, warningThresholdsMs.join(',')]);
+  }, [serverDeadline, refreshIntervalMs, sortedThresholdsKey(sortedThresholds)]);
 
-  const lowestThreshold = Math.max(...warningThresholdsMs);
-  const isWarning = remainingMs <= lowestThreshold && remainingMs > 0;
+  const lowestThreshold = sortedThresholds.length > 0 ? Math.max(...sortedThresholds) : 0;
+  const isWarning = lowestThreshold > 0 && remainingMs <= lowestThreshold && remainingMs > 0;
   const isExpired = remainingMs === 0;
   const displayText = formatDuration(remainingMs);
 
