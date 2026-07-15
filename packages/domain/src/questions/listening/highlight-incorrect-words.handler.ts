@@ -30,8 +30,31 @@ export function createHighlightIncorrectWordsHandler(): QuestionTypeHandler<
       return 'complete';
     },
 
-    validateSubmission(input: SubmissionValidationInput<HighlightIncorrectWordsResponse>): SubmissionValidationResult {
-      return validateListeningSubmission(input, (r) => r.flaggedWordIndices.length === 0);
+    validateSubmission(
+      input: SubmissionValidationInput<HighlightIncorrectWordsResponse, HighlightIncorrectWordsQuestion>,
+    ): SubmissionValidationResult {
+      const base = validateListeningSubmission(input, (r) => r.flaggedWordIndices.length === 0);
+      if (!base.valid) return base;
+
+      const { response, question } = input;
+
+      const seen = new Set<number>();
+      for (const idx of response.flaggedWordIndices) {
+        if (seen.has(idx)) {
+          return { valid: false, reason: `Duplicate flagged word index: ${idx}` };
+        }
+        seen.add(idx);
+      }
+
+      if (question) {
+        for (const idx of response.flaggedWordIndices) {
+          if (idx < 0 || idx >= question.wordCount) {
+            return { valid: false, reason: `Flagged word index out of range: ${idx}` };
+          }
+        }
+      }
+
+      return { valid: true };
     },
   };
 }

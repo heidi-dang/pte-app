@@ -31,9 +31,20 @@ export function createReadingMultipleChoiceSingleHandler(): QuestionTypeHandler<
     },
 
     validateSubmission(
-      input: SubmissionValidationInput<ReadingMultipleChoiceSingleResponse>,
+      input: SubmissionValidationInput<ReadingMultipleChoiceSingleResponse, ReadingMultipleChoiceSingleQuestion>,
     ): SubmissionValidationResult {
-      return validateReadingSubmission(input, (r) => r.selectedKey === null);
+      const base = validateReadingSubmission(input, (r) => r.selectedKey === null);
+      if (!base.valid) return base;
+
+      const { response, question } = input;
+      if (response.selectedKey !== null && question) {
+        const validKeys = new Set(question.options.map((o) => o.key));
+        if (!validKeys.has(response.selectedKey)) {
+          return { valid: false, reason: `Unknown selected key: ${response.selectedKey}` };
+        }
+      }
+
+      return { valid: true };
     },
   };
 }

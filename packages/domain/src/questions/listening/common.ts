@@ -27,8 +27,8 @@ export const LISTENING_MANIFEST_BASE: Omit<QuestionRendererManifest, 'type'> = {
   },
 };
 
-export function validateListeningSubmission<TResponse>(
-  input: SubmissionValidationInput<TResponse>,
+export function validateListeningSubmission<TResponse, TQuestion = unknown>(
+  input: SubmissionValidationInput<TResponse, TQuestion>,
   isEmpty: (r: TResponse) => boolean,
 ): SubmissionValidationResult {
   if (!input.allowsEmptySubmission && isEmpty(input.response)) {

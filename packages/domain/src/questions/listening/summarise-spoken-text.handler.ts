@@ -30,7 +30,9 @@ export function createSummariseSpokenTextHandler(): QuestionTypeHandler<
       return 'incomplete';
     },
 
-    validateSubmission(input: SubmissionValidationInput<SummariseSpokenTextResponse>): SubmissionValidationResult {
+    validateSubmission(
+      input: SubmissionValidationInput<SummariseSpokenTextResponse, SummariseSpokenTextQuestion>,
+    ): SubmissionValidationResult {
       return validateListeningSubmission(input, (r) => r.summary.trim().length === 0);
     },
   };

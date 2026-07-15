@@ -31,10 +31,25 @@ export function createListeningFillBlanksHandler(): QuestionTypeHandler<
       return 'incomplete';
     },
 
-    validateSubmission(input: SubmissionValidationInput<ListeningFillBlanksResponse>): SubmissionValidationResult {
-      return validateListeningSubmission(input, (r) =>
+    validateSubmission(
+      input: SubmissionValidationInput<ListeningFillBlanksResponse, ListeningFillBlanksQuestion>,
+    ): SubmissionValidationResult {
+      const base = validateListeningSubmission(input, (r) =>
         Object.values(r.placements).every((v) => v === null || v === undefined),
       );
+      if (!base.valid) return base;
+
+      const { response, question } = input;
+      if (question) {
+        const validGapIndices = new Set(question.gaps.map((g) => String(g.index)));
+        for (const gapIndex of Object.keys(response.placements)) {
+          if (!validGapIndices.has(gapIndex)) {
+            return { valid: false, reason: `Unknown gap index: ${gapIndex}` };
+          }
+        }
+      }
+
+      return { valid: true };
     },
   };
 }

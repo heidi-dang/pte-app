@@ -31,8 +31,27 @@ export function createReadingWritingFillBlanksHandler(): QuestionTypeHandler<
       return 'incomplete';
     },
 
-    validateSubmission(input: SubmissionValidationInput<ReadingWritingFillBlanksResponse>): SubmissionValidationResult {
-      return validateReadingSubmission(input, (r) => Object.keys(r.selections).length === 0);
+    validateSubmission(
+      input: SubmissionValidationInput<ReadingWritingFillBlanksResponse, ReadingWritingFillBlanksQuestion>,
+    ): SubmissionValidationResult {
+      const base = validateReadingSubmission(input, (r) => Object.keys(r.selections).length === 0);
+      if (!base.valid) return base;
+
+      const { response, question } = input;
+      if (question) {
+        for (const [gapIndex, selectedKey] of Object.entries(response.selections)) {
+          const gap = question.gaps.find((g) => String(g.index) === gapIndex);
+          if (!gap) {
+            return { valid: false, reason: `Unknown gap index: ${gapIndex}` };
+          }
+          const validKeys = new Set(gap.options.map((o) => o.key));
+          if (!validKeys.has(selectedKey)) {
+            return { valid: false, reason: `Unknown option key '${selectedKey}' for gap ${gapIndex}` };
+          }
+        }
+      }
+
+      return { valid: true };
     },
   };
 }

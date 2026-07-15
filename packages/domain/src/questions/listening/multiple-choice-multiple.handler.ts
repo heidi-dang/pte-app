@@ -30,8 +30,38 @@ export function createListeningMultipleAnswersHandler(): QuestionTypeHandler<
       return 'complete';
     },
 
-    validateSubmission(input: SubmissionValidationInput<ListeningMultipleAnswersResponse>): SubmissionValidationResult {
-      return validateListeningSubmission(input, (r) => r.selectedKeys.length === 0);
+    validateSubmission(
+      input: SubmissionValidationInput<ListeningMultipleAnswersResponse, ListeningMultipleAnswersQuestion>,
+    ): SubmissionValidationResult {
+      const base = validateListeningSubmission(input, (r) => r.selectedKeys.length === 0);
+      if (!base.valid) return base;
+
+      const { response, question } = input;
+
+      const seen = new Set<string>();
+      for (const key of response.selectedKeys) {
+        if (seen.has(key)) {
+          return { valid: false, reason: `Duplicate selected key: ${key}` };
+        }
+        seen.add(key);
+      }
+
+      if (question) {
+        const validKeys = new Set(question.options.map((o) => o.key));
+        for (const key of response.selectedKeys) {
+          if (!validKeys.has(key)) {
+            return { valid: false, reason: `Unknown selected key: ${key}` };
+          }
+        }
+        if (response.selectedKeys.length > question.maxSelections) {
+          return {
+            valid: false,
+            reason: `Too many selections: ${response.selectedKeys.length} > ${question.maxSelections}`,
+          };
+        }
+      }
+
+      return { valid: true };
     },
   };
 }

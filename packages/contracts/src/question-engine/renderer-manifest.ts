@@ -26,10 +26,33 @@ export interface QuestionRendererManifest {
   accessibility: RendererAccessibilityContract;
 }
 
-export interface SubmissionValidationInput<TResponse = unknown> {
+export interface ScoringProfileSummary {
+  id: string;
+  version: number;
+  correctCredit: number;
+  incorrectDeduction: number;
+  minimumResult: number;
+  maximumResult: number;
+}
+
+export interface ModeProfileSummary {
+  id: string;
+  version: number;
+  mode: string;
+}
+
+export interface SubmissionValidationInput<TResponse = unknown, TQuestion = unknown> {
   response: TResponse;
   sessionMode: string;
   allowsEmptySubmission: boolean;
+  /** The parsed question for immutable-context validation. */
+  question?: TQuestion;
+  /** The question version ID the session was started against. */
+  questionVersionId?: string;
+  /** The resolved mode profile attached to this session. */
+  modeProfile?: ModeProfileSummary;
+  /** The resolved scoring profile attached to this session. */
+  scoringProfile?: ScoringProfileSummary;
 }
 
 export interface SubmissionValidationResult {
@@ -43,5 +66,5 @@ export interface QuestionTypeHandler<TQuestion = unknown, TResponse = unknown> {
   parseResponse(input: unknown): TResponse;
   createEmptyResponse(): TResponse;
   getResponseState(response: TResponse): 'empty' | 'incomplete' | 'complete' | 'submitted';
-  validateSubmission(input: SubmissionValidationInput<TResponse>): SubmissionValidationResult;
+  validateSubmission(input: SubmissionValidationInput<TResponse, TQuestion>): SubmissionValidationResult;
 }

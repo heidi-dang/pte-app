@@ -28,8 +28,8 @@ export const READING_MANIFEST_BASE: Omit<QuestionRendererManifest, 'type'> = {
   },
 };
 
-export function validateReadingSubmission<TResponse>(
-  input: SubmissionValidationInput<TResponse>,
+export function validateReadingSubmission<TResponse, TQuestion = unknown>(
+  input: SubmissionValidationInput<TResponse, TQuestion>,
   isEmpty: (r: TResponse) => boolean,
 ): SubmissionValidationResult {
   if (!input.allowsEmptySubmission && isEmpty(input.response)) {

@@ -30,8 +30,10 @@ export function createReorderParagraphHandler(): QuestionTypeHandler<
       return 'incomplete';
     },
 
-    validateSubmission(input: SubmissionValidationInput<ReorderParagraphResponse>): SubmissionValidationResult {
-      const { response, allowsEmptySubmission } = input;
+    validateSubmission(
+      input: SubmissionValidationInput<ReorderParagraphResponse, ReorderParagraphQuestion>,
+    ): SubmissionValidationResult {
+      const { response, allowsEmptySubmission, question } = input;
       if (!allowsEmptySubmission && response.orderedIds.length === 0) {
         return { valid: false, reason: 'Response is empty and empty submission is not allowed' };
       }
@@ -42,6 +44,15 @@ export function createReorderParagraphHandler(): QuestionTypeHandler<
           return { valid: false, reason: `Duplicate paragraph ID: ${id}` };
         }
         seen.add(id);
+      }
+
+      if (question) {
+        const validIds = new Set(question.items.map((item) => item.id));
+        for (const id of response.orderedIds) {
+          if (!validIds.has(id)) {
+            return { valid: false, reason: `Unknown paragraph ID: ${id}` };
+          }
+        }
       }
 
       return { valid: true };

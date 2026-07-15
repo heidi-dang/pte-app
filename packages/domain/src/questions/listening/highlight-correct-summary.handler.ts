@@ -30,8 +30,21 @@ export function createHighlightCorrectSummaryHandler(): QuestionTypeHandler<
       return 'complete';
     },
 
-    validateSubmission(input: SubmissionValidationInput<HighlightCorrectSummaryResponse>): SubmissionValidationResult {
-      return validateListeningSubmission(input, (r) => r.selectedKey === null);
+    validateSubmission(
+      input: SubmissionValidationInput<HighlightCorrectSummaryResponse, HighlightCorrectSummaryQuestion>,
+    ): SubmissionValidationResult {
+      const base = validateListeningSubmission(input, (r) => r.selectedKey === null);
+      if (!base.valid) return base;
+
+      const { response, question } = input;
+      if (response.selectedKey !== null && question) {
+        const validKeys = new Set(question.options.map((o) => o.key));
+        if (!validKeys.has(response.selectedKey)) {
+          return { valid: false, reason: `Unknown selected key: ${response.selectedKey}` };
+        }
+      }
+
+      return { valid: true };
     },
   };
 }

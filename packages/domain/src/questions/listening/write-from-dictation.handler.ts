@@ -30,7 +30,9 @@ export function createWriteFromDictationHandler(): QuestionTypeHandler<
       return 'complete';
     },
 
-    validateSubmission(input: SubmissionValidationInput<WriteFromDictationResponse>): SubmissionValidationResult {
+    validateSubmission(
+      input: SubmissionValidationInput<WriteFromDictationResponse, WriteFromDictationQuestion>,
+    ): SubmissionValidationResult {
       return validateListeningSubmission(input, (r) => r.words.trim().length === 0);
     },
   };
