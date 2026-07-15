@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+export const MasterySubjectSchema: z.ZodType<unknown> = z.discriminatedUnion('subjectType', [
+  z.object({ subjectType: z.literal('skill'), subjectId: z.string(), subjectName: z.string() }),
+  z.object({ subjectType: z.literal('task'), subjectId: z.string(), subjectName: z.string(), taskType: z.string() }),
+]);
+
 export const MasteryEvidenceSchema = z.object({
   attemptId: z.string(),
   resultId: z.string(),
@@ -19,62 +24,105 @@ export const MasteryEvidenceSchema = z.object({
   timestamp: z.string(),
 });
 
+export const ScoreNormalisationPolicySchema: z.ZodType<unknown> = z.discriminatedUnion('method', [
+  z.object({ method: z.literal('none') }),
+  z.object({
+    method: z.literal('linear'),
+    inputMinimum: z.number(),
+    inputMaximum: z.number(),
+    outputMinimum: z.number(),
+    outputMaximum: z.number(),
+  }),
+  z.object({
+    method: z.literal('z-score'),
+    referenceMean: z.number(),
+    referenceStandardDeviation: z.number().positive(),
+  }),
+]);
+
 export const EvidencePolicySchema = z.object({
   completeResultPolicy: z.literal('include'),
   partialResultPolicy: z.enum(['include', 'discount', 'exclude']),
+  partialResultWeight: z.number().min(0).max(1),
   failedResultPolicy: z.enum(['exclude', 'include-with-disclosure']),
+  failedResultWeight: z.number().min(0).max(1),
   minimumEvidence: z.number().int().min(1),
   minimumConfidence: z.number().min(0).max(1),
-  scoreNormalisationPolicy: z.enum(['none', 'z-score', 'linear']),
+  scoreNormalisationPolicy: ScoreNormalisationPolicySchema,
   confidenceWeightingPolicy: z.enum(['none', 'weighted']),
+  allowedScoringProfileIds: z.array(z.string()),
+  allowedScoringProfileVersions: z.array(z.number().int()),
+  allowedEvaluationProfileIds: z.array(z.string()),
+  allowedEvaluationProfileVersions: z.array(z.number().int()),
+  mixedProfilePolicy: z.enum(['allow', 'exclude-mismatched', 'disclose-mismatched']),
+});
+
+export const MasteryLevelDefinitionSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  value: z.number().int().min(0),
+  threshold: z.number().min(0).max(1),
+});
+
+export const ExcludedEvidenceSchema = z.object({
+  evidence: MasteryEvidenceSchema,
+  reason: z.enum([
+    'partial-policy-excluded',
+    'failed-policy-excluded',
+    'invalid-profile-version',
+    'incompatible-result-profile',
+    'missing-required-field',
+  ]),
+});
+
+const InsufficientLevelSchema = z.object({
+  subject: MasterySubjectSchema,
+  status: z.literal('insufficient'),
+  level: z.null(),
+  confidence: z.literal(0),
+  evidenceCount: z.number().int().min(0),
+  minimumRequired: z.number().int().min(1),
+  lastUpdated: z.string(),
+  contributingEvidence: z.array(MasteryEvidenceSchema),
+  excludedEvidence: z.array(ExcludedEvidenceSchema),
+  totalEvidence: z.number().int().min(0),
+  eligibleEvidence: z.number().int().min(0),
+  partialEvidence: z.number().int().min(0),
+  failedEvidence: z.number().int().min(0),
+  excludedEvidenceCount: z.number().int().min(0),
+  warnings: z.array(z.string()),
+});
+
+const PartialSufficientLevelSchema = z.object({
+  subject: MasterySubjectSchema,
+  status: z.enum(['partial', 'sufficient']),
+  level: z.number().int().min(0),
+  confidence: z.number().min(0).max(1),
+  evidenceCount: z.number().int().min(0),
+  minimumRequired: z.number().int().min(1),
+  lastUpdated: z.string(),
+  contributingEvidence: z.array(MasteryEvidenceSchema),
+  excludedEvidence: z.array(ExcludedEvidenceSchema),
+  totalEvidence: z.number().int().min(0),
+  eligibleEvidence: z.number().int().min(0),
+  partialEvidence: z.number().int().min(0),
+  failedEvidence: z.number().int().min(0),
+  excludedEvidenceCount: z.number().int().min(0),
+  warnings: z.array(z.string()),
 });
 
 export const MasteryLevelSchema: z.ZodType<unknown> = z.discriminatedUnion('status', [
-  z.object({
-    skillId: z.string(),
-    skillName: z.string(),
-    status: z.literal('insufficient'),
-    level: z.null(),
-    confidence: z.literal(0),
-    evidenceCount: z.number().int().min(0),
-    minimumRequired: z.number().int().min(1),
-    lastUpdated: z.string(),
-    contributingAttempts: z.array(MasteryEvidenceSchema),
-    totalEvidence: z.number().int().min(0),
-    eligibleEvidence: z.number().int().min(0),
-    partialEvidence: z.number().int().min(0),
-    failedEvidence: z.number().int().min(0),
-    excludedEvidence: z.number().int().min(0),
-  }),
-  z.object({
-    skillId: z.string(),
-    skillName: z.string(),
-    status: z.enum(['partial', 'sufficient']),
-    level: z.number().int().min(0),
-    confidence: z.number().min(0).max(1),
-    evidenceCount: z.number().int().min(0),
-    minimumRequired: z.number().int().min(1),
-    lastUpdated: z.string(),
-    contributingAttempts: z.array(MasteryEvidenceSchema),
-    totalEvidence: z.number().int().min(0),
-    eligibleEvidence: z.number().int().min(0),
-    partialEvidence: z.number().int().min(0),
-    failedEvidence: z.number().int().min(0),
-    excludedEvidence: z.number().int().min(0),
-  }),
+  InsufficientLevelSchema,
+  PartialSufficientLevelSchema,
 ]);
 
 export const MasteryProfileSchema = z.object({
   id: z.string(),
   version: z.number().int().min(1),
   evidencePolicy: EvidencePolicySchema,
-  levelDefinitions: z.record(
-    z.object({
-      threshold: z.number().min(0).max(1),
-      label: z.string(),
-    }),
-  ),
+  levelDefinitions: z.array(MasteryLevelDefinitionSchema),
   staleDataThresholdDays: z.number().int().min(1),
+  fallbackLevel: z.number().int().min(0).nullable(),
 });
 
 export const MasterySnapshotSchema = z.object({

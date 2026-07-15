@@ -17,8 +17,13 @@ export function calculateAgreement(
     };
   }
 
-  const absoluteMatches = reviewerScores.filter((s, i) => s === referenceScores[i]).length;
-  const toleranceMatches = reviewerScores.filter((s, i) => Math.abs(s - referenceScores[i]) <= tolerance).length;
+  let absoluteMatches = 0;
+  let toleranceMatches = 0;
+  for (let i = 0; i < reviewerScores.length; i++) {
+    const ref = referenceScores[i] as number;
+    if (reviewerScores[i] === ref) absoluteMatches++;
+    if (Math.abs((reviewerScores[i] as number) - ref) <= tolerance) toleranceMatches++;
+  }
 
   return {
     absoluteAgreement: absoluteMatches / reviewerScores.length,

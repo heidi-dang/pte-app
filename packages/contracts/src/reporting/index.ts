@@ -19,7 +19,17 @@ export type {
 export type { Dashboard, StudentDashboard } from './dashboard.js';
 export type { ActivityItem, ActivityType } from './activity.js';
 export type { ScoreTrendPoint, ScoreTrendConfig, ScoreTrendSet } from './score-trend.js';
-export type { MasteryEvidence, EvidencePolicy, MasteryLevel, MasteryProfile, MasterySnapshot } from './mastery.js';
+export type {
+  MasterySubject,
+  MasteryEvidence,
+  EvidencePolicy,
+  ScoreNormalisationPolicy,
+  MasteryLevelDefinition,
+  ExcludedEvidence,
+  MasteryLevel,
+  MasteryProfile,
+  MasterySnapshot,
+} from './mastery.js';
 export type { TraitResult, TraitAnalysis } from './trait-analysis.js';
 export type { WeaknessReport } from './weakness-report.js';
 export type { AttemptHistoryFilter, AttemptHistoryEntry, AttemptHistoryResult } from './attempt-history.js';

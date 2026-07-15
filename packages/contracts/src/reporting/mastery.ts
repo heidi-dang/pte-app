@@ -1,6 +1,19 @@
 import type { MasteryId, MasterySnapshotId } from './identifiers.js';
 import type { DataFreshnessStatus } from './data-freshness.js';
 
+export type MasterySubject =
+  | {
+      subjectType: 'skill';
+      subjectId: string;
+      subjectName: string;
+    }
+  | {
+      subjectType: 'task';
+      subjectId: string;
+      subjectName: string;
+      taskType: string;
+    };
+
 export interface MasteryEvidence {
   attemptId: string;
   resultId: string;
@@ -20,58 +33,100 @@ export interface MasteryEvidence {
   timestamp: string;
 }
 
+export type ScoreNormalisationPolicy =
+  | { method: 'none' }
+  | {
+      method: 'linear';
+      inputMinimum: number;
+      inputMaximum: number;
+      outputMinimum: number;
+      outputMaximum: number;
+    }
+  | {
+      method: 'z-score';
+      referenceMean: number;
+      referenceStandardDeviation: number;
+    };
+
 export interface EvidencePolicy {
   completeResultPolicy: 'include';
   partialResultPolicy: 'include' | 'discount' | 'exclude';
+  partialResultWeight: number;
   failedResultPolicy: 'exclude' | 'include-with-disclosure';
+  failedResultWeight: number;
   minimumEvidence: number;
   minimumConfidence: number;
-  scoreNormalisationPolicy: 'none' | 'z-score' | 'linear';
+  scoreNormalisationPolicy: ScoreNormalisationPolicy;
   confidenceWeightingPolicy: 'none' | 'weighted';
+  allowedScoringProfileIds: string[];
+  allowedScoringProfileVersions: number[];
+  allowedEvaluationProfileIds: string[];
+  allowedEvaluationProfileVersions: number[];
+  mixedProfilePolicy: 'allow' | 'exclude-mismatched' | 'disclose-mismatched';
+}
+
+export interface MasteryLevelDefinition {
+  id: string;
+  label: string;
+  value: number;
+  threshold: number;
 }
 
 export type MasteryLevelStatus = 'insufficient' | 'partial' | 'sufficient';
 
+export interface ExcludedEvidence {
+  evidence: MasteryEvidence;
+  reason:
+    | 'partial-policy-excluded'
+    | 'failed-policy-excluded'
+    | 'invalid-profile-version'
+    | 'incompatible-result-profile'
+    | 'missing-required-field';
+}
+
 export type MasteryLevel =
   | {
-      skillId: string;
-      skillName: string;
+      subject: MasterySubject;
       status: 'insufficient';
       level: null;
       confidence: 0;
       evidenceCount: number;
       minimumRequired: number;
       lastUpdated: string;
-      contributingAttempts: MasteryEvidence[];
+      contributingEvidence: MasteryEvidence[];
+      excludedEvidence: ExcludedEvidence[];
       totalEvidence: number;
       eligibleEvidence: number;
       partialEvidence: number;
       failedEvidence: number;
-      excludedEvidence: number;
+      excludedEvidenceCount: number;
+      warnings: string[];
     }
   | {
-      skillId: string;
-      skillName: string;
+      subject: MasterySubject;
       status: 'partial' | 'sufficient';
       level: number;
       confidence: number;
       evidenceCount: number;
       minimumRequired: number;
       lastUpdated: string;
-      contributingAttempts: MasteryEvidence[];
+      contributingEvidence: MasteryEvidence[];
+      excludedEvidence: ExcludedEvidence[];
       totalEvidence: number;
       eligibleEvidence: number;
       partialEvidence: number;
       failedEvidence: number;
-      excludedEvidence: number;
+      excludedEvidenceCount: number;
+      warnings: string[];
     };
 
 export interface MasteryProfile {
   id: MasteryId;
   version: number;
   evidencePolicy: EvidencePolicy;
-  levelDefinitions: Record<string, { threshold: number; label: string }>;
+  levelDefinitions: MasteryLevelDefinition[];
   staleDataThresholdDays: number;
+  fallbackLevel: number | null;
 }
 
 export interface MasterySnapshot {
