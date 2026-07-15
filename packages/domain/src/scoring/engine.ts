@@ -4,7 +4,6 @@ import type {
   ScoringEvidence,
   ScoringInput,
   ScoringRuleDefinition,
-  ScoringRuleParams,
 } from '@pte-app/contracts';
 import { randomUUID } from 'node:crypto';
 
@@ -59,7 +58,6 @@ function validateProfile(profile: ScoringProfile): void {
     'per-blank',
     'per-word',
     'adjacent-pair',
-    'no-response',
   ]);
   for (const rule of profile.rules) {
     if (!knownTypes.has(rule.ruleType)) {
@@ -72,7 +70,6 @@ function evaluateProfileRules(input: ScoringInput, profile: ScoringProfile): Rul
   const outputs: RuleEvaluation[] = [];
 
   for (const ruleDef of profile.rules) {
-    if (ruleDef.ruleType === 'no-response') continue;
     outputs.push(evaluateRule(ruleDef, input));
   }
 
@@ -91,34 +88,45 @@ function evaluateRule(ruleDef: ScoringRuleDefinition, input: ScoringInput): Rule
       return evaluatePerWord(ruleDef.params, input);
     case 'adjacent-pair':
       return evaluateAdjacentPair(ruleDef.params, input);
-    default:
-      throw new Error(`Unsupported rule type: ${ruleDef.ruleType}`);
   }
 }
 
-function evaluateBinary(params: ScoringRuleParams, input: ScoringInput): RuleEvaluation {
+function evaluateBinary(
+  params: {
+    kind: 'binary';
+    correctCredit: number;
+    incorrectDeduction: number;
+    duplicateAction: 'reject' | 'deduplicate' | 'allow';
+  },
+  input: ScoringInput,
+): RuleEvaluation {
   const selected = validateStringArray(input.selectedAnswers, 'selectedAnswers');
   const correct = validateStringArray(input.correctAnswers, 'correctAnswers');
   const validIds = input.context?.validAnswerIdentifiers as string[] | undefined;
-  const correctCredit = (params.correctCredit as number) ?? 1;
-  const incorrectDeduction = (params.incorrectDeduction as number) ?? 0;
-  const duplicatePolicy = (params.duplicatePolicy as string) ?? 'reject';
 
-  const seen = new Set<string>();
-  let score = 0;
-
+  const scoreCounts: Record<string, number> = {};
   for (const key of selected) {
-    if (duplicatePolicy === 'reject' && seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
+    scoreCounts[key] = (scoreCounts[key] ?? 0) + 1;
+  }
+
+  let effectiveKeys: string[];
+  if (params.duplicateAction === 'reject') {
+    effectiveKeys = selected.filter((k, i) => selected.indexOf(k) === i);
+  } else if (params.duplicateAction === 'deduplicate') {
+    effectiveKeys = Object.keys(scoreCounts);
+  } else {
+    effectiveKeys = selected;
+  }
+
+  let score = 0;
+  for (const key of effectiveKeys) {
     if (validIds && !validIds.includes(key) && !correct.includes(key)) {
       throw new Error(`Unknown answer identifier: ${key}`);
     }
     if (correct.includes(key)) {
-      score += correctCredit;
+      score += params.correctCredit;
     } else {
-      score -= incorrectDeduction;
+      score -= params.incorrectDeduction;
     }
   }
 
@@ -126,45 +134,61 @@ function evaluateBinary(params: ScoringRuleParams, input: ScoringInput): RuleEva
     score,
     evidence: {
       ruleType: 'binary-correct-incorrect',
-      description: `Binary scoring: ${score} from ${seen.size} unique selections`,
+      description: `Binary scoring: ${score} from ${effectiveKeys.length} effective selections`,
       contribution: score,
       metadata: {
-        selectedCount: seen.size,
+        selectedCount: effectiveKeys.length,
         correctCount: correct.length,
-        correctCredit,
-        incorrectDeduction,
+        correctCredit: params.correctCredit,
+        incorrectDeduction: params.incorrectDeduction,
+        duplicateAction: params.duplicateAction,
       },
     },
   };
 }
 
-function evaluateMultipleAnswer(params: ScoringRuleParams, input: ScoringInput): RuleEvaluation {
+function evaluateMultipleAnswer(
+  params: {
+    kind: 'multiple-answer';
+    correctCredit: number;
+    incorrectDeduction: number;
+    duplicateAction: 'reject' | 'deduplicate' | 'allow';
+  },
+  input: ScoringInput,
+): RuleEvaluation {
   const selected = validateStringArray(input.selectedAnswers, 'selectedAnswers');
   const correct = validateStringArray(input.correctAnswers, 'correctAnswers');
   const validIds = input.context?.validAnswerIdentifiers as string[] | undefined;
-  const correctCredit = (params.correctCredit as number) ?? 1;
-  const incorrectDeduction = (params.incorrectDeduction as number) ?? 0;
-  const duplicatePolicy = (params.duplicatePolicy as string) ?? 'reject';
 
   const correctSet = new Set(correct);
-  const seen = new Set<string>();
+
+  const scoreCounts: Record<string, number> = {};
+  for (const key of selected) {
+    scoreCounts[key] = (scoreCounts[key] ?? 0) + 1;
+  }
+
+  let effectiveKeys: string[];
+  if (params.duplicateAction === 'reject') {
+    effectiveKeys = selected.filter((k, i) => selected.indexOf(k) === i);
+  } else if (params.duplicateAction === 'deduplicate') {
+    effectiveKeys = Object.keys(scoreCounts);
+  } else {
+    effectiveKeys = selected;
+  }
+
   let score = 0;
   let correctCount = 0;
   let incorrectCount = 0;
 
-  for (const key of selected) {
-    if (duplicatePolicy === 'reject' && seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
+  for (const key of effectiveKeys) {
     if (validIds && !validIds.includes(key) && !correctSet.has(key)) {
       throw new Error(`Unknown answer identifier: ${key}`);
     }
     if (correctSet.has(key)) {
-      score += correctCredit;
+      score += params.correctCredit;
       correctCount++;
     } else {
-      score -= incorrectDeduction;
+      score -= params.incorrectDeduction;
       incorrectCount++;
     }
   }
@@ -173,34 +197,41 @@ function evaluateMultipleAnswer(params: ScoringRuleParams, input: ScoringInput):
     score,
     evidence: {
       ruleType: 'multiple-answer-negative-marking',
-      description: `Multiple-answer: +${correctCount * correctCredit} -${incorrectCount * incorrectDeduction}`,
+      description: `Multiple-answer: +${correctCount * params.correctCredit} -${incorrectCount * params.incorrectDeduction}`,
       contribution: score,
       metadata: {
         correctSelections: correctCount,
         incorrectSelections: incorrectCount,
-        correctCredit,
-        incorrectDeduction,
+        correctCredit: params.correctCredit,
+        incorrectDeduction: params.incorrectDeduction,
+        duplicateAction: params.duplicateAction,
       },
     },
   };
 }
 
-function evaluatePerBlank(params: ScoringRuleParams, input: ScoringInput): RuleEvaluation {
+function evaluatePerBlank(
+  params: {
+    kind: 'per-blank';
+    blankCredit: number;
+    casePolicy: 'insensitive' | 'sensitive';
+    whitespacePolicy: 'collapse' | 'preserve';
+  },
+  input: ScoringInput,
+): RuleEvaluation {
   const selected = validateStringArray(input.selectedAnswers, 'selectedAnswers');
   const correct = validateStringArray(input.correctAnswers, 'correctAnswers');
-  const blankCredit = (params.blankCredit as number) ?? 1;
-  const casePolicy = (params.casePolicy as string) ?? 'insensitive';
-  const whitespacePolicy = (params.whitespacePolicy as string) ?? 'collapse';
 
   let score = 0;
   const blankResults: boolean[] = [];
 
   for (let i = 0; i < correct.length; i++) {
-    const expected = normaliseBlankAnswer(correct[i] ?? '', casePolicy, whitespacePolicy);
-    const given = i < selected.length ? normaliseBlankAnswer(selected[i] ?? '', casePolicy, whitespacePolicy) : '';
+    const expected = normaliseBlankAnswer(correct[i] ?? '', params.casePolicy, params.whitespacePolicy);
+    const given =
+      i < selected.length ? normaliseBlankAnswer(selected[i] ?? '', params.casePolicy, params.whitespacePolicy) : '';
     const matches = expected === given;
     if (matches) {
-      score += blankCredit;
+      score += params.blankCredit;
     }
     blankResults.push(matches);
   }
@@ -211,58 +242,77 @@ function evaluatePerBlank(params: ScoringRuleParams, input: ScoringInput): RuleE
       ruleType: 'per-blank',
       description: `Per-blank: ${blankResults.filter(Boolean).length}/${correct.length} correct`,
       contribution: score,
-      metadata: { blankResults, blankCredit },
+      metadata: { blankResults, blankCredit: params.blankCredit },
     },
   };
 }
 
-function evaluatePerWord(params: ScoringRuleParams, input: ScoringInput): RuleEvaluation {
+function evaluatePerWord(
+  params: {
+    kind: 'per-word';
+    wordCredit: number;
+    casePolicy: 'insensitive' | 'sensitive';
+    punctuationPolicy: 'strip' | 'preserve';
+  },
+  input: ScoringInput,
+): RuleEvaluation {
   const selected = validateStringArray(input.selectedAnswers, 'selectedAnswers');
   const correct = validateStringArray(input.correctAnswers, 'correctAnswers');
-  const wordCredit = (params.wordCredit as number) ?? 1;
-  const casePolicy = (params.casePolicy as string) ?? 'insensitive';
-  const punctuationPolicy = (params.punctuationPolicy as string) ?? 'strip';
 
-  const normalisedCorrect = correct.map((w) => normaliseWord(w, casePolicy, punctuationPolicy));
-  const normalisedSelected = selected.map((w) => normaliseWord(w, casePolicy, punctuationPolicy));
+  const normalisedCorrect = correct.map((w) => normaliseWord(w, params.casePolicy, params.punctuationPolicy));
+  const normalisedSelected = selected.map((w) => normaliseWord(w, params.casePolicy, params.punctuationPolicy));
+
+  const selectedCounts: Record<string, number> = {};
+  for (const w of normalisedSelected) {
+    selectedCounts[w] = (selectedCounts[w] ?? 0) + 1;
+  }
 
   let score = 0;
   const wordResults: boolean[] = [];
 
   for (const word of normalisedCorrect) {
-    const matches = normalisedSelected.includes(word);
-    if (matches) {
-      score += wordCredit;
+    const remaining = selectedCounts[word] ?? 0;
+    if (remaining > 0) {
+      score += params.wordCredit;
+      selectedCounts[word] = remaining - 1;
+      wordResults.push(true);
+    } else {
+      wordResults.push(false);
     }
-    wordResults.push(matches);
   }
 
   return {
     score,
     evidence: {
       ruleType: 'per-word',
-      description: `Per-word: ${wordResults.filter(Boolean).length}/${normalisedCorrect.length} correct`,
+      description: `Per-word multiset: ${wordResults.filter(Boolean).length}/${normalisedCorrect.length} correct`,
       contribution: score,
-      metadata: { wordResults, wordCredit },
+      metadata: { wordResults, wordCredit: params.wordCredit },
     },
   };
 }
 
-function evaluateAdjacentPair(params: ScoringRuleParams, input: ScoringInput): RuleEvaluation {
+function evaluateAdjacentPair(
+  params: { kind: 'adjacent-pair'; correctCredit: number },
+  input: ScoringInput,
+): RuleEvaluation {
   const selected = validateStringArray(input.selectedAnswers, 'selectedAnswers');
   const correct = validateStringArray(input.correctAnswers, 'correctAnswers');
-  const correctCredit = (params.correctCredit as number) ?? 1;
+
+  const correctIndex: Record<string, number> = {};
+  for (let i = 0; i < correct.length; i++) {
+    correctIndex[correct[i]] = i;
+  }
 
   let score = 0;
-
   for (let i = 0; i < selected.length - 1; i++) {
     const currentItem = selected[i];
     const nextItem = selected[i + 1];
     if (currentItem === undefined || nextItem === undefined) continue;
-    const currentIdx = correct.indexOf(currentItem);
-    const nextIdx = correct.indexOf(nextItem);
-    if (currentIdx !== -1 && nextIdx !== -1 && nextIdx === currentIdx + 1) {
-      score += correctCredit;
+    const currentIdx = correctIndex[currentItem];
+    const nextIdx = correctIndex[nextItem];
+    if (currentIdx !== undefined && nextIdx !== undefined && nextIdx === currentIdx + 1) {
+      score += params.correctCredit;
     }
   }
 
@@ -270,15 +320,14 @@ function evaluateAdjacentPair(params: ScoringRuleParams, input: ScoringInput): R
     score,
     evidence: {
       ruleType: 'adjacent-pair',
-      description: `Adjacent pairs: ${score / correctCredit} correct pairs`,
+      description: `Adjacent pairs: ${score / params.correctCredit} correct pairs`,
       contribution: score,
-      metadata: { pairCount: selected.length - 1, correctCredit },
+      metadata: { pairCount: selected.length - 1, correctCredit: params.correctCredit },
     },
   };
 }
 
 function createNoResponseResult(input: ScoringInput, profile: ScoringProfile, attemptId: string): ScoringResult {
-  const noResponseRule = profile.rules.find((r) => r.ruleType === 'no-response');
   const result = profile.noResponseBehaviour.result;
   return {
     resultId: randomUUID(),
@@ -292,7 +341,7 @@ function createNoResponseResult(input: ScoringInput, profile: ScoringProfile, at
     componentEvidence: [
       {
         ruleType: 'no-response',
-        description: noResponseRule ? `No-response rule: ${result}` : `No response submitted: ${result}`,
+        description: `No response submitted: ${result}`,
         contribution: result,
       },
     ],
@@ -338,7 +387,12 @@ function validateStringArray(value: unknown, fieldName: string): string[] {
   if (!Array.isArray(value)) {
     throw new Error(`${fieldName} must be an array`);
   }
-  return value as string[];
+  for (const item of value) {
+    if (typeof item !== 'string') {
+      throw new Error(`${fieldName} must be an array of strings`);
+    }
+  }
+  return value;
 }
 
 function normaliseBlankAnswer(value: string, casePolicy: string, whitespacePolicy: string): string {
