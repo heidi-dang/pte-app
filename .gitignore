@@ -3,6 +3,7 @@ dist
 .next
 .env.local
 .env.*.local
+.env.production
 *.log
 *.tsbuildinfo
 coverage
@@ -10,3 +11,6 @@ coverage
 .local-runtime/
 .config/
 test-results/
+.terraform/
+*.tfstate
+*.tfstate.backup

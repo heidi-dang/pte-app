@@ -1,0 +1,65 @@
+name: Production Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_commit:
+        description: 'Exact commit SHA to deploy (must be reachable from origin/main)'
+        required: true
+        type: string
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify commit reachable from main
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor "${{ github.event.inputs.release_commit }}" origin/main; then
+            echo "ERROR: ${{ github.event.inputs.release_commit }} is not reachable from origin/main"
+            exit 1
+          fi
+          echo "Commit verified: ${{ github.event.inputs.release_commit }}"
+
+      - name: Checkout exact commit
+        run: |
+          git checkout --detach "${{ github.event.inputs.release_commit }}"
+          echo "Deploying commit: $(git rev-parse HEAD)"
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_DIRECTORY }}
+            git fetch --prune origin
+            export RELEASE_COMMIT="${{ github.event.inputs.release_commit }}"
+            cd /root/pte-app
+            bash scripts/deploy-production.sh
+
+      - name: Post-deployment smoke tests
+        run: |
+          sleep 10
+          for domain in ${{ secrets.WEB_DOMAIN }} ${{ secrets.API_DOMAIN }} ${{ secrets.SCORING_DOMAIN }}; do
+            if curl --fail --silent --show-error --location --max-time 15 "https://${domain}/" > /dev/null 2>&1; then
+              echo "https://${domain}/: OK"
+            else
+              echo "WARNING: https://${domain}/: unreachable"
+            fi
+          done
+
+      - name: Record deployment
+        run: |
+          echo "Deployed commit: ${{ github.event.inputs.release_commit }}"
+          echo "Deployed at: $(date -u)"
