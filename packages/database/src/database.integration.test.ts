@@ -75,7 +75,7 @@ describe('database integration', () => {
       await runMigrations(connection);
       await runMigrations(connection);
       const applied = await getAppliedMigrations(connection);
-      assert.equal(applied.length, 4);
+      assert.equal(applied.length, 5);
     });
 
     pgIt('rejects checksum mismatch on reapplication', async () => {
