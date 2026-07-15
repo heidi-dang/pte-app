@@ -57,8 +57,15 @@ export async function restartApi(apiUrl: string): Promise<number> {
     }
   }
 
+  const apiPort = new URL(apiUrl).port;
   const env = loadEnvLocal();
-  const serviceEnv = { ...process.env, ...env, API_PORT: String(new URL(apiUrl).port), API_HOST: '127.0.0.1' };
+  const serviceEnv = {
+    ...process.env,
+    ...env,
+    API_PORT: apiPort,
+    API_HOST: '127.0.0.1',
+    NEXT_PUBLIC_API_URL: apiUrl,
+  };
   const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
   const child = spawn(npmCmd, ['run', 'start'], {
     cwd: resolve(process.cwd(), '../../services/api'),

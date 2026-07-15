@@ -1,5 +1,4 @@
 import { spawn, type ChildProcess } from 'node:child_process';
-import { createServer } from 'node:net';
 import { writeFileSync, mkdirSync, existsSync, appendFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadEnvLocal, applyEnvLocal } from '@pte-app/database/testing/env';
@@ -56,16 +55,11 @@ function writeLog(label: string, line: string) {
   appendFileSync(resolve(RUNTIME_DIR, `e2e-${label}.log`), line);
 }
 
-function getAvailablePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = createServer();
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const addr = server.address();
-      const port = addr && typeof addr === 'object' ? addr.port : 0;
-      server.close(() => resolve(port));
-    });
-  });
+function getRequiredEnv(key: string): string {
+  const val = process.env[key];
+  if (!val)
+    throw new Error(`Required environment variable ${key} is not set. Run scripts/prepare-e2e-runtime.mjs first.`);
+  return val;
 }
 
 async function waitForUrl(url: string, timeoutMs: number): Promise<boolean> {
@@ -110,20 +104,30 @@ function spawnService(
 async function startServices(
   testDbName: string,
 ): Promise<{ apiUrl: string; webUrl: string; api: ChildProcess; web: ChildProcess }> {
-  const apiPort = await getAvailablePort();
-  const webPort = await getAvailablePort();
-  const apiUrl = `http://127.0.0.1:${apiPort}`;
-  const webUrl = `http://127.0.0.1:${webPort}`;
+  const apiUrl = getRequiredEnv('E2E_API_URL');
+  const webUrl = getRequiredEnv('E2E_WEB_URL');
+  const apiPort = getRequiredEnv('API_PORT');
+  const webPort = getRequiredEnv('WEB_PORT');
+  const apiHost = getRequiredEnv('API_HOST');
+  const webHost = getRequiredEnv('WEB_HOST');
+  const webOrigin = getRequiredEnv('WEB_ORIGIN');
+
+  const parsedApiUrl = new URL(apiUrl);
+  if (parsedApiUrl.port !== apiPort) throw new Error(`E2E_API_URL port ${parsedApiUrl.port} ≠ API_PORT ${apiPort}`);
+  const parsedWebUrl = new URL(webUrl);
+  if (parsedWebUrl.port !== webPort) throw new Error(`E2E_WEB_URL port ${parsedWebUrl.port} ≠ WEB_PORT ${webPort}`);
+
   const env = loadEnvLocal();
   const serviceEnv = {
     ...process.env,
     ...env,
-    POSTGRES_DATABASE: testDbName,
-    API_PORT: String(apiPort),
-    API_HOST: '127.0.0.1',
-    WEB_PORT: String(webPort),
-    WEB_HOST: '127.0.0.1',
+    API_HOST: apiHost,
+    API_PORT: apiPort,
+    WEB_HOST: webHost,
+    WEB_PORT: webPort,
     NEXT_PUBLIC_API_URL: apiUrl,
+    WEB_ORIGIN: webOrigin,
+    POSTGRES_DATABASE: testDbName,
     NODE_ENV: 'test',
   };
 
@@ -145,6 +149,16 @@ async function startServices(
     throw new Error(
       `Web did not become ready at ${webUrl} (port ${webPort}, pid ${web.pid ?? 'unknown'}, exit code ${web.exitCode ?? 'N/A'}, signal ${web.signalCode ?? 'N/A'})`,
     );
+  }
+
+  // Verify the compiled client can reach the API
+  const catalogueRes = await fetch(`${webUrl}/learn/catalogue`);
+  if (!catalogueRes.ok) {
+    throw new Error(`Web catalogue unreachable at ${webUrl}: ${catalogueRes.status}`);
+  }
+  const catalogueBody = await catalogueRes.text();
+  if (catalogueBody.includes('NEXT_PUBLIC_API_URL is required')) {
+    throw new Error(`Compiled bundle still reports missing NEXT_PUBLIC_API_URL at ${webUrl}`);
   }
 
   return { apiUrl, webUrl, api, web };
@@ -186,6 +200,12 @@ async function fetchLesson(apiUrl: string, token: string, lessonId: string): Pro
 
 async function main(): Promise<void> {
   ensureDir(RUNTIME_DIR);
+
+  // Verify required environment
+  getRequiredEnv('E2E_API_URL');
+  getRequiredEnv('E2E_WEB_URL');
+  console.log(`Using E2E_API_URL=${process.env.E2E_API_URL}`);
+  console.log(`Using E2E_WEB_URL=${process.env.E2E_WEB_URL}`);
 
   const baseConfig = loadDatabaseConfig();
   const testDbName = `${baseConfig.database}_test`;
