@@ -103,27 +103,34 @@ function MatchingBlock({ content }: { content: Record<string, unknown> }) {
   const [matched, setMatched] = useState<Set<number>>(new Set());
   const [feedback, setFeedback] = useState('');
 
+  const rightIndexOffset = pairs.length;
+  const leftItems = pairs.map((p, i) => ({ text: p.left, idx: i }));
+  const [rightItems] = useState(() =>
+    [...pairs.map((p, i) => ({ text: p.right, originalIdx: i }))]
+      .sort(() => Math.random() - 0.5)
+      .map((item, displayIdx) => ({ ...item, idx: displayIdx })),
+  );
+
   const handleLeftClick = useCallback((idx: number) => {
     setSelectedLeft(idx);
     setFeedback('');
   }, []);
 
   const handleRightClick = useCallback(
-    (idx: number) => {
+    (displayIdx: number) => {
       if (selectedLeft === null) return;
-      if (pairs[selectedLeft]?.right === pairs[idx]?.right) {
-        setMatched((prev) => new Set([...prev, selectedLeft, idx]));
+      const originalIdx = rightItems[displayIdx]?.originalIdx;
+      if (originalIdx === undefined) return;
+      if (pairs[selectedLeft]?.right === pairs[originalIdx]?.right) {
+        setMatched((prev) => new Set([...prev, selectedLeft, displayIdx + rightIndexOffset]));
         setFeedback('Correct match!');
       } else {
         setFeedback('Try again');
       }
       setSelectedLeft(null);
     },
-    [selectedLeft, pairs],
+    [selectedLeft, pairs, rightIndexOffset, rightItems],
   );
-
-  const leftItems = pairs.map((p, i) => ({ text: p.left, idx: i }));
-  const rightItems = [...pairs].sort(() => Math.random() - 0.5).map((p, i) => ({ text: p.right, idx: i }));
 
   return (
     <div data-testid="interactive-matching" role="region" aria-label="Matching interaction">
@@ -159,17 +166,17 @@ function MatchingBlock({ content }: { content: Record<string, unknown> }) {
               key={idx}
               data-testid={`match-right-${idx}`}
               onClick={() => handleRightClick(idx)}
-              disabled={matched.has(idx)}
+              disabled={matched.has(idx + rightIndexOffset)}
               aria-label={`Match option: ${text}`}
               style={{
                 display: 'block',
                 width: '100%',
                 padding: '0.5rem',
                 marginBottom: '0.25rem',
-                background: matched.has(idx) ? '#c8e6c9' : '#f5f5f5',
-                border: `2px solid ${matched.has(idx) ? '#388e3c' : '#ddd'}`,
+                background: matched.has(idx + rightIndexOffset) ? '#c8e6c9' : '#f5f5f5',
+                border: `2px solid ${matched.has(idx + rightIndexOffset) ? '#388e3c' : '#ddd'}`,
                 borderRadius: '6px',
-                cursor: matched.has(idx) ? 'default' : 'pointer',
+                cursor: matched.has(idx + rightIndexOffset) ? 'default' : 'pointer',
                 textAlign: 'left',
               }}
             >
@@ -186,7 +193,7 @@ function MatchingBlock({ content }: { content: Record<string, unknown> }) {
           {feedback}
         </p>
       )}
-      {matched.size >= pairs.length && (
+      {matched.size >= pairs.length * 2 && (
         <p data-testid="match-complete" style={{ marginTop: '0.5rem', color: '#2e7d32', fontWeight: 600 }}>
           All pairs matched!
         </p>

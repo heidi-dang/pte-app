@@ -19,7 +19,7 @@ async function logout(page: Page): Promise<string> {
   expect(oldToken).toBeTruthy();
 
   await page.request.post(`${cfg.apiUrl}/auth/logout`, {
-    headers: { authorization: `Bearer ${oldToken}`, 'content-type': 'application/json' },
+    headers: { authorization: `Bearer ${oldToken}` },
   });
 
   const cookiesAfter = await page.context().cookies();
@@ -33,7 +33,7 @@ async function getAuthHeaders(page: Page): Promise<Record<string, string>> {
   const cookies = await page.context().cookies();
   const sessionCookie = cookies.find((c) => c.name === cfg.sessionCookieName);
   const token = sessionCookie?.value ?? '';
-  return { authorization: `Bearer ${token}`, 'content-type': 'application/json' };
+  return { authorization: `Bearer ${token}` };
 }
 
 test.describe('Phase G browser-driven provenance workflow', () => {

@@ -17,6 +17,8 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
   const [versionId, setVersionId] = useState<string>('');
   const [lastMutId, setLastMutId] = useState<string>('');
+  const [teacherNotes, setTeacherNotes] = useState<Array<Record<string, unknown>>>([]);
+  const [quiz, setQuiz] = useState<Record<string, unknown> | null>(null);
 
   async function load() {
     setLoading(true);
@@ -26,6 +28,8 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
       setLesson(lessonData);
       setBlocks((data.blocks as Array<Record<string, unknown>>) || []);
       setProgress((data.progress as Record<string, unknown>) || null);
+      setTeacherNotes((data.teacherNotes as Array<Record<string, unknown>>) || []);
+      setQuiz((data.quiz as Record<string, unknown>) || null);
       setVersionId((lessonData.versionId as string) || '');
       if (data.progress && (data.progress as Record<string, unknown>).blockPosition !== undefined) {
         setCurrentBlock((data.progress as Record<string, unknown>).blockPosition as number);
@@ -199,7 +203,7 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
           <Button data-testid="btn-save-progress" onClick={() => saveProgress(currentBlock)}>
             Save Progress
           </Button>
-          {currentBlock >= blocks.length - 1 && !completed ? (
+          {!completed && progress && progress.status !== 'not_started' && (
             <Button
               data-testid="btn-complete-lesson"
               onClick={handleComplete}
@@ -207,10 +211,10 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
             >
               Complete Lesson
             </Button>
-          ) : (
+          )}
+          {currentBlock < blocks.length - 1 && blocks.length > 0 && (
             <Button
               data-testid="btn-next-block"
-              disabled={currentBlock >= blocks.length - 1}
               onClick={() => {
                 const next = Math.min(blocks.length - 1, currentBlock + 1);
                 setCurrentBlock(next);
@@ -241,9 +245,9 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
               Lesson Completed!
             </Badge>
           )}
-          {!!(lesson as Record<string, unknown>).quizId && (
+          {quiz && (
             <a
-              href={`/learn/quiz/${(lesson as Record<string, unknown>).quizId as string}`}
+              href={`/learn/quiz/${quiz.id as string}`}
               style={{ color: 'var(--color-primary)' }}
               data-testid="quiz-link"
             >
@@ -251,6 +255,19 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
             </a>
           )}
         </div>
+        {teacherNotes.length > 0 && (
+          <div
+            style={{ marginTop: '1.5rem', padding: '1rem', background: '#fff9c4', borderRadius: '8px' }}
+            data-testid="teacher-notes"
+          >
+            <h3 style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: '#666' }}>Teacher Notes</h3>
+            {teacherNotes.map((note, i) => (
+              <div key={i} data-testid="teacher-note" style={{ marginBottom: '0.5rem' }}>
+                <p>{note.content as string}</p>
+              </div>
+            ))}
+          </div>
+        )}
         <div style={{ marginTop: '1rem' }}>
           <a href="/learn/catalogue" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
             Back to catalogue
