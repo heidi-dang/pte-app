@@ -35,6 +35,15 @@ jobs:
           git checkout --detach "${{ github.event.inputs.release_commit }}"
           echo "Deploying commit: $(git rev-parse HEAD)"
 
+      - name: Verify checked-out commit matches request
+        run: |
+          CHECKED_OUT=$(git rev-parse HEAD)
+          if [ "$CHECKED_OUT" != "${{ github.event.inputs.release_commit }}" ]; then
+            echo "ERROR: Checked out commit $CHECKED_OUT does not match requested commit ${{ github.event.inputs.release_commit }}"
+            exit 1
+          fi
+          echo "Commit verified: $CHECKED_OUT"
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -44,20 +53,46 @@ jobs:
           script: |
             cd ${{ secrets.DEPLOY_DIRECTORY }}
             git fetch --prune origin
+            git checkout --detach "${{ github.event.inputs.release_commit }}"
+            CHECKED_OUT=$(git rev-parse HEAD)
+            if [ "$CHECKED_OUT" != "${{ github.event.inputs.release_commit }}" ]; then
+              echo "ERROR: Remote checked-out commit $CHECKED_OUT does not match requested commit ${{ github.event.inputs.release_commit }}"
+              exit 1
+            fi
             export RELEASE_COMMIT="${{ github.event.inputs.release_commit }}"
-            cd /root/pte-app
             bash scripts/deploy-production.sh
 
       - name: Post-deployment smoke tests
         run: |
-          sleep 10
+          SMOKE_MAX_RETRIES=${{ inputs.smoke_max_retries || vars.SMOKE_MAX_RETRIES || '6' }}
+          SMOKE_RETRY_DELAY=${{ inputs.smoke_retry_delay || vars.SMOKE_RETRY_DELAY || '10' }}
+          smoke_failed=false
           for domain in ${{ secrets.WEB_DOMAIN }} ${{ secrets.API_DOMAIN }} ${{ secrets.SCORING_DOMAIN }}; do
-            if curl --fail --silent --show-error --location --max-time 15 "https://${domain}/" > /dev/null 2>&1; then
-              echo "https://${domain}/: OK"
-            else
-              echo "WARNING: https://${domain}/: unreachable"
+            endpoint="/"
+            if [ "$domain" != "${{ secrets.WEB_DOMAIN }}" ]; then
+              endpoint="/health/ready"
+            fi
+            attempt=1
+            while [ $attempt -le $SMOKE_MAX_RETRIES ]; do
+              echo "  [smoke] https://${domain}${endpoint} attempt $attempt/$SMOKE_MAX_RETRIES"
+              if curl --fail --silent --show-error --location --max-time 15 "https://${domain}${endpoint}" > /dev/null 2>&1; then
+                echo "  [smoke] https://${domain}${endpoint}: OK"
+                break
+              fi
+              attempt=$((attempt + 1))
+              if [ $attempt -le $SMOKE_MAX_RETRIES ]; then
+                sleep $SMOKE_RETRY_DELAY
+              fi
+            done
+            if [ $attempt -gt $SMOKE_MAX_RETRIES ]; then
+              echo "ERROR: https://${domain}${endpoint}: unreachable after $SMOKE_MAX_RETRIES attempts"
+              smoke_failed=true
             fi
           done
+          if [ "$smoke_failed" = true ]; then
+            echo "ERROR: Post-deployment smoke tests failed"
+            exit 1
+          fi
 
       - name: Record deployment
         run: |

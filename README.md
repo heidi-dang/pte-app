@@ -12,7 +12,10 @@ This is an independent PTE Academic preparation platform. It is not affiliated w
 
 Phase A — Product Contract (accepted at 98/100).
 Phase B — Monorepo, tooling and local environment foundation.
-Phase Y — Production deployment (Caddy, Cloudflare DNS, Docker Compose).
+
+Note: Phase H is the current active implementation phase.
+Production infrastructure (Caddy, Cloudflare DNS, Docker Compose) is an unapproved draft prepared for future Phase Y.
+It cannot be activated until Phases H–X pass independent audit.
 
 ## Supported PTE Product
 

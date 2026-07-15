@@ -51,7 +51,7 @@ describe('Web integration', () => {
     child = spawn(npmCmd, ['run', 'start'], {
       cwd: webDir,
       stdio: 'pipe',
-      env: { ...process.env, WEB_PORT: String(port) },
+      env: { ...process.env, WEB_PORT: String(port), PORT: String(port) },
       detached: true,
     });
     await new Promise<void>((resolve, reject) => {

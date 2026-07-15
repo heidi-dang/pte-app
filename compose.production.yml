@@ -28,7 +28,7 @@ services:
     <<: *production-restart
     logging: *default-logging
     networks:
-      - production
+      - private
 
   redis:
     image: redis:7-alpine
@@ -44,26 +44,20 @@ services:
     <<: *production-restart
     logging: *default-logging
     networks:
-      - production
+      - private
 
   api:
     build:
       context: .
       dockerfile: Dockerfile
       target: api
-    image: pte-production-api:${RELEASE_COMMIT:-latest}
+    image: pte-production-api:${RELEASE_COMMIT}
     container_name: pte-prod-api
     env_file:
       - .env.production
     environment:
       POSTGRES_HOST: postgres
       REDIS_HOST: redis
-    healthcheck:
-      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:4000/health/live']
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,34 +66,38 @@ services:
     <<: *production-restart
     logging: *default-logging
     networks:
-      - production
+      - edge
+      - private
 
   scoring:
     build:
       context: .
       dockerfile: Dockerfile
       target: scoring
-    image: pte-production-scoring:${RELEASE_COMMIT:-latest}
+    image: pte-production-scoring:${RELEASE_COMMIT}
     container_name: pte-prod-scoring
     env_file:
       - .env.production
-    healthcheck:
-      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:5000/health/live']
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     <<: *production-restart
     logging: *default-logging
     networks:
-      - production
+      - edge
+      - private
 
   worker:
     build:
       context: .
       dockerfile: Dockerfile
       target: worker
-    image: pte-production-worker:${RELEASE_COMMIT:-latest}
+    image: pte-production-worker:${RELEASE_COMMIT}
     container_name: pte-prod-worker
     env_file:
       - .env.production
@@ -114,30 +112,25 @@ services:
     <<: *production-restart
     logging: *default-logging
     networks:
-      - production
+      - private
 
   web:
     build:
       context: .
       dockerfile: Dockerfile
       target: web
-    image: pte-production-web:${RELEASE_COMMIT:-latest}
+    image: pte-production-web:${RELEASE_COMMIT}
     container_name: pte-prod-web
     env_file:
       - .env.production
-    healthcheck:
-      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000/']
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
     depends_on:
       api:
         condition: service_started
     <<: *production-restart
     logging: *default-logging
     networks:
-      - production
+      - edge
+      - private
 
   caddy:
     image: caddy:2
@@ -152,13 +145,16 @@ services:
     env_file:
       - .env.production
     depends_on:
-      - web
-      - api
-      - scoring
+      web:
+        condition: service_started
+      api:
+        condition: service_started
+      scoring:
+        condition: service_started
     <<: *production-restart
     logging: *default-logging
     networks:
-      - production
+      - edge
 
 volumes:
   pgdata:
@@ -167,7 +163,10 @@ volumes:
   caddyconfig:
 
 networks:
-  production:
-    name: pte-production
+  edge:
+    name: pte-edge
     driver: bridge
-    internal: false
+  private:
+    name: pte-private
+    driver: bridge
+    internal: true

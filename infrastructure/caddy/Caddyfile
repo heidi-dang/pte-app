@@ -1,43 +1,26 @@
 {
-  email {$ACME_EMAIL}
-  admin off
-  log {
-    output file /data/caddy/access.log {
-      roll_size 100mb
-      roll_keep 5
-    }
-    format json
-  }
+	email {$ACME_EMAIL:admin@tnaprovider.com.au}
+	admin off
+	log {
+		output file /data/caddy/access.log {
+			roll_size 100mb
+			roll_keep 5
+		}
+		format json
+	}
 }
 
-{$WEB_DOMAIN} {
-  encode zstd gzip
-  reverse_proxy {$WEB_UPSTREAM} {
-    header_up X-Real-IP {remote_host}
-    header_up X-Forwarded-For {remote_host}
-    header_up X-Forwarded-Proto {scheme}
-    header_up Host {host}
-  }
+{$WEB_DOMAIN:pte.tnaprovider.com.au} {
+	encode zstd gzip
+	reverse_proxy {$WEB_UPSTREAM:web:3000}
 }
 
-{$API_DOMAIN} {
-  encode zstd gzip
-  header Access-Control-Allow-Origin {$WEB_ORIGIN}
-  header Access-Control-Allow-Credentials true
-  reverse_proxy {$API_UPSTREAM} {
-    header_up X-Real-IP {remote_host}
-    header_up X-Forwarded-For {remote_host}
-    header_up X-Forwarded-Proto {scheme}
-    header_up Host {host}
-  }
+{$API_DOMAIN:api.tnaprovider.com.au} {
+	encode zstd gzip
+	reverse_proxy {$API_UPSTREAM:api:4000}
 }
 
-{$SCORING_DOMAIN} {
-  encode zstd gzip
-  reverse_proxy {$SCORING_UPSTREAM} {
-    header_up X-Real-IP {remote_host}
-    header_up X-Forwarded-For {remote_host}
-    header_up X-Forwarded-Proto {scheme}
-    header_up Host {host}
-  }
+{$SCORING_DOMAIN:scoring.tnaprovider.com.au} {
+	encode zstd gzip
+	reverse_proxy {$SCORING_UPSTREAM:scoring:5000}
 }

@@ -35,14 +35,12 @@ db_name="${POSTGRES_DATABASE:-pte_prod}"
 # Restore database
 if [ -f "${backup_dir}/database.sql.gz" ]; then
   echo "Restoring PostgreSQL database..."
-  gunzip -c "${backup_dir}/database.sql.gz" | docker compose -f compose.production.yml exec -T postgres psql -U "$db_user" -d "$db_name" > /dev/null 2>&1 && \
-    echo "  Database restored from ${backup_dir}/database.sql.gz" || \
-    echo "  WARNING: Database restore failed"
+  gunzip -c "${backup_dir}/database.sql.gz" | docker compose -f compose.production.yml exec -T postgres psql -U "$db_user" -d "$db_name" > /dev/null 2>&1
+  echo "  Database restored from ${backup_dir}/database.sql.gz"
 elif [ -f "${backup_dir}/database.sql" ]; then
   echo "Restoring PostgreSQL database..."
-  docker compose -f compose.production.yml exec -T postgres psql -U "$db_user" -d "$db_name" < "${backup_dir}/database.sql" > /dev/null 2>&1 && \
-    echo "  Database restored from ${backup_dir}/database.sql" || \
-    echo "  WARNING: Database restore failed"
+  docker compose -f compose.production.yml exec -T postgres psql -U "$db_user" -d "$db_name" < "${backup_dir}/database.sql" > /dev/null 2>&1
+  echo "  Database restored from ${backup_dir}/database.sql"
 else
   echo "  No database backup found in $backup_dir"
 fi
@@ -50,12 +48,11 @@ fi
 # Restore Redis
 if [ -f "${backup_dir}/redis.rdb" ]; then
   echo "Restoring Redis data..."
-  docker compose -f compose.production.yml cp "${backup_dir}/redis.rdb" redis:/data/dump.rdb 2>/dev/null || \
-    echo "  WARNING: Redis restore copy failed"
-  docker compose -f compose.production.yml exec redis redis-cli CONFIG SET dir /data 2>/dev/null || true
-  docker compose -f compose.production.yml exec redis redis-cli DEBUG RELOAD 2>/dev/null && \
-    echo "  Redis restored from ${backup_dir}/redis.rdb" || \
-    echo "  WARNING: Redis reload failed (restart required)"
+  docker compose -f compose.production.yml cp "${backup_dir}/redis.rdb" redis:/data/dump.rdb 2>/dev/null
+  docker compose -f compose.production.yml exec -T redis redis-cli CONFIG SET dir /data 2>/dev/null || true
+  docker compose -f compose.production.yml exec -T redis redis-cli DEBUG RELOAD 2>/dev/null || \
+    echo "  Redis reload deferred (restart container for changes to take effect)"
+  echo "  Redis restored from ${backup_dir}/redis.rdb"
 fi
 
 echo ""

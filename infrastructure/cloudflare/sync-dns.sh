@@ -2,22 +2,36 @@
 set -euo pipefail
 
 # Cloudflare DNS sync script for pte.tnaprovider.com.au
+# Modes (mutually exclusive, set via DNS_MODE):
+#   DIRECT - Three A or AAAA records pointing to the VPS IP
+#   TUNNEL - Three CNAME records pointing to the tunnel hostname
+#
 # Usage:
-#   CLOUDFLARE_DRY_RUN=true ./infrastructure/cloudflare/sync-dns.sh
-#   CLOUDFLARE_DRY_RUN=false ./infrastructure/cloudflare/sync-dns.sh
+#   DNS_MODE=DIRECT CLOUDFLARE_DRY_RUN=true ./infrastructure/cloudflare/sync-dns.sh
+#   DNS_MODE=TUNNEL CLOUDFLARE_DRY_RUN=false ./infrastructure/cloudflare/sync-dns.sh
 
+dns_mode="${DNS_MODE:-DIRECT}"
 dry_run="${CLOUDFLARE_DRY_RUN:-true}"
 api_token="${CLOUDFLARE_API_TOKEN:-}"
 zone_id="${CLOUDFLARE_ZONE_ID:-}"
 vps_ip="${VPS_IP:-}"
+tunnel_hostname="${TUNNEL_HOSTNAME:-}"
 proxy_mode="${CLOUDFLARE_PROXIED:-true}"
 ttl="${CLOUDFLARE_TTL:-120}"
 rollback_file="${CLOUDFLARE_ROLLBACK_FILE:-/tmp/cloudflare-dns-rollback-$(date +%s).json}"
 
+if [ "$dns_mode" != "DIRECT" ] && [ "$dns_mode" != "TUNNEL" ]; then
+  echo "ERROR: DNS_MODE must be DIRECT or TUNNEL (got: $dns_mode)" >&2
+  exit 1
+fi
+
 missing=""
 if [ -z "$api_token" ]; then missing="$missing CLOUDFLARE_API_TOKEN"; fi
 if [ -z "$zone_id" ]; then missing="$missing CLOUDFLARE_ZONE_ID"; fi
-if [ -z "$vps_ip" ]; then missing="$missing VPS_IP"; fi
+if [ "$dns_mode" = "DIRECT" ] && [ -z "$vps_ip" ]; then missing="$missing VPS_IP"; fi
+if [ "$dns_mode" = "TUNNEL" ] && [ -z "$tunnel_hostname" ]; then
+  missing="$missing TUNNEL_HOSTNAME"
+fi
 
 if [ -n "$missing" ]; then
   echo "ERROR: Missing required environment variables:$missing" >&2
@@ -26,11 +40,19 @@ fi
 
 base_url="https://api.cloudflare.com/client/v4/zones/$zone_id/dns_records"
 
-records=(
-  "pte.tnaprovider.com.au:A"
-  "api.tnaprovider.com.au:A"
-  "scoring.tnaprovider.com.au:A"
-)
+# Build record list based on mode
+declare -A records
+if [ "$dns_mode" = "DIRECT" ]; then
+  records["pte.tnaprovider.com.au"]="A"
+  records["api.tnaprovider.com.au"]="A"
+  records["scoring.tnaprovider.com.au"]="A"
+  record_content="$vps_ip"
+else
+  records["pte.tnaprovider.com.au"]="CNAME"
+  records["api.tnaprovider.com.au"]="CNAME"
+  records["scoring.tnaprovider.com.au"]="CNAME"
+  record_content="$tunnel_hostname"
+fi
 
 declare -A existing
 declare -A existing_ids
@@ -38,16 +60,18 @@ declare -A rollback_data
 
 echo "=== Cloudflare DNS Sync ==="
 echo "Zone ID: ${zone_id:0:8}..."
-echo "VPS IP: $vps_ip"
-echo "Proxied: $proxy_mode"
-echo "TTL: $ttl"
+echo "Mode: $dns_mode"
 echo "Dry run: $dry_run"
+if [ "$dns_mode" = "DIRECT" ]; then
+  echo "Target IP: $vps_ip"
+else
+  echo "Tunnel hostname: $tunnel_hostname"
+fi
 echo ""
 
 echo "=== Reading existing records ==="
-for entry in "${records[@]}"; do
-  name="${entry%%:*}"
-  type="${entry##*:}"
+for name in "${!records[@]}"; do
+  type="${records[$name]}"
   response=$(curl -s -X GET "$base_url?name=${name}&type=${type}" \
     -H "Authorization: Bearer $api_token" \
     -H "Content-Type: application/json")
@@ -73,9 +97,8 @@ done
 
 echo ""
 echo "=== Change Plan ==="
-for entry in "${records[@]}"; do
-  name="${entry%%:*}"
-  type="${entry##*:}"
+for name in "${!records[@]}"; do
+  type="${records[$name]}"
   need_proxied="$proxy_mode"
   if [ "$need_proxied" = "true" ] || [ "$need_proxied" = "1" ]; then
     need_proxied="true"
@@ -84,13 +107,13 @@ for entry in "${records[@]}"; do
   fi
   if [ -n "${existing[$name]:-}" ]; then
     current_content="${existing[$name]}"
-    if [ "$current_content" = "$vps_ip" ]; then
-      echo "  $name ($type): No change needed (already $vps_ip)"
+    if [ "$current_content" = "$record_content" ]; then
+      echo "  $name ($type): No change needed (already $record_content)"
     else
-      echo "  $name ($type): UPDATE ${current_content} → $vps_ip (proxied: $need_proxied)"
+      echo "  $name ($type): UPDATE ${current_content} → $record_content (proxied: $need_proxied)"
     fi
   else
-    echo "  $name ($type): CREATE → $vps_ip (proxied: $need_proxied)"
+    echo "  $name ($type): CREATE → $record_content (proxied: $need_proxied)"
   fi
 done
 
@@ -103,9 +126,8 @@ fi
 
 echo ""
 echo "=== Applying Changes ==="
-for entry in "${records[@]}"; do
-  name="${entry%%:*}"
-  type="${entry##*:}"
+for name in "${!records[@]}"; do
+  type="${records[$name]}"
   need_proxied="$proxy_mode"
   if [ "$need_proxied" = "true" ] || [ "$need_proxied" = "1" ]; then
     need_proxied="true"
@@ -114,7 +136,7 @@ for entry in "${records[@]}"; do
   fi
   if [ -n "${existing_ids[$name]:-}" ]; then
     current_content="${existing[$name]}"
-    if [ "$current_content" = "$vps_ip" ]; then
+    if [ "$current_content" = "$record_content" ]; then
       echo "  $name ($type): No update needed"
       continue
     fi
@@ -126,7 +148,7 @@ for entry in "${records[@]}"; do
 {
   "type": "$type",
   "name": "$name",
-  "content": "$vps_ip",
+  "content": "$record_content",
   "ttl": $ttl,
   "proxied": $need_proxied
 }
@@ -134,7 +156,7 @@ EOF
 )")
     success=$(echo "$response" | python3 -c "import json,sys; print(json.load(sys.stdin).get('success', False))" 2>/dev/null || echo "false")
     if [ "$success" = "True" ]; then
-      echo "  $name ($type): Updated → $vps_ip"
+      echo "  $name ($type): Updated → $record_content"
     else
       err_msg=$(echo "$response" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('errors',[{}])[0].get('message','unknown'))" 2>/dev/null || echo "unknown error")
       echo "ERROR: Failed to update $name: $err_msg" >&2
@@ -148,7 +170,7 @@ EOF
 {
   "type": "$type",
   "name": "$name",
-  "content": "$vps_ip",
+  "content": "$record_content",
   "ttl": $ttl,
   "proxied": $need_proxied
 }
@@ -168,9 +190,8 @@ done
 
 echo ""
 echo "=== Verification ==="
-for entry in "${records[@]}"; do
-  name="${entry%%:*}"
-  type="${entry##*:}"
+for name in "${!records[@]}"; do
+  type="${records[$name]}"
   response=$(curl -s -X GET "$base_url?name=${name}&type=${type}" \
     -H "Authorization: Bearer $api_token" \
     -H "Content-Type: application/json")

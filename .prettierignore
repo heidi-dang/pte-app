@@ -2,6 +2,10 @@ dist
 .next
 node_modules
 coverage
+Dockerfile
+Caddyfile
+*.sh
+*.yml
 *.local
 *.log
 docs/content/pte-task-manifest.json
