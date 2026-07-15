@@ -2,8 +2,11 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { DatabaseConnection } from '@pte-app/database';
 import { phaseH } from '@pte-app/database';
 import type { UserRole } from '../auth/rbac.js';
+import { requirePublicationEligibility } from '../content-provenance/publication-guard.js';
+import type { ContentId, ContentVersionId, RequestId, UserId } from '@pte-app/contracts';
 
-type AnyRepo = any;
+type AnyRepo = Record<string, any>;
+const repo = phaseH as unknown as AnyRepo;
 
 function getAuth(request: FastifyRequest, reply: FastifyReply) {
   if (!request.auth) { reply.status(401).send({ error: 'Unauthorized' }); return null; }
@@ -17,12 +20,33 @@ function requireRoles(auth: { roles: readonly string[] }, allowed: UserRole[], r
   return true;
 }
 
+function requirePermission(auth: { roles: readonly string[] }, permission: string, reply: FastifyReply): boolean {
+  if (auth.roles.includes('admin' as UserRole)) return true;
+  reply.status(403).send({ error: 'Forbidden', detail: `Permission ${permission} required` });
+  return false;
+}
+
+function checkEntitlement(auth: { roles: readonly string[] }, accessLevel: string): boolean {
+  if (accessLevel === 'free') return true;
+  if (accessLevel === 'entitlement' || accessLevel === 'paid') {
+    return auth.roles.some((r) =>
+      ['admin', 'content_editor', 'teacher'].includes(r as string));
+  }
+  return false;
+}
+
+function reqId(request: FastifyRequest): RequestId {
+  return ((request.headers['x-request-id'] as string) ?? crypto.randomUUID()) as RequestId;
+}
+
 export async function phaseHPlugin(app: FastifyInstance, options: { db: DatabaseConnection }): Promise<void> {
   const { db } = options;
   const staffRoles: UserRole[] = ['admin', 'content_editor', 'teacher'];
-  const repo = phaseH as unknown as Record<string, AnyRepo>;
+  const contentRoles: UserRole[] = ['admin', 'content_editor'];
 
-  // ─── CATALOGUE ─────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════
+  // STUDENT: Catalogue
+  // ═══════════════════════════════════════════════════════
   app.get('/learn/catalogue', async (request, reply) => {
     const auth = getAuth(request, reply); if (!auth) return;
     const query = (request.query || {}) as Record<string, string>;
@@ -32,7 +56,16 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
       pageSize: Math.min(parseInt(query.pageSize || '20', 10), 50),
       cursor: query.cursor,
     });
-    return reply.status(200).send(result);
+    const filtered = {
+      ...result,
+      courses: (result.courses || []).filter((c: any) => {
+        if (c.accessLevel === 'paid' || c.accessLevel === 'entitlement') {
+          return checkEntitlement(auth, c.accessLevel);
+        }
+        return true;
+      }),
+    };
+    return reply.status(200).send(filtered);
   });
 
   app.get('/learn/courses/:slug', async (request, reply) => {
@@ -40,17 +73,25 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     const { slug } = request.params as { slug: string };
     const course = await repo.courses.getCourseBySlug(db, slug);
     if (!course || course.status !== 'published') return reply.status(404).send({ error: 'Course not found' });
+    if (!checkEntitlement(auth, course.accessLevel || 'free')) {
+      return reply.status(403).send({ error: 'Forbidden', reason: 'ENTITLEMENT_REQUIRED' });
+    }
     const modules = await repo.modules.listModulesForCourse(db, course.id);
     const enrolment = await repo.enrolments.getEnrolment(db, auth.userId, course.id);
     return reply.status(200).send({ course, modules, enrolment });
   });
 
-  // ─── ENROLMENT ─────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════
+  // STUDENT: Enrolment
+  // ═══════════════════════════════════════════════════════
   app.post('/learn/courses/:courseId/enrol', async (request, reply) => {
     const auth = getAuth(request, reply); if (!auth) return;
     const { courseId } = request.params as { courseId: string };
     const course = await repo.courses.getCourseById(db, courseId);
     if (!course) return reply.status(404).send({ error: 'Course not found' });
+    if (!checkEntitlement(auth, course.accessLevel || 'free')) {
+      return reply.status(403).send({ error: 'Forbidden', reason: 'ENTITLEMENT_REQUIRED' });
+    }
     const existing = await repo.enrolments.getEnrolment(db, auth.userId, course.id);
     if (existing) return reply.status(200).send(existing);
     const enrolment = await repo.enrolments.createEnrolment(db, {
@@ -59,34 +100,76 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     return reply.status(201).send(enrolment);
   });
 
-  // ─── LESSONS ───────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════
+  // STUDENT: Lesson Delivery
+  // ═══════════════════════════════════════════════════════
   app.get('/learn/lessons/:lessonId', async (request, reply) => {
     const auth = getAuth(request, reply); if (!auth) return;
     const { lessonId } = request.params as { lessonId: string };
     const lesson = await repo.lessons.getLessonById(db, lessonId);
     if (!lesson || lesson.status !== 'published') return reply.status(404).send({ error: 'Lesson not found' });
-    const blocks = await repo.lessonBlocks.getLessonBlocks(db, lesson.id, '');
+    const course = lesson.courseId ? await repo.courses.getCourseById(db, lesson.courseId) : null;
+    if (course && !checkEntitlement(auth, course.accessLevel || 'free')) {
+      return reply.status(403).send({ error: 'Forbidden', reason: 'ENTITLEMENT_REQUIRED' });
+    }
+    const blocks = await repo.lessonBlocks.getLessonBlocks(db, lesson.id, lesson.versionId || '');
     const progress = await repo.progress.getProgress(db, auth.userId, lesson.id);
-    return reply.status(200).send({ lesson, blocks, progress });
+    const quiz = await repo.quizzes.getQuizForLesson(db, lesson.id, lesson.versionId || '').catch(() => null);
+    const teacherNotes = auth.roles.some((r: string) => staffRoles.includes(r as UserRole))
+      ? await repo.teacherNotes.getTeacherNotes(db, 'lesson', lesson.id).catch(() => [])
+      : [];
+    return reply.status(200).send({
+      lesson, blocks, progress,
+      quiz: quiz ? { id: quiz.id, title: quiz.title, description: quiz.description } : null,
+      teacherNotes: teacherNotes.length > 0 ? teacherNotes : undefined,
+    });
   });
 
-  // ─── PROGRESS ──────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════
+  // STUDENT: Progress & Resume
+  // ═══════════════════════════════════════════════════════
   app.post('/learn/progress', async (request, reply) => {
     const auth = getAuth(request, reply); if (!auth) return;
     const body = request.body as Record<string, unknown>;
     if (!body.lessonId || !body.mutationId) return reply.status(400).send({ error: 'lessonId and mutationId required' });
     const existing = await repo.progress.getProgress(db, auth.userId, body.lessonId);
     if (existing && existing.mutationId === body.mutationId) return reply.status(200).send(existing);
-    const progress = await repo.progress.upsertProgress(db, {
-      userId: auth.userId, enrolmentId: body.enrolmentId,
-      courseId: body.courseId, moduleId: body.moduleId,
-      lessonId: body.lessonId, lessonVersionId: body.lessonVersionId,
-      lastBlockId: body.blockId, blockPosition: (body.blockPosition as number) || 0,
-      progressPercentage: (body.progressPercentage as number) || 0,
-      status: 'in_progress', mutationId: body.mutationId as string,
-      startedAt: new Date().toISOString(), lastActivityAt: new Date().toISOString(),
-    });
+    const progress = await repo.progress.upsertProgress(db,
+      auth.userId,
+      body.enrolmentId as string,
+      body.courseId as string,
+      body.moduleId as string,
+      body.lessonId as string,
+      body.lessonVersionId as string || '',
+      {
+        blockId: body.blockId as string,
+        blockPosition: (body.blockPosition as number) || 0,
+        progressPercentage: (body.progressPercentage as number) || 0,
+        mutationId: body.mutationId as string,
+      },
+    );
     return reply.status(200).send(progress);
+  });
+
+  app.get('/learn/progress/resume/:courseId', async (request, reply) => {
+    const auth = getAuth(request, reply); if (!auth) return;
+    const { courseId } = request.params as { courseId: string };
+    const enrolment = await repo.enrolments.getEnrolment(db, auth.userId, courseId);
+    if (!enrolment) return reply.status(404).send({ error: 'Not enrolled' });
+    const allProgress = await repo.progress.listProgressForEnrolment(db, enrolment.id);
+    const inProgress = (allProgress || []).filter((p: any) => p.status !== 'completed');
+    if (inProgress.length > 0) {
+      const latest = inProgress.sort((a: any, b: any) =>
+        (b.lastActivityAt || '').localeCompare(a.lastActivityAt || ''))[0];
+      return reply.status(200).send({
+        resumeType: 'in_progress',
+        lessonId: latest.lessonId,
+        lessonVersionId: latest.lessonVersionId,
+        blockPosition: latest.blockPosition,
+        progressPercentage: latest.progressPercentage,
+      });
+    }
+    return reply.status(200).send({ resumeType: 'first_lesson', courseId, message: 'Start from beginning' });
   });
 
   app.get('/learn/progress/:lessonId', async (request, reply) => {
@@ -96,56 +179,23 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     return reply.status(200).send(progress || { status: 'not_started' });
   });
 
-  // ─── STAFF: Courses ────────────────────────────────────
-  app.post('/learn/admin/courses', async (request, reply) => {
+  // ═══════════════════════════════════════════════════════
+  // STUDENT: Lesson Completion
+  // ═══════════════════════════════════════════════════════
+  app.post('/learn/lessons/:lessonId/complete', async (request, reply) => {
     const auth = getAuth(request, reply); if (!auth) return;
-    if (!requireRoles(auth, staffRoles, reply)) return;
-    const body = request.body as Record<string, unknown>;
-    const course = await repo.courses.createCourse(db, {
-      slug: body.slug as string, title: body.title as string,
-      summary: (body.summary as string) || '', description: (body.description as string) || '',
-      accessLevel: body.accessLevel || 'free', difficulty: (body.difficulty as string) || 'beginner',
-      estimatedDurationMinutes: (body.estimatedDurationMinutes as number) || 0,
-      skillTags: (body.skillTags as string[]) || [], thumbnailMediaId: (body.thumbnailMediaId as string) || null,
-      createdBy: auth.userId,
+    const { lessonId } = request.params as { lessonId: string };
+    const progress = await repo.progress.completeProgress(db, auth.userId, lessonId);
+    if (!progress) return reply.status(404).send({ error: 'No progress found' });
+    return reply.status(200).send({
+      progress,
+      estimatedTrainingResult: 'Lesson completed',
     });
-    return reply.status(201).send(course);
   });
 
-  // ─── STAFF: Modules ────────────────────────────────────
-  app.post('/learn/admin/courses/:courseId/modules', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
-    if (!requireRoles(auth, staffRoles, reply)) return;
-    const { courseId } = request.params as { courseId: string };
-    const body = request.body as Record<string, unknown>;
-    const mod = await repo.modules.createCourseModule(db, {
-      courseId, title: body.title as string,
-      description: (body.description as string) || '',
-      orderPosition: (body.orderPosition as number) || 0, createdBy: auth.userId,
-    });
-    return reply.status(201).send(mod);
-  });
-
-  // ─── STAFF: Lessons ────────────────────────────────────
-  app.post('/learn/admin/modules/:moduleId/lessons', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
-    if (!requireRoles(auth, staffRoles, reply)) return;
-    const { moduleId } = request.params as { moduleId: string };
-    const body = request.body as Record<string, unknown>;
-    const mod = await repo.modules.getCourseModuleById(db, moduleId);
-    if (!mod) return reply.status(404).send({ error: 'Module not found' });
-    const lesson = await repo.lessons.createLesson(db, {
-      moduleId: mod.id, courseId: mod.courseId, title: body.title as string,
-      slug: body.slug as string, summary: (body.summary as string) || '',
-      orderPosition: (body.orderPosition as number) || 0,
-      isOptional: (body.isOptional as boolean) || false,
-      estimatedMinutes: (body.estimatedMinutes as number) || 10, createdBy: auth.userId,
-      quizId: null,
-    });
-    return reply.status(201).send(lesson);
-  });
-
-  // ─── QUIZ ──────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════
+  // STUDENT: Quiz
+  // ═══════════════════════════════════════════════════════
   app.post('/learn/quiz/:quizId/submit', async (request, reply) => {
     const auth = getAuth(request, reply); if (!auth) return;
     const { quizId } = request.params as { quizId: string };
@@ -164,9 +214,9 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
       const correct = (item.correctAnswers || []) as number[];
       const user = answers[i] || [];
       if (correct.length === user.length && correct.every((a: number) => user.includes(a))) {
-        score++; fb.push(`Question ${i + 1}: Correct`);
+        score++; fb.push(`Item ${i + 1}: Correct`);
       } else {
-        fb.push(`Question ${i + 1}: Incorrect. ${item.explanation || ''}`);
+        fb.push(`Item ${i + 1}: Incorrect. ${item.explanation || ''}`);
       }
     }
     const quiz = await repo.quizzes.getQuizForLesson(db, quizId, quizId);
@@ -182,7 +232,215 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     });
   });
 
-  // ─── TEACHER NOTES ─────────────────────────────────────
+  // ═══════════════════════════════════════════════════════
+  // STAFF: Course CRUD
+  // ═══════════════════════════════════════════════════════
+  app.post('/learn/admin/courses', async (request, reply) => {
+    const auth = getAuth(request, reply); if (!auth) return;
+    if (!requireRoles(auth, contentRoles, reply)) return;
+    const body = request.body as Record<string, unknown>;
+    const course = await repo.courses.createCourse(db, {
+      slug: body.slug as string, title: body.title as string,
+      summary: (body.summary as string) || '', description: (body.description as string) || '',
+      accessLevel: body.accessLevel || 'free', difficulty: (body.difficulty as string) || 'beginner',
+      estimatedDurationMinutes: (body.estimatedDurationMinutes as number) || 0,
+      skillTags: (body.skillTags as string[]) || [], thumbnailMediaId: (body.thumbnailMediaId as string) || null,
+      createdBy: auth.userId,
+    });
+    return reply.status(201).send(course);
+  });
+
+  // ─── PUBLISH COURSE (Phase G guard) ─────────────────────
+  app.post('/learn/admin/courses/:courseId/publish', async (request, reply) => {
+    const auth = getAuth(request, reply); if (!auth) return;
+    if (!requirePermission(auth, 'content:publish', reply)) return;
+    const { courseId } = request.params as { courseId: string };
+    const course = await repo.courses.getCourseById(db, courseId);
+    if (!course) return reply.status(404).send({ error: 'Course not found' });
+
+    const pubResult = await requirePublicationEligibility(
+      db,
+      auth.userId as UserId,
+      course.id as ContentId,
+      (course.versionId || course.version || '1') as ContentVersionId,
+      reqId(request),
+    );
+
+    if (!pubResult.eligible) {
+      return reply.status(400).send({
+        error: 'Publication not eligible',
+        blockers: pubResult.blockers,
+        warnings: pubResult.warnings,
+        decisionId: pubResult.decisionId,
+      });
+    }
+
+    const published = await repo.courses.publishCourse(db, course.id);
+    return reply.status(200).send({ course: published, decisionId: pubResult.decisionId });
+  });
+
+  // ─── RETIRE COURSE ─────────────────────────────────────
+  app.post('/learn/admin/courses/:courseId/retire', async (request, reply) => {
+    const auth = getAuth(request, reply); if (!auth) return;
+    if (!requirePermission(auth, 'content:retire', reply)) return;
+    const { courseId } = request.params as { courseId: string };
+    const course = await repo.courses.getCourseById(db, courseId);
+    if (!course) return reply.status(404).send({ error: 'Course not found' });
+    const retired = await repo.courses.retireCourse(db, course.id);
+    return reply.status(200).send(retired);
+  });
+
+  // ─── UPDATE COURSE ─────────────────────────────────────
+  app.patch('/learn/admin/courses/:courseId', async (request, reply) => {
+    const auth = getAuth(request, reply); if (!auth) return;
+    if (!requireRoles(auth, contentRoles, reply)) return;
+    const { courseId } = request.params as { courseId: string };
+    const body = request.body as Record<string, unknown>;
+    const updated = await repo.courses.updateCourse(db, courseId, body as any);
+    return reply.status(200).send(updated);
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // STAFF: Module CRUD
+  // ═══════════════════════════════════════════════════════
+  app.post('/learn/admin/courses/:courseId/modules', async (request, reply) => {
+    const auth = getAuth(request, reply); if (!auth) return;
+    if (!requireRoles(auth, contentRoles, reply)) return;
+    const { courseId } = request.params as { courseId: string };
+    const body = request.body as Record<string, unknown>;
+    const mod = await repo.modules.createCourseModule(db, {
+      courseId, title: body.title as string,
+      description: (body.description as string) || '',
+      orderPosition: (body.orderPosition as number) || 0, createdBy: auth.userId,
+    });
+    return reply.status(201).send(mod);
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // STAFF: Lesson CRUD
+  // ═══════════════════════════════════════════════════════
+  app.post('/learn/admin/modules/:moduleId/lessons', async (request, reply) => {
+    const auth = getAuth(request, reply); if (!auth) return;
+    if (!requireRoles(auth, contentRoles, reply)) return;
+    const { moduleId } = request.params as { moduleId: string };
+    const body = request.body as Record<string, unknown>;
+    const mod = await repo.modules.getCourseModuleById(db, moduleId);
+    if (!mod) return reply.status(404).send({ error: 'Module not found' });
+    const lesson = await repo.lessons.createLesson(db, {
+      moduleId: mod.id, courseId: mod.courseId, title: body.title as string,
+      slug: body.slug as string, summary: (body.summary as string) || '',
+      orderPosition: (body.orderPosition as number) || 0,
+      isOptional: (body.isOptional as boolean) || false,
+      estimatedMinutes: (body.estimatedMinutes as number) || 10, createdBy: auth.userId,
+      quizId: null,
+    });
+    return reply.status(201).send(lesson);
+  });
+
+  // ─── PUBLISH LESSON (Phase G guard) ────────────────────
+  app.post('/learn/admin/lessons/:lessonId/publish', async (request, reply) => {
+    const auth = getAuth(request, reply); if (!auth) return;
+    if (!requirePermission(auth, 'content:publish', reply)) return;
+    const { lessonId } = request.params as { lessonId: string };
+    const lesson = await repo.lessons.getLessonById(db, lessonId);
+    if (!lesson) return reply.status(404).send({ error: 'Lesson not found' });
+
+    const pubResult = await requirePublicationEligibility(
+      db,
+      auth.userId as UserId,
+      lesson.id as ContentId,
+      (lesson.versionId || lesson.version || '1') as ContentVersionId,
+      reqId(request),
+    );
+
+    if (!pubResult.eligible) {
+      return reply.status(400).send({
+        error: 'Publication not eligible',
+        blockers: pubResult.blockers,
+        warnings: pubResult.warnings,
+        decisionId: pubResult.decisionId,
+      });
+    }
+
+    const published = await repo.lessons.publishLesson(db, lesson.id);
+    return reply.status(200).send({ lesson: published, decisionId: pubResult.decisionId });
+  });
+
+  app.post('/learn/admin/lessons/:lessonId/retire', async (request, reply) => {
+    const auth = getAuth(request, reply); if (!auth) return;
+    if (!requirePermission(auth, 'content:retire', reply)) return;
+    const { lessonId } = request.params as { lessonId: string };
+    const lesson = await repo.lessons.getLessonById(db, lessonId);
+    if (!lesson) return reply.status(404).send({ error: 'Lesson not found' });
+    const retired = await repo.lessons.retireLesson(db, lesson.id);
+    return reply.status(200).send(retired);
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // STAFF: Lesson Blocks
+  // ═══════════════════════════════════════════════════════
+  app.post('/learn/admin/lessons/:lessonId/blocks', async (request, reply) => {
+    const auth = getAuth(request, reply); if (!auth) return;
+    if (!requireRoles(auth, contentRoles, reply)) return;
+    const { lessonId } = request.params as { lessonId: string };
+    const body = request.body as Record<string, unknown>;
+    const block = await repo.lessonBlocks.createBlock(db, {
+      lessonId, lessonVersionId: body.lessonVersionId || '',
+      blockType: body.blockType || 'text',
+      orderPosition: (body.orderPosition as number) || 0,
+      content: body.content || {},
+      mediaId: (body.mediaId as string) || null,
+    });
+    return reply.status(201).send(block);
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // STAFF: Prerequisites
+  // ═══════════════════════════════════════════════════════
+  app.post('/learn/admin/prerequisites', async (request, reply) => {
+    const auth = getAuth(request, reply); if (!auth) return;
+    if (!requireRoles(auth, contentRoles, reply)) return;
+    const body = request.body as Record<string, unknown>;
+    try {
+      const prereq = await repo.prerequisites.createPrerequisite(db, {
+        lessonId: body.lessonId as string,
+        prerequisiteType: body.prerequisiteType as string || 'lesson_completion',
+        prerequisiteLessonId: body.prerequisiteLessonId as string || null,
+        prerequisiteModuleId: body.prerequisiteModuleId as string || null,
+        prerequisiteCourseId: body.prerequisiteCourseId as string || null,
+      });
+      return reply.status(201).send(prereq);
+    } catch (err: any) {
+      if (err.message?.includes('cycle')) return reply.status(400).send({ error: 'Prerequisite cycle detected' });
+      if (err.message?.includes('self')) return reply.status(400).send({ error: 'Self-dependency not allowed' });
+      throw err;
+    }
+  });
+
+  app.delete('/learn/admin/prerequisites/:id', async (request, reply) => {
+    const auth = getAuth(request, reply); if (!auth) return;
+    if (!requireRoles(auth, contentRoles, reply)) return;
+    const { id } = request.params as { id: string };
+    await repo.prerequisites.deletePrerequisite(db, id);
+    return reply.status(200).send({ ok: true });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // STAFF: Teacher Notes
+  // ═══════════════════════════════════════════════════════
+  app.post('/learn/admin/notes', async (request, reply) => {
+    const auth = getAuth(request, reply); if (!auth) return;
+    if (!requireRoles(auth, ['admin', 'teacher'], reply)) return;
+    const body = request.body as Record<string, unknown>;
+    const note = await repo.teacherNotes.createNote(db, {
+      entityType: body.entityType as string,
+      entityId: body.entityId as string,
+      content: body.content as string,
+      authorId: auth.userId,
+    });
+    return reply.status(201).send(note);
+  });
+
   app.get('/learn/admin/notes/:entityType/:entityId', async (request, reply) => {
     const auth = getAuth(request, reply); if (!auth) return;
     if (!requireRoles(auth, staffRoles, reply)) return;
