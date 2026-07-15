@@ -208,13 +208,11 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
 
     const prereq = await repo.prerequisites.checkPrerequisites(db, lesson.id, auth.userId);
     if (prereq.locked) {
-      return reply
-        .status(403)
-        .send({
-          error: 'Prerequisite not satisfied',
-          reason: prereq.reason,
-          prerequisiteId: prereq.blockingPrerequisiteId,
-        });
+      return reply.status(403).send({
+        error: 'Prerequisite not satisfied',
+        reason: prereq.reason,
+        prerequisiteId: prereq.blockingPrerequisiteId,
+      });
     }
 
     const lvId = await resolvePublishedLessonVersion(db, lesson.id);
@@ -270,13 +268,11 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
 
     const prereq = await repo.prerequisites.checkPrerequisites(db, lessonId, auth.userId);
     if (prereq.locked) {
-      return reply
-        .status(403)
-        .send({
-          error: 'Prerequisite not satisfied',
-          reason: prereq.reason,
-          prerequisiteId: prereq.blockingPrerequisiteId,
-        });
+      return reply.status(403).send({
+        error: 'Prerequisite not satisfied',
+        reason: prereq.reason,
+        prerequisiteId: prereq.blockingPrerequisiteId,
+      });
     }
 
     const lvId = (body.lessonVersionId as string) || (await resolvePublishedLessonVersion(db, lessonId));
@@ -381,13 +377,11 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
 
     const prereq = await repo.prerequisites.checkPrerequisites(db, lessonId, auth.userId);
     if (prereq.locked) {
-      return reply
-        .status(403)
-        .send({
-          error: 'Prerequisite not satisfied',
-          reason: prereq.reason,
-          prerequisiteId: prereq.blockingPrerequisiteId,
-        });
+      return reply.status(403).send({
+        error: 'Prerequisite not satisfied',
+        reason: prereq.reason,
+        prerequisiteId: prereq.blockingPrerequisiteId,
+      });
     }
 
     const lvId = await resolvePublishedLessonVersion(db, lessonId);
@@ -451,13 +445,11 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
 
     const prereq = await repo.prerequisites.checkPrerequisites(db, lesson.id, auth.userId);
     if (prereq.locked) {
-      return reply
-        .status(403)
-        .send({
-          error: 'Prerequisite not satisfied',
-          reason: prereq.reason,
-          prerequisiteId: prereq.blockingPrerequisiteId,
-        });
+      return reply.status(403).send({
+        error: 'Prerequisite not satisfied',
+        reason: prereq.reason,
+        prerequisiteId: prereq.blockingPrerequisiteId,
+      });
     }
 
     const items = await repo.quizzes.getQuizItems(db, quizId);
