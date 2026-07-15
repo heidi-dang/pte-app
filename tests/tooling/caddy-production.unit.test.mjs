@@ -52,4 +52,29 @@ describe('Caddy configuration', () => {
     const content = readFileSync(CADDYFILE, 'utf-8');
     assert.ok(content.includes('format json'), 'Must use JSON log format');
   });
+
+  it('all three virtual hosts use TLS (not http:// prefix)', () => {
+    const content = readFileSync(CADDYFILE, 'utf-8');
+    const httpHosts = content.split('\n').filter((l) => l.startsWith('http://'));
+    assert.strictEqual(httpHosts.length, 0, 'No hosts should use http:// prefix (plaintext application)');
+    assert.ok(content.includes('tls '), 'Must have tls directive with certificate paths');
+  });
+
+  it('certificate and key paths are configuration-driven', () => {
+    const content = readFileSync(CADDYFILE, 'utf-8');
+    assert.ok(content.includes('/etc/caddy/certs/origin.pem'), 'Must reference origin.pem path');
+    assert.ok(content.includes('/etc/caddy/certs/origin-key.pem'), 'Must reference origin-key.pem path');
+  });
+
+  it('port 80 serves health only (no application traffic)', () => {
+    const content = readFileSync(CADDYFILE, 'utf-8');
+    const port80Section = content.split(':80')[1]?.split(':443')[0] || '';
+    assert.ok(port80Section.includes('/health'), 'Port 80 block must serve health endpoint');
+    assert.ok(!port80Section.includes('reverse_proxy'), 'Port 80 must not reverse-proxy application traffic');
+  });
+
+  it('port 443 handles application TLS', () => {
+    const content = readFileSync(CADDYFILE, 'utf-8');
+    assert.ok(content.includes(':443'), 'Must have port 443 listener');
+  });
 });

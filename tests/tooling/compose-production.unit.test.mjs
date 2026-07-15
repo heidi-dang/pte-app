@@ -174,4 +174,24 @@ describe('Compose production configuration', () => {
     const buildIdx = buildSection.indexOf('npm run build');
     assert.ok(argApiIdx < buildIdx, 'NEXT_PUBLIC_ vars must appear before npm run build');
   });
+
+  it('Caddy volume mounts include TLS certificate and key', () => {
+    const composeRaw = readFileSync(COMPOSE_FILE, 'utf-8');
+    assert.ok(composeRaw.includes('origin.pem'), 'Compose must mount origin.pem certificate');
+    assert.ok(composeRaw.includes('origin-key.pem'), 'Compose must mount origin-key.pem private key');
+  });
+
+  it('TLS certificate and key are mounted read-only', () => {
+    const composeRaw = readFileSync(COMPOSE_FILE, 'utf-8');
+    const lines = composeRaw.split('\n');
+    const certLines = lines.filter((l) => l.includes('origin.pem') && l.includes(':ro'));
+    assert.ok(certLines.length > 0, 'origin.pem must be mounted read-only');
+    const keyLines = lines.filter((l) => l.includes('origin-key.pem') && l.includes(':ro'));
+    assert.ok(keyLines.length > 0, 'origin-key.pem must be mounted read-only');
+  });
+
+  it('certificate files are excluded by .gitignore', () => {
+    const gitignore = readFileSync(`${ROOT}/.gitignore`, 'utf-8');
+    assert.ok(gitignore.includes('secrets'), '.gitignore must exclude secrets/ directory');
+  });
 });
