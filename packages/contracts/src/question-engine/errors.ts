@@ -1,0 +1,21 @@
+export type QuestionEngineErrorCode =
+  | 'UNSUPPORTED_QUESTION_TYPE'
+  | 'QUESTION_VERSION_MISMATCH'
+  | 'INVALID_SESSION_TRANSITION'
+  | 'STALE_RESPONSE_REVISION'
+  | 'INVALID_RESPONSE_PAYLOAD'
+  | 'RESPONSE_TOO_LARGE'
+  | 'SESSION_NOT_OWNED'
+  | 'SESSION_EXPIRED'
+  | 'SESSION_ALREADY_SUBMITTED'
+  | 'IDEMPOTENCY_CONFLICT'
+  | 'PLAYBACK_NOT_ALLOWED'
+  | 'PLAYBACK_ALREADY_CONSUMED'
+  | 'TRANSCRIPT_NOT_AUTHORISED'
+  | 'RENDERER_CONTRACT_MISMATCH';
+
+export interface QuestionEngineErrorContract {
+  code: QuestionEngineErrorCode;
+  message: string;
+  details?: Record<string, unknown>;
+}
