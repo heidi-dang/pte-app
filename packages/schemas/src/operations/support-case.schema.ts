@@ -1,0 +1,26 @@
+import { z } from 'zod';
+export const SupportCaseSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  category: z.string(),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']),
+  subject: z.string(),
+  description: z.string(),
+  relatedAttemptIds: z.array(z.string()),
+  relatedJobIds: z.array(z.string()),
+  relatedMediaIds: z.array(z.string()),
+  assignedAgentId: z.string().optional(),
+  status: z.enum([
+    'open',
+    'triaged',
+    'in-progress',
+    'waiting-for-student',
+    'waiting-for-internal',
+    'resolved',
+    'closed',
+    'reopened',
+  ]),
+  resolution: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});

@@ -17,6 +17,16 @@ export async function loadMigrations(): Promise<Migration[]> {
     await loadMigration('0002', 'content_provenance'),
     await loadMigration('0003', 'provenance_ext'),
     await loadMigration('0004', 'question_engine'),
+    await loadMigration('0005', 'speaking_recordings'),
+    await loadMigration('0006', 'objective_scoring'),
+    await loadMigration('0007', 'open_response_evaluation'),
+    await loadMigration('0008', 'diagnostics_study_plans'),
+    await loadMigration('0009', 'mock_exam_engine'),
+    await loadMigration('0010', 'reporting_and_mastery'),
+    await loadMigration('0011', 'teacher_and_admin_portals'),
+    await loadMigration('0012', 'content_production_factory'),
+    await loadMigration('0013', 'calibration_and_validation'),
+    await loadMigration('0014', 'notifications_support_operations'),
   ];
 }
 
