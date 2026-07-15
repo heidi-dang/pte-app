@@ -3,7 +3,7 @@ import { z } from 'zod';
 const NonEmpty = z.string().min(1);
 const PositiveInt = z.number().int().min(1);
 
-// Raw evidence schema — accepts potentially empty fields for malformed input
+// Raw evidence — accepts empty/potentially invalid fields for malformed input recovery
 export const RawMasteryEvidenceSchema = z.object({
   attemptId: z.string(),
   resultId: z.string(),
@@ -23,7 +23,7 @@ export const RawMasteryEvidenceSchema = z.object({
   timestamp: z.string(),
 });
 
-// Valid evidence schema — strict non-empty for all identity fields, positive versions
+// Valid evidence — strict non-empty identifiers, positive versions, paired evaluation
 export const ValidMasteryEvidenceSchema = z
   .object({
     attemptId: NonEmpty,
@@ -38,8 +38,8 @@ export const ValidMasteryEvidenceSchema = z
     confidence: z.number().min(0).max(1),
     scoringProfileId: NonEmpty,
     scoringProfileVersion: PositiveInt,
-    evaluationProfileId: z.string().nullable(),
-    evaluationProfileVersion: z.number().int().nullable(),
+    evaluationProfileId: NonEmpty.nullable(),
+    evaluationProfileVersion: PositiveInt.nullable(),
     completenessStatus: z.enum(['complete', 'partial', 'failed']),
     timestamp: NonEmpty,
   })
@@ -75,7 +75,6 @@ const ProfileCompatibilitySchema: z.ZodType<unknown> = z.discriminatedUnion('sta
   }),
 ]);
 
-// Weighted contribution uses validated evidence
 export const WeightedContributionSchema = z.object({
   evidence: ValidMasteryEvidenceSchema,
   appliedWeight: z.number().gt(0),
@@ -110,27 +109,24 @@ export const ScoreNormalisationPolicySchema = z
   ])
   .superRefine((d, ctx) => {
     if (d.method !== 'linear') return;
-    if (d.inputMaximum <= d.inputMinimum) {
+    if (d.inputMaximum <= d.inputMinimum)
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'inputMaximum must be greater than inputMinimum',
         path: ['inputMaximum'],
       });
-    }
-    if (d.direction === 'ascending' && d.outputMaximum <= d.outputMinimum) {
+    if (d.direction === 'ascending' && d.outputMaximum <= d.outputMinimum)
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'ascending requires outputMaximum > outputMinimum',
         path: ['outputMaximum'],
       });
-    }
-    if (d.direction === 'descending' && d.outputMaximum >= d.outputMinimum) {
+    if (d.direction === 'descending' && d.outputMaximum >= d.outputMinimum)
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'descending requires outputMaximum < outputMinimum',
         path: ['outputMaximum'],
       });
-    }
   });
 
 export const EvidencePolicySchema = z
@@ -148,9 +144,9 @@ export const EvidencePolicySchema = z
     referenceScoringProfileVersion: PositiveInt.nullable(),
     referenceEvaluationProfileId: NonEmpty.nullable(),
     referenceEvaluationProfileVersion: PositiveInt.nullable(),
-    allowedScoringProfileIds: z.array(z.string()),
+    allowedScoringProfileIds: z.array(NonEmpty),
+    allowedEvaluationProfileIds: z.array(NonEmpty),
     allowedScoringProfileVersions: z.array(PositiveInt),
-    allowedEvaluationProfileIds: z.array(z.string()),
     allowedEvaluationProfileVersions: z.array(PositiveInt),
     mixedProfilePolicy: z.enum(['allow', 'exclude-mismatched', 'disclose-mismatched']),
   })
@@ -194,6 +190,7 @@ export const MasteryLevelDefinitionSchema = z.object({
   threshold: z.number().min(0).max(1),
 });
 
+// Excluded evidence uses valid evidence only — structural issues go to unassignedEvidence
 export const ExcludedEvidenceSchema = z.object({
   evidence: ValidMasteryEvidenceSchema,
   reason: z.enum([
@@ -202,18 +199,20 @@ export const ExcludedEvidenceSchema = z.object({
     'zero-weight-policy-excluded',
     'invalid-profile-version',
     'incompatible-result-profile',
-    'missing-required-field',
     'missing-reference-evaluation-profile',
-    'malformed-identity',
   ]),
 });
 
-// Unassigned evidence uses raw schema — malformed input must remain recoverable
 export const UnassignedMasteryEvidenceSchema = z.object({
   evidence: RawMasteryEvidenceSchema,
   intendedMasteryType: z.enum(['skill', 'task']),
-  reason: z.enum(['malformed-identity', 'missing-required-field']),
-  missingFields: z.array(z.string()).min(1),
+  reason: z.enum([
+    'malformed-identity',
+    'missing-required-field',
+    'invalid-profile-reference',
+    'invalid-evaluation-pair',
+  ]),
+  invalidFields: z.array(z.string()).min(1),
 });
 
 const InsufficientLevelSchema = z.object({

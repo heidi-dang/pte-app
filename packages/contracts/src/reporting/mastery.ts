@@ -100,16 +100,14 @@ export interface ExcludedEvidence {
     | 'zero-weight-policy-excluded'
     | 'invalid-profile-version'
     | 'incompatible-result-profile'
-    | 'missing-required-field'
-    | 'missing-reference-evaluation-profile'
-    | 'malformed-identity';
+    | 'missing-reference-evaluation-profile';
 }
 
 export interface UnassignedMasteryEvidence {
   evidence: MasteryEvidence;
   intendedMasteryType: 'skill' | 'task';
-  reason: 'malformed-identity' | 'missing-required-field';
-  missingFields: string[];
+  reason: 'malformed-identity' | 'missing-required-field' | 'invalid-profile-reference' | 'invalid-evaluation-pair';
+  invalidFields: string[];
 }
 
 export type MasteryLevel =

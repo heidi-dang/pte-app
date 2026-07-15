@@ -37,47 +37,40 @@ function validateLinearPolicy(d: {
   outputMaximum: number;
 }): void {
   if (d.inputMaximum <= d.inputMinimum)
-    throw new MasteryValidationError(
-      'INVALID_LINEAR_NORMALISATION_RANGE',
-      'inputMaximum must be greater than inputMinimum',
-    );
+    throw new MasteryValidationError('INVALID_LINEAR_NORMALISATION_RANGE', 'inputMax must be > inputMin');
   if (d.direction === 'ascending' && d.outputMaximum <= d.outputMinimum)
-    throw new MasteryValidationError('INVALID_LINEAR_DIRECTION', 'ascending requires outputMaximum > outputMinimum');
+    throw new MasteryValidationError('INVALID_LINEAR_DIRECTION', 'ascending requires outputMax > outputMin');
   if (d.direction === 'descending' && d.outputMaximum >= d.outputMinimum)
-    throw new MasteryValidationError('INVALID_LINEAR_DIRECTION', 'descending requires outputMaximum < outputMinimum');
+    throw new MasteryValidationError('INVALID_LINEAR_DIRECTION', 'descending requires outputMax < outputMin');
 }
 
-function normaliseScore(value: number, policy: ScoreNormalisationPolicy): number {
+function normaliseScore(v: number, policy: ScoreNormalisationPolicy): number {
   switch (policy.method) {
     case 'none':
-      return value;
+      return v;
     case 'linear': {
       validateLinearPolicy(policy);
-      const ratio = (value - policy.inputMinimum) / (policy.inputMaximum - policy.inputMinimum);
-      const range = policy.outputMaximum - policy.outputMinimum;
-      return policy.outputMinimum + ratio * range;
+      const r = (v - policy.inputMinimum) / (policy.inputMaximum - policy.inputMinimum);
+      return policy.outputMinimum + r * (policy.outputMaximum - policy.outputMinimum);
     }
     case 'z-score': {
       if (policy.referenceStandardDeviation <= 0)
-        throw new MasteryValidationError(
-          'INVALID_Z_SCORE_STANDARD_DEVIATION',
-          'referenceStandardDeviation must be greater than zero',
-        );
-      return (value - policy.referenceMean) / policy.referenceStandardDeviation;
+        throw new MasteryValidationError('INVALID_Z_SCORE_STANDARD_DEVIATION', 'std dev must be > 0');
+      return (v - policy.referenceMean) / policy.referenceStandardDeviation;
     }
   }
 }
 
-function inclusionReasonFor(evidence: MasteryEvidence, policy: EvidencePolicy): InclusionReason {
-  if (evidence.completenessStatus === 'failed') return 'failed-included-with-disclosure';
-  if (evidence.completenessStatus === 'partial')
+function inclusionReasonFor(e: MasteryEvidence, policy: EvidencePolicy): InclusionReason {
+  if (e.completenessStatus === 'failed') return 'failed-included-with-disclosure';
+  if (e.completenessStatus === 'partial')
     return policy.partialResultPolicy === 'discount' ? 'partial-discounted' : 'partial-included';
   return 'complete-included';
 }
 
 function computeProfileCompatibility(e: MasteryEvidence, policy: EvidencePolicy): ProfileCompatibility {
   if (policy.mixedProfilePolicy !== 'disclose-mismatched') return { status: 'matched' };
-  const mismatches: Array<
+  const m: Array<
     | 'scoring-profile-id'
     | 'scoring-profile-version'
     | 'evaluation-profile-id'
@@ -85,30 +78,31 @@ function computeProfileCompatibility(e: MasteryEvidence, policy: EvidencePolicy)
     | 'evaluation-profile-missing'
   > = [];
   if (policy.referenceScoringProfileId !== null && e.scoringProfileId !== policy.referenceScoringProfileId)
-    mismatches.push('scoring-profile-id');
+    m.push('scoring-profile-id');
   if (
     policy.referenceScoringProfileVersion !== null &&
     e.scoringProfileVersion !== policy.referenceScoringProfileVersion
   )
-    mismatches.push('scoring-profile-version');
+    m.push('scoring-profile-version');
   if (
     policy.referenceEvaluationProfileId !== null &&
     e.evaluationProfileId !== null &&
     e.evaluationProfileId !== policy.referenceEvaluationProfileId
   )
-    mismatches.push('evaluation-profile-id');
+    m.push('evaluation-profile-id');
   if (
     policy.referenceEvaluationProfileVersion !== null &&
     e.evaluationProfileVersion !== null &&
     e.evaluationProfileVersion !== policy.referenceEvaluationProfileVersion
   )
-    mismatches.push('evaluation-profile-version');
+    m.push('evaluation-profile-version');
   if (
     policy.referenceEvaluationProfileId !== null &&
-    (e.evaluationProfileId === null || e.evaluationProfileVersion === null)
+    e.evaluationProfileId === null &&
+    e.evaluationProfileVersion === null
   )
-    mismatches.push('evaluation-profile-missing');
-  if (mismatches.length > 0) return { status: 'included-with-disclosure', mismatches } as ProfileCompatibility;
+    m.push('evaluation-profile-missing');
+  if (m.length > 0) return { status: 'included-with-disclosure', mismatches: m } as ProfileCompatibility;
   return { status: 'matched' } as ProfileCompatibility;
 }
 
@@ -135,7 +129,6 @@ function isCompatible(
     !policy.allowedEvaluationProfileVersions.includes(e.evaluationProfileVersion)
   )
     return { compatible: false, reason: 'invalid-profile-version' };
-
   if (policy.mixedProfilePolicy === 'exclude-mismatched') {
     if (policy.referenceScoringProfileId !== null && e.scoringProfileId !== policy.referenceScoringProfileId)
       return { compatible: false, reason: 'incompatible-result-profile' };
@@ -158,69 +151,87 @@ function isCompatible(
       return { compatible: false, reason: 'invalid-profile-version' };
     if (
       policy.referenceEvaluationProfileId !== null &&
-      (e.evaluationProfileId === null || e.evaluationProfileVersion === null)
+      e.evaluationProfileId === null &&
+      e.evaluationProfileVersion === null
     )
       return { compatible: false, reason: 'missing-reference-evaluation-profile' };
   }
   return { compatible: true };
 }
 
-function isSkillEvidenceValid(e: MasteryEvidence): boolean {
-  return !!(e.skillId && e.skillName && e.questionVersionId && e.attemptId && e.resultId);
-}
+// ----------------------------------------------------------------
+// Evidence classifier: returns either valid or unassigned
+// ----------------------------------------------------------------
+type EvidenceClassification =
+  | { status: 'valid'; evidence: MasteryEvidence }
+  | {
+      status: 'unassigned';
+      evidence: MasteryEvidence;
+      reason: UnassignedMasteryEvidence['reason'];
+      invalidFields: string[];
+    };
 
-function isTaskEvidenceValid(e: MasteryEvidence): boolean {
-  return !!(e.taskId && e.taskType && e.taskName && e.questionVersionId && e.attemptId && e.resultId);
-}
+function classifyEvidenceForMastery(e: MasteryEvidence, mode: 'skill' | 'task'): EvidenceClassification {
+  const invalidFields: string[] = [];
+  const check = (cond: boolean, field: string) => {
+    if (!cond) invalidFields.push(field);
+  };
 
-function missingSkillFields(e: MasteryEvidence): string[] {
-  const f: string[] = [];
-  if (!e.skillId) f.push('skillId');
-  if (!e.skillName) f.push('skillName');
-  if (!e.questionVersionId) f.push('questionVersionId');
-  if (!e.attemptId) f.push('attemptId');
-  if (!e.resultId) f.push('resultId');
-  return f;
-}
+  // Common required fields
+  check(!!e.attemptId, 'attemptId');
+  check(!!e.resultId, 'resultId');
+  check(!!e.questionVersionId, 'questionVersionId');
+  check(!!e.scoringProfileId, 'scoringProfileId');
+  check(!!e.timestamp, 'timestamp');
+  check(e.scoringProfileVersion >= 1, 'scoringProfileVersion');
 
-function missingTaskFields(e: MasteryEvidence): string[] {
-  const f: string[] = [];
-  if (!e.taskId) f.push('taskId');
-  if (!e.taskType) f.push('taskType');
-  if (!e.taskName) f.push('taskName');
-  if (!e.questionVersionId) f.push('questionVersionId');
-  if (!e.attemptId) f.push('attemptId');
-  if (!e.resultId) f.push('resultId');
-  return f;
-}
+  // Mode-specific identity
+  if (mode === 'task') {
+    check(!!e.taskId, 'taskId');
+    check(!!e.taskType, 'taskType');
+    check(!!e.taskName, 'taskName');
+  } else {
+    check(!!e.skillId, 'skillId');
+    check(!!e.skillName, 'skillName');
+  }
 
-function validateEvidence(e: MasteryEvidence): boolean {
-  return !!(
-    e.attemptId &&
-    e.resultId &&
-    e.questionVersionId &&
-    e.taskId &&
-    e.taskType &&
-    e.skillId &&
-    e.scoringProfileId &&
-    e.timestamp
+  // Evaluation pairing
+  const evalIdPresent = e.evaluationProfileId !== null && e.evaluationProfileId !== '';
+  const evalVerPresent = e.evaluationProfileVersion !== null && e.evaluationProfileVersion >= 1;
+
+  if (evalIdPresent && !evalVerPresent) {
+    invalidFields.push('evaluationProfileId/evaluationProfileVersion');
+  }
+  if (!evalIdPresent && evalVerPresent) {
+    invalidFields.push('evaluationProfileId/evaluationProfileVersion');
+  }
+  if (evalIdPresent && evalVerPresent && e.evaluationProfileVersion! < 1) {
+    invalidFields.push('evaluationProfileVersion');
+  }
+  if (evalIdPresent && !e.evaluationProfileId) {
+    invalidFields.push('evaluationProfileId');
+  }
+
+  if (invalidFields.length === 0) return { status: 'valid', evidence: e };
+
+  const identMissing = invalidFields.some((f) =>
+    ['attemptId', 'resultId', 'questionVersionId', 'taskId', 'taskType', 'taskName', 'skillId', 'skillName'].includes(
+      f,
+    ),
   );
+  const profInvalid = invalidFields.some((f) => f.includes('scoringProfile'));
+  const evalInvalid = invalidFields.some((f) => f.includes('evaluation'));
+
+  if (evalInvalid) return { status: 'unassigned', evidence: e, reason: 'invalid-evaluation-pair', invalidFields };
+  if (profInvalid) return { status: 'unassigned', evidence: e, reason: 'invalid-profile-reference', invalidFields };
+  if (identMissing) return { status: 'unassigned', evidence: e, reason: 'malformed-identity', invalidFields };
+  return { status: 'unassigned', evidence: e, reason: 'missing-required-field', invalidFields };
 }
 
-function isValidEvidence(e: MasteryEvidence): boolean {
-  if (!validateEvidence(e)) return false;
-  if (e.scoringProfileVersion < 1) return false;
-  if (e.evaluationProfileId !== null && e.evaluationProfileVersion === null) return false;
-  if (e.evaluationProfileId === null && e.evaluationProfileVersion !== null) return false;
-  if (e.evaluationProfileVersion !== null && e.evaluationProfileVersion < 1) return false;
-  return true;
-}
-
-function classifyEvidence(
+function classifyExclude(
   e: MasteryEvidence,
   policy: EvidencePolicy,
 ): { eligible: boolean; weight: number; excludedReason?: ExcludedEvidence['reason'] } {
-  if (!isValidEvidence(e)) return { eligible: false, excludedReason: 'missing-required-field', weight: 0 };
   if (e.completenessStatus === 'failed') {
     if (policy.failedResultPolicy === 'include-with-disclosure')
       return { eligible: true, weight: policy.failedResultWeight };
@@ -263,12 +274,12 @@ function evaluateEvidence(
     if (e.completenessStatus === 'failed') failedCount++;
     const compat = isCompatible(e, policy);
     if (!compat.compatible) {
-      excluded.push({ evidence: e, reason: compat.reason ?? 'missing-required-field' });
+      excluded.push({ evidence: e, reason: compat.reason! });
       continue;
     }
     const pc = computeProfileCompatibility(e, policy);
     if (pc.status === 'included-with-disclosure') hasDisclosedMismatch = true;
-    const cls = classifyEvidence(e, policy);
+    const cls = classifyExclude(e, policy);
     if (cls.eligible) {
       const w = cls.weight;
       if (w === 0) {
@@ -319,8 +330,8 @@ function computeLevel(profile: MasteryProfile, subject: MasterySubject, items: M
     failedCount,
     hasDisclosedMismatch,
   } = evaluateEvidence(items, policy);
-  const hasMinimum = eligibleCount >= policy.minimumEvidence;
-  if (!hasMinimum || totalAppliedWeight === 0)
+  const hasMin = eligibleCount >= policy.minimumEvidence;
+  if (!hasMin || totalAppliedWeight === 0)
     return {
       subject,
       status: 'insufficient',
@@ -338,12 +349,12 @@ function computeLevel(profile: MasteryProfile, subject: MasterySubject, items: M
       excludedEvidenceCount: excluded.length,
       warnings: ['Insufficient eligible evidence'],
     };
-  const weightedMean = weightedSum / totalAppliedWeight;
-  const weightedMeanConfidence = weightedConfidenceSum / totalAppliedWeight;
-  const normalised = normaliseScore(weightedMean, policy.scoreNormalisationPolicy);
-  const adjusted = policy.confidenceWeightingPolicy === 'weighted' ? normalised * weightedMeanConfidence : normalised;
-  const levelResult = assignLevel(profile, adjusted);
-  if (levelResult === null)
+  const wm = weightedSum / totalAppliedWeight;
+  const wmc = weightedConfidenceSum / totalAppliedWeight;
+  const n = normaliseScore(wm, policy.scoreNormalisationPolicy);
+  const adj = policy.confidenceWeightingPolicy === 'weighted' ? n * wmc : n;
+  const lr = assignLevel(profile, adj);
+  if (lr === null)
     return {
       subject,
       status: 'insufficient',
@@ -362,7 +373,7 @@ function computeLevel(profile: MasteryProfile, subject: MasterySubject, items: M
       warnings: ['No mastery level matches the calculated score'],
     };
   let status: 'partial' | 'sufficient';
-  if (weightedMeanConfidence < policy.minimumConfidence || partialCount > 0) {
+  if (wmc < policy.minimumConfidence || partialCount > 0) {
     status = 'partial';
     warnings.push('Partial evidence present');
   } else if (failedCount > 0 && policy.failedResultPolicy === 'include-with-disclosure') {
@@ -385,8 +396,8 @@ function computeLevel(profile: MasteryProfile, subject: MasterySubject, items: M
   return {
     subject,
     status,
-    level: levelResult,
-    confidence: weightedMeanConfidence,
+    level: lr,
+    confidence: wmc,
     evidenceCount: eligibleCount,
     minimumRequired: policy.minimumEvidence,
     lastUpdated: latestTimestamp(items),
@@ -402,15 +413,15 @@ function computeLevel(profile: MasteryProfile, subject: MasterySubject, items: M
 }
 
 function assignLevel(profile: MasteryProfile, score: number): number | null {
-  const sorted = [...profile.levelDefinitions].sort((a, b) => b.threshold - a.threshold);
-  for (const def of sorted) {
-    if (score >= def.threshold) return def.value;
+  const s = [...profile.levelDefinitions].sort((a, b) => b.threshold - a.threshold);
+  for (const d of s) {
+    if (score >= d.threshold) return d.value;
   }
   return profile.fallbackLevel;
 }
 
 function latestTimestamp(items: MasteryEvidence[]): string {
-  return items.reduce((latest, e) => (e.timestamp > latest ? e.timestamp : latest), '');
+  return items.reduce((lt, e) => (e.timestamp > lt ? e.timestamp : lt), '');
 }
 
 export function calculateSkillMastery(
@@ -420,22 +431,19 @@ export function calculateSkillMastery(
   const unassigned: UnassignedMasteryEvidence[] = [];
   const valid: MasteryEvidence[] = [];
   for (const e of evidence) {
-    if (isSkillEvidenceValid(e)) valid.push(e);
+    const c = classifyEvidenceForMastery(e, 'skill');
+    if (c.status === 'valid') valid.push(c.evidence);
     else
       unassigned.push({
-        evidence: e,
+        evidence: c.evidence,
         intendedMasteryType: 'skill',
-        reason: 'malformed-identity',
-        missingFields: missingSkillFields(e),
+        reason: c.reason,
+        invalidFields: c.invalidFields,
       });
   }
   const groups = groupBy(valid, (e) => e.skillId);
-  const levels = Object.entries(groups).map(([skillId, items]) =>
-    computeLevel(
-      profile,
-      { subjectType: 'skill', subjectId: skillId, subjectName: items[0]?.skillName ?? skillId },
-      items,
-    ),
+  const levels = Object.entries(groups).map(([id, items]) =>
+    computeLevel(profile, { subjectType: 'skill', subjectId: id, subjectName: items[0]?.skillName ?? id }, items),
   );
   return { levels, unassigned };
 }
@@ -447,40 +455,36 @@ export function calculateTaskMastery(
   const unassigned: UnassignedMasteryEvidence[] = [];
   const valid: MasteryEvidence[] = [];
   for (const e of evidence) {
-    if (isTaskEvidenceValid(e)) valid.push(e);
+    const c = classifyEvidenceForMastery(e, 'task');
+    if (c.status === 'valid') valid.push(c.evidence);
     else
       unassigned.push({
-        evidence: e,
+        evidence: c.evidence,
         intendedMasteryType: 'task',
-        reason: 'malformed-identity',
-        missingFields: missingTaskFields(e),
+        reason: c.reason,
+        invalidFields: c.invalidFields,
       });
   }
   const groups = groupBy(valid, (e) => e.taskId);
-  const levels = Object.entries(groups).map(([taskId, items]) =>
+  const levels = Object.entries(groups).map(([id, items]) =>
     computeLevel(
       profile,
-      {
-        subjectType: 'task',
-        subjectId: taskId,
-        subjectName: items[0]?.taskName ?? taskId,
-        taskType: items[0]?.taskType ?? '',
-      },
+      { subjectType: 'task', subjectId: id, subjectName: items[0]?.taskName ?? id, taskType: items[0]?.taskType ?? '' },
       items,
     ),
   );
   return { levels, unassigned };
 }
 
-function groupBy<T>(items: T[], keyFn: (item: T) => string): Record<string, T[]> {
-  const map: Record<string, T[]> = {};
-  for (const item of items) {
-    const key = keyFn(item);
-    const g = map[key];
-    if (g) g.push(item);
-    else map[key] = [item];
+function groupBy<T>(items: T[], fn: (i: T) => string): Record<string, T[]> {
+  const m: Record<string, T[]> = {};
+  for (const i of items) {
+    const k = fn(i);
+    const g = m[k];
+    if (g) g.push(i);
+    else m[k] = [i];
   }
-  return map;
+  return m;
 }
 
 export function buildMasterySnapshot(

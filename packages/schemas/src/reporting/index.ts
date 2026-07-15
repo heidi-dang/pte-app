@@ -4,6 +4,7 @@ export { ScoreTrendPointSchema, ScoreTrendConfigSchema, ScoreTrendSetSchema } fr
 export {
   RawMasteryEvidenceSchema,
   ValidMasteryEvidenceSchema,
+  ExcludedEvidenceSchema,
   EvidencePolicySchema,
   MasteryLevelSchema,
   MasteryProfileSchema,
