@@ -48,3 +48,13 @@ export * from './content-provenance/index.js';
 export * from './question-engine/index.js';
 
 export * from './questions/index.js';
+
+export * from './scoring/index.js';
+
+export * from './evaluation/index.js';
+
+export * from './diagnostics/index.js';
+
+export * from './study-plan/index.js';
+
+export * from './mock-exams/index.js';
