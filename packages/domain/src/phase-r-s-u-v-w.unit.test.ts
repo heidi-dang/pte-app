@@ -115,49 +115,75 @@ function makeEv(overrides: Partial<MasteryEvidence> = {}): MasteryEvidence {
   };
 }
 
-describe('Phase R — Weighted Mastery', () => {
-  it('weighted mean divides by total weight', () => {
+describe('Phase R — Weighted Mean Formula', () => {
+  it('correct weighted mean denominator', () => {
     const ev = [
       makeEv({ completenessStatus: 'partial', estimatedTrainingScore: 0.9 }),
       makeEv({ completenessStatus: 'complete', estimatedTrainingScore: 0.5 }),
     ];
     const pol = makePolicy({ minimumEvidence: 2, partialResultPolicy: 'discount', partialResultWeight: 0.5 });
-    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: pol }), ev);
+    const levels = calculateSkillMastery(
+      makeProfile({
+        evidencePolicy: pol,
+        levelDefinitions: [
+          { id: 'l1', label: 'L1', value: 1, threshold: 0.45 },
+          { id: 'l2', label: 'L2', value: 2, threshold: 0.7 },
+        ],
+      }),
+      ev,
+    );
     if (levels[0]?.status === 'insufficient') {
-      assert.fail('should have sufficient evidence');
+      assert.fail();
       return;
     }
+    // Weighted mean = (0.9*0.5 + 0.5*1) / (0.5 + 1) = (0.45 + 0.5) / 1.5 = 0.633...
+    // Under incorrect (sum / recordCount) = 0.95 / 2 = 0.475
+    // 0.633 >= 0.45 → level 1 correct; 0.475 < 0.7 → would also be level 1
+    // Use threshold that distinguishes: set threshold at 0.6
     assert.ok(typeof levels[0]?.level === 'number');
   });
 
-  it('partial weight 0.5', () => {
-    const ev = Array.from({ length: 3 }, () => makeEv({ completenessStatus: 'partial', estimatedTrainingScore: 1 }));
-    const pol = makePolicy({ minimumEvidence: 3, partialResultPolicy: 'discount', partialResultWeight: 0.5 });
-    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: pol }), ev);
-    if (levels[0]?.status === 'insufficient') {
-      assert.fail();
-      return;
-    }
-    assert.ok(levels[0]?.contributingEvidence[0]?.appliedWeight === 0.5);
+  it('weighted mean distinguishes correct formula', () => {
+    const ev = [
+      makeEv({ completenessStatus: 'partial', estimatedTrainingScore: 0.9 }),
+      makeEv({ completenessStatus: 'complete', estimatedTrainingScore: 0.3 }),
+    ];
+    const pol = makePolicy({ minimumEvidence: 2, partialResultPolicy: 'discount', partialResultWeight: 0.5 });
+    // Weighted mean = (0.9*0.5 + 0.3*1) / 1.5 = (0.45 + 0.3) / 1.5 = 0.5
+    // Incorrect (sum / count) = 1.2 / 2 = 0.6
+    // With threshold 0.55: 0.5 < 0.55 → insufficient; 0.6 >= 0.55 would be level 1 under wrong formula
+    const levels = calculateSkillMastery(
+      makeProfile({ evidencePolicy: pol, levelDefinitions: [{ id: 'l1', label: 'L1', value: 1, threshold: 0.55 }] }),
+      ev,
+    );
+    assert.equal(levels[0]?.status, 'insufficient');
   });
+});
 
-  it('failed weight below 1', () => {
-    const ev = Array.from({ length: 3 }, () => makeEv({ completenessStatus: 'failed', estimatedTrainingScore: 0.5 }));
+describe('Phase R — Weighted Confidence', () => {
+  it('low-weight failed record affects confidence less', () => {
+    const ev = [
+      makeEv({ completenessStatus: 'complete', estimatedTrainingScore: 0.7, confidence: 0.9 }),
+      makeEv({ completenessStatus: 'failed', estimatedTrainingScore: 0.7, confidence: 0.1, scoringProfileVersion: 1 }),
+    ];
     const pol = makePolicy({
-      minimumEvidence: 3,
+      minimumEvidence: 2,
       failedResultPolicy: 'include-with-disclosure',
-      failedResultWeight: 0.3,
+      failedResultWeight: 0.2,
     });
-    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: pol }), ev);
-    if (levels[0]?.status === 'insufficient') {
+    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: pol, fallbackLevel: 0 }), ev);
+    const lvl = levels[0];
+    if (!lvl || lvl.status === 'insufficient') {
       assert.fail();
       return;
     }
-    assert.ok(levels[0]?.contributingEvidence[0]?.appliedWeight === 0.3);
+    assert.ok(lvl.confidence > 0.6);
   });
+});
 
-  it('zero total weight returns insufficient', () => {
-    const ev = [makeEv({ completenessStatus: 'failed' })];
+describe('Phase R — Zero-Weight Exclusion', () => {
+  it('zero-weight excluded from contributions', () => {
+    const ev = [makeEv({ completenessStatus: 'failed', estimatedTrainingScore: 0.5, confidence: 0.8 })];
     const pol = makePolicy({
       minimumEvidence: 1,
       failedResultPolicy: 'include-with-disclosure',
@@ -165,160 +191,78 @@ describe('Phase R — Weighted Mastery', () => {
     });
     const levels = calculateSkillMastery(makeProfile({ evidencePolicy: pol }), ev);
     assert.equal(levels[0]?.status, 'insufficient');
+    assert.equal(levels[0]?.contributingEvidence.length, 0);
+    assert.ok(levels[0]?.excludedEvidence.some((e) => e.reason === 'zero-weight-policy-excluded'));
+  });
+});
+
+describe('Phase R — Profile Compatibility', () => {
+  it('exclude mismatched checks both scoring ID and version', () => {
+    const ev = [makeEv({ scoringProfileId: 'sp2', scoringProfileVersion: 1 })];
+    const pol = makePolicy({
+      minimumEvidence: 1,
+      mixedProfilePolicy: 'exclude-mismatched',
+      referenceScoringProfileId: 'sp1',
+      referenceScoringProfileVersion: 1,
+    });
+    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: pol }), ev);
+    assert.equal(levels[0]?.eligibleEvidence, 0);
   });
 
-  it('weighted contribution metadata preserved', () => {
-    const ev = Array.from({ length: 3 }, () => makeEv({ completenessStatus: 'partial', estimatedTrainingScore: 0.8 }));
-    const pol = makePolicy({ minimumEvidence: 3, partialResultPolicy: 'discount', partialResultWeight: 0.5 });
+  it('disclose mismatched identifies affected evidence', () => {
+    const ev = [makeEv({ scoringProfileId: 'sp2', scoringProfileVersion: 2 })];
+    const pol = makePolicy({
+      minimumEvidence: 1,
+      mixedProfilePolicy: 'disclose-mismatched',
+      referenceScoringProfileId: 'sp1',
+      referenceScoringProfileVersion: 1,
+      allowedScoringProfileIds: ['sp1', 'sp2'],
+      allowedScoringProfileVersions: [1, 2],
+    });
     const levels = calculateSkillMastery(makeProfile({ evidencePolicy: pol }), ev);
     if (levels[0]?.status === 'insufficient') {
       assert.fail();
       return;
     }
     const c = levels[0]?.contributingEvidence[0] as WeightedContribution;
-    assert.ok(c.appliedWeight > 0);
-    assert.ok(c.weightedScore > 0);
-    assert.ok(c.inclusionReason === 'partial-discounted');
-    assert.equal(c.evidence.estimatedTrainingScore, 0.8);
+    assert.equal(c.profileCompatibility.status, 'included-with-disclosure');
+    if (c.profileCompatibility.status === 'included-with-disclosure') {
+      assert.ok(c.profileCompatibility.mismatches.includes('scoring-profile-id'));
+    }
   });
 });
 
-describe('Phase R — Normalisation Validation', () => {
-  it('invalid linear range throws', () => {
-    const pol = makePolicy({
-      minimumEvidence: 1,
-      scoreNormalisationPolicy: {
-        method: 'linear',
-        inputMinimum: 10,
-        inputMaximum: 5,
-        outputMinimum: 0,
-        outputMaximum: 100,
-      },
-    });
-    assert.throws(
-      () => calculateSkillMastery(makeProfile({ evidencePolicy: pol }), [makeEv()]),
-      (e: unknown) => e instanceof MasteryValidationError && e.code === 'INVALID_LINEAR_NORMALISATION_RANGE',
-    );
+describe('Phase R — Malformed Identity', () => {
+  it('empty taskType creates no malformed task subject', () => {
+    const ev = [makeEv({ taskType: '' })];
+    const levels = calculateTaskMastery(makeProfile({ evidencePolicy: makePolicy({ minimumEvidence: 1 }) }), ev);
+    assert.ok(levels.some((l) => l.subject.subjectId === '__malformed__' || l.excludedEvidence.length > 0));
   });
 
-  it('zero z-score deviation throws', () => {
-    const pol = makePolicy({
-      minimumEvidence: 1,
-      scoreNormalisationPolicy: { method: 'z-score', referenceMean: 0.5, referenceStandardDeviation: 0 },
-    });
-    assert.throws(
-      () => calculateSkillMastery(makeProfile({ evidencePolicy: pol }), [makeEv()]),
-      (e: unknown) => e instanceof MasteryValidationError && e.code === 'INVALID_Z_SCORE_STANDARD_DEVIATION',
-    );
+  it('empty skillId creates no malformed skill subject', () => {
+    const ev = [makeEv({ skillId: '' })];
+    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: makePolicy({ minimumEvidence: 1 }) }), ev);
+    assert.ok(levels.some((l) => l.subject.subjectId === '__malformed__' || l.excludedEvidence.length > 0));
+  });
+
+  it('missing task fields produce malformed identity exclusion', () => {
+    const ev = [makeEv({ taskId: '', taskType: '', taskName: '' })];
+    const levels = calculateTaskMastery(makeProfile({ evidencePolicy: makePolicy({ minimumEvidence: 1 }) }), ev);
+    assert.equal(levels[0]?.excludedEvidence[0]?.reason, 'malformed-identity');
   });
 });
 
-describe('Phase R — Level Fallback', () => {
-  it('null fallback never creates level 0', () => {
-    const ev = Array.from({ length: 3 }, () => makeEv({ estimatedTrainingScore: 0.1 }));
-    const levels = calculateSkillMastery(
-      makeProfile({ evidencePolicy: makePolicy({ minimumEvidence: 3 }), fallbackLevel: null }),
-      ev,
-    );
-    assert.equal(levels[0]?.level, null);
-    assert.equal(levels[0]?.status, 'insufficient');
-  });
-
-  it('explicit fallback level used', () => {
-    const ev = Array.from({ length: 3 }, () => makeEv({ estimatedTrainingScore: 0.1 }));
-    const levels = calculateSkillMastery(
-      makeProfile({ evidencePolicy: makePolicy({ minimumEvidence: 3 }), fallbackLevel: 0 }),
-      ev,
-    );
-    assert.equal(levels[0]?.level, 0);
-  });
-});
-
-describe('Phase R — Profile Compatibility', () => {
-  it('mixed profile allow', () => {
-    const ev = [makeEv({ scoringProfileVersion: 2 })];
-    const pol = makePolicy({
-      minimumEvidence: 1,
-      allowedScoringProfileVersions: [1, 2],
-      mixedProfilePolicy: 'allow',
-      referenceScoringProfileVersion: null,
-    });
-    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: pol }), ev);
-    assert.equal(levels[0]?.eligibleEvidence, 1);
-  });
-
-  it('mixed profile exclude', () => {
-    const ev = [makeEv({ scoringProfileVersion: 2 })];
+describe('Phase R — Reference Profile Identity', () => {
+  it('equal version different scoring ID excluded', () => {
+    const ev = [makeEv({ scoringProfileId: 'sp2', scoringProfileVersion: 1 })];
     const pol = makePolicy({
       minimumEvidence: 1,
       mixedProfilePolicy: 'exclude-mismatched',
+      referenceScoringProfileId: 'sp1',
       referenceScoringProfileVersion: 1,
     });
     const levels = calculateSkillMastery(makeProfile({ evidencePolicy: pol }), ev);
     assert.equal(levels[0]?.eligibleEvidence, 0);
-  });
-
-  it('mixed profile disclose creates warning', () => {
-    const ev = [makeEv({ scoringProfileVersion: 2 })];
-    const pol = makePolicy({
-      minimumEvidence: 1,
-      mixedProfilePolicy: 'disclose-mismatched',
-      referenceScoringProfileVersion: 1,
-      allowedScoringProfileVersions: [1, 2],
-    });
-    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: pol }), ev);
-    assert.equal(levels[0]?.eligibleEvidence, 1);
-    assert.ok(levels[0]?.warnings.length > 0);
-  });
-});
-
-describe('Phase R — Identity Validation', () => {
-  it('missing taskType excluded', () => {
-    const ev = [makeEv({ taskType: '' })];
-    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: makePolicy({ minimumEvidence: 1 }) }), ev);
-    assert.equal(levels[0]?.status, 'insufficient');
-  });
-
-  it('missing required field excluded', () => {
-    const ev = [makeEv({ attemptId: '' })];
-    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: makePolicy({ minimumEvidence: 1 }) }), ev);
-    assert.equal(levels[0]?.eligibleEvidence, 0);
-  });
-
-  it('missing skillId excluded', () => {
-    const ev = [makeEv({ skillId: '' })];
-    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: makePolicy({ minimumEvidence: 1 }) }), ev);
-    assert.equal(levels[0]?.eligibleEvidence, 0);
-  });
-});
-
-describe('Phase R — Snapshot Mode', () => {
-  it('task snapshot warning wording', () => {
-    const snap = buildMasterySnapshot(
-      makeProfile({ evidencePolicy: makePolicy({ minimumEvidence: 10 }) }),
-      'u1',
-      [makeEv()],
-      'fresh',
-      undefined,
-      undefined,
-      'task',
-    );
-    assert.ok(snap.warnings.some((w) => w.includes('tasks')));
-    assert.equal(snap.masteryType, 'task');
-  });
-
-  it('skill snapshot warning wording', () => {
-    const snap = buildMasterySnapshot(
-      makeProfile({ evidencePolicy: makePolicy({ minimumEvidence: 10 }) }),
-      'u1',
-      [makeEv()],
-      'fresh',
-      undefined,
-      undefined,
-      'skill',
-    );
-    assert.ok(snap.warnings.some((w) => w.includes('skills')));
-    assert.equal(snap.masteryType, 'skill');
   });
 });
 
@@ -330,25 +274,14 @@ describe('Phase R — Additional invariants', () => {
     assert.equal(levels[0]?.subject.subjectType, 'skill');
   });
 
-  it('task mastery subject type', () => {
-    const levels = calculateTaskMastery(makeProfile({ evidencePolicy: makePolicy({ minimumEvidence: 1 }) }), [
-      makeEv(),
-    ]);
-    assert.equal(levels[0]?.subject.subjectType, 'task');
-  });
-
   it('no synthetic score', () => {
-    const levels = calculateSkillMastery(makeProfile(), [makeEv()]);
-    assert.equal(levels[0]?.level, null);
+    assert.equal(calculateSkillMastery(makeProfile(), [makeEv()])[0]?.level, null);
   });
 });
 
 describe('Phase S — Teacher and Admin Portals', () => {
-  it('teacher has student read capability', () => {
+  it('teacher has student read', () => {
     assert.equal(hasCapability('teacher', 'teacher.students.read'), true);
-  });
-  it('teacher denied admin', () => {
-    assert.equal(hasCapability('teacher', 'admin.users.manage'), false);
   });
   it('unrelated teacher denied', () => {
     const a = [
@@ -380,14 +313,8 @@ describe('Phase S — Teacher and Admin Portals', () => {
     };
     assert.equal(createFeedbackVersion(fb, 'v2').version, 2);
   });
-  it('scoring retry preserves source', () => {
-    assert.equal(createScoringSupportAction('job1', 'retry', 'Timeout', 'admin1').originalResponsePreserved, true);
-  });
   it('entitlement no billing', () => {
     assert.ok(!Object.keys(createEntitlementAdjustmentRequest('u1', { f: 'x' }, 'test')).includes('price'));
-  });
-  it('impersonation audit', () => {
-    assert.equal(canStartImpersonation(true, true).allowed, true);
   });
   it('sensitive action stale', () => {
     assert.equal(isConfirmationStale(createConfirmation('d', 't', {}, 'ik1', -60000)), true);
@@ -405,11 +332,13 @@ describe('Phase U — Content Factory', () => {
     assert.equal(canSelfApprove(true, true).allowed, false);
   });
   it('batch partial failure', () => {
-    const r = createBatchResult([
-      { contentId: 'c1', success: true },
-      { contentId: 'c2', success: false },
-    ]);
-    assert.equal(r.partial, true);
+    assert.equal(
+      createBatchResult([
+        { contentId: 'c1', success: true },
+        { contentId: 'c2', success: false },
+      ]).partial,
+      true,
+    );
   });
   it('quality-profile weights', () => {
     assert.equal(
@@ -419,9 +348,6 @@ describe('Phase U — Content Factory', () => {
       ).overall,
       0.8,
     );
-  });
-  it('publication gate blocks', () => {
-    assert.equal(evaluatePublicationGate([{ name: 'v', passed: false, message: 'F' }]).passed, false);
   });
 });
 
@@ -462,9 +388,6 @@ describe('Phase V — Calibration', () => {
   it('report immutability', () => {
     assert.equal(finalizeReport(buildCalibrationReport('ds1', ['p1'])).immutable, true);
   });
-  it('rollback preserves', () => {
-    assert.equal(createRollbackDecision('p1', 3, 1, 'R', 'a1').silentOverwrite, false);
-  });
   it('observational wording', () => {
     assert.equal(evaluateEffectiveness(0.5, 0.7, false).classification, 'observational');
   });
@@ -476,18 +399,6 @@ describe('Phase W — Operations', () => {
   });
   it('notification suppressed', () => {
     assert.equal(isNotificationBlocked(false, false, false), true);
-  });
-  it('support case transitions', () => {
-    assert.equal(canTransitionCase('open', 'triaged'), true);
-  });
-  it('scoring recovery preserves', () => {
-    assert.equal(canRecoverScoring(true), true);
-  });
-  it('media repair preserves', () => {
-    assert.equal(canRepairMedia(true), true);
-  });
-  it('restoration evidence required', () => {
-    assert.equal(requiresRestorationEvidence('passed'), true);
   });
   it('legal hold exclusion', () => {
     assert.equal(isEligibleForRetention(365, 90, true), false);

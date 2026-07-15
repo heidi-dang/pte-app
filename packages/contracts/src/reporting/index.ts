@@ -23,6 +23,7 @@ export type {
   MasterySubject,
   MasteryEvidence,
   WeightedContribution,
+  ProfileCompatibility,
   InclusionReason,
   EvidencePolicy,
   ScoreNormalisationPolicy,

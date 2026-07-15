@@ -27,11 +27,21 @@ export interface MasteryEvidence {
 export type InclusionReason =
   'complete-included' | 'partial-included' | 'partial-discounted' | 'failed-included-with-disclosure';
 
+export type ProfileCompatibility =
+  | { status: 'matched' }
+  | {
+      status: 'included-with-disclosure';
+      mismatches: Array<
+        'scoring-profile-id' | 'scoring-profile-version' | 'evaluation-profile-id' | 'evaluation-profile-version'
+      >;
+    };
+
 export interface WeightedContribution {
   evidence: MasteryEvidence;
   appliedWeight: number;
   weightedScore: number;
   inclusionReason: InclusionReason;
+  profileCompatibility: ProfileCompatibility;
 }
 
 export type ScoreNormalisationPolicy =
@@ -74,9 +84,11 @@ export interface ExcludedEvidence {
   reason:
     | 'partial-policy-excluded'
     | 'failed-policy-excluded'
+    | 'zero-weight-policy-excluded'
     | 'invalid-profile-version'
     | 'incompatible-result-profile'
-    | 'missing-required-field';
+    | 'missing-required-field'
+    | 'malformed-identity';
 }
 
 export type MasteryLevel =
