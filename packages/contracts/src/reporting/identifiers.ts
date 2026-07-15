@@ -1,0 +1,16 @@
+export type DashboardId = string & { __brand: 'DashboardId' };
+export type ReportId = string & { __brand: 'ReportId' };
+export type ReportSnapshotId = string & { __brand: 'ReportSnapshotId' };
+export type MasterySnapshotId = string & { __brand: 'MasterySnapshotId' };
+export type ReportExportId = string & { __brand: 'ReportExportId' };
+export type ReportGenerationJobId = string & { __brand: 'ReportGenerationJobId' };
+export type ReportDataLineageId = string & { __brand: 'ReportDataLineageId' };
+export type ActivityId = string & { __brand: 'ActivityId' };
+export type ScoreTrendId = string & { __brand: 'ScoreTrendId' };
+export type MasteryId = string & { __brand: 'MasteryId' };
+export type TraitAnalysisId = string & { __brand: 'TraitAnalysisId' };
+export type WeaknessReportId = string & { __brand: 'WeaknessReportId' };
+export type AttemptHistoryId = string & { __brand: 'AttemptHistoryId' };
+export type MockComparisonId = string & { __brand: 'MockComparisonId' };
+export type DataFreshnessId = string & { __brand: 'DataFreshnessId' };
+export type ReportProfileId = string & { __brand: 'ReportProfileId' };

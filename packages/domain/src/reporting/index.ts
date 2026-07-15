@@ -1,0 +1,12 @@
+export { resolveAttemptReference, collectAttemptReferences } from './result-resolver.js';
+export { buildScoreTrendSet, detectProfileChanges, isProfileCompatible } from './score-trend.js';
+export { calculateMasteryLevels, buildMasterySnapshot } from './mastery-calculator.js';
+export { buildTraitAnalysis } from './trait-analysis.js';
+export { buildWeaknessReport } from './weakness-report.js';
+export { filterAttemptHistory } from './attempt-history.js';
+export { buildMockComparison, compareBlueprints } from './mock-comparison.js';
+export { evaluateFreshness } from './freshness.js';
+export { hasPartialData, buildPartialDataWarning, labelScore } from './partial-data.js';
+export { buildCompositeReport } from './report-builder.js';
+export type { CompositeReport } from './report-builder.js';
+export { createExportJob, buildExportManifest } from './export-builder.js';
