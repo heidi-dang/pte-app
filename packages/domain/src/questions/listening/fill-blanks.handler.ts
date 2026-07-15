@@ -40,12 +40,10 @@ export function createListeningFillBlanksHandler(): QuestionTypeHandler<
       if (!base.valid) return base;
 
       const { response, question } = input;
-      if (question) {
-        const validGapIndices = new Set(question.gaps.map((g) => String(g.index)));
-        for (const gapIndex of Object.keys(response.placements)) {
-          if (!validGapIndices.has(gapIndex)) {
-            return { valid: false, reason: `Unknown gap index: ${gapIndex}` };
-          }
+      const validGapIndices = new Set(question.gaps.map((g) => String(g.index)));
+      for (const gapIndex of Object.keys(response.placements)) {
+        if (!validGapIndices.has(gapIndex)) {
+          return { valid: false, reason: `Unknown gap index: ${gapIndex}` };
         }
       }
 

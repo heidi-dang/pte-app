@@ -37,7 +37,7 @@ export function createSelectMissingWordHandler(): QuestionTypeHandler<
       if (!base.valid) return base;
 
       const { response, question } = input;
-      if (response.selectedKey !== null && question) {
+      if (response.selectedKey !== null) {
         const validKeys = new Set(question.options.map((o) => o.key));
         if (!validKeys.has(response.selectedKey)) {
           return { valid: false, reason: `Unknown selected key: ${response.selectedKey}` };

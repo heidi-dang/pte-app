@@ -2,9 +2,9 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import type {
   QuestionSessionModeProfile,
-  TimerDisplayProfile,
   ScoringProfileId,
   QuestionSessionMode,
+  QuestionVersionId,
 } from '@pte-app/contracts';
 import {
   resolveModeProfile,
@@ -13,6 +13,7 @@ import {
   type ModeProfileStore,
 } from './mode-profile-resolver.js';
 import { resolveTimerDisplayProfile, type TimerDisplayProfileStore } from './timer-display-resolver.js';
+import { DEV_TIMER_DISPLAY_PROFILE_FIXTURE, TEST_TIMER_DISPLAY_PROFILE } from './timer-display-profiles.fixture.js';
 import { createHandlerRegistry } from './renderer-registry.js';
 import {
   scoreReadingMultipleChoiceMultiple,
@@ -95,7 +96,9 @@ function createModeStore(profiles: QuestionSessionModeProfile[]): ModeProfileSto
   };
 }
 
-function createStore(entries: Array<[string, TimerDisplayProfile]>): TimerDisplayProfileStore {
+function createStore(
+  entries: Array<[string, { refreshIntervalMs: number; warningThresholdsMs: number[] }]>,
+): TimerDisplayProfileStore {
   const map = new Map(entries);
   return {
     get(id: string) {
@@ -196,22 +199,21 @@ describe('question-engine', () => {
   });
 
   describe('timer display profile resolution', () => {
-    const defaultProfile: TimerDisplayProfile = {
-      refreshIntervalMs: 1000,
-      warningThresholdsMs: [60_000, 30_000, 10_000],
-    };
-
-    it('returns default when no profile ID given', () => {
+    it('throws MISSING_TIMER_DISPLAY_PROFILE when no profile ID given', () => {
       const store = createStore([]);
-      const resolved = resolveTimerDisplayProfile(store, undefined);
-      assert.deepEqual(resolved, defaultProfile);
+      assert.throws(
+        () => resolveTimerDisplayProfile(store, undefined),
+        (err: Error) => {
+          assert.equal(err.message.includes('Timer display profile ID is required'), true);
+          return true;
+        },
+      );
     });
 
     it('returns profile from store when found', () => {
-      const custom: TimerDisplayProfile = { refreshIntervalMs: 500, warningThresholdsMs: [5_000] };
-      const store = createStore([['custom_timer', custom]]);
+      const store = createStore([['custom_timer', TEST_TIMER_DISPLAY_PROFILE]]);
       const resolved = resolveTimerDisplayProfile(store, 'custom_timer');
-      assert.deepEqual(resolved, custom);
+      assert.deepEqual(resolved, TEST_TIMER_DISPLAY_PROFILE);
     });
 
     it('throws MISSING_TIMER_DISPLAY_PROFILE when profile not found', () => {
@@ -220,6 +222,24 @@ describe('question-engine', () => {
         () => resolveTimerDisplayProfile(store, 'nonexistent'),
         (err: Error) => {
           assert.equal(err.message.includes('No timer display profile found'), true);
+          return true;
+        },
+      );
+    });
+
+    it('dev fixture is only used when explicitly supplied', () => {
+      const store = createStore([['dev_fixture', DEV_TIMER_DISPLAY_PROFILE_FIXTURE]]);
+      const resolved = resolveTimerDisplayProfile(store, 'dev_fixture');
+      assert.equal(resolved.refreshIntervalMs, 1000);
+      assert.deepEqual(resolved.warningThresholdsMs, [60_000, 30_000, 10_000]);
+    });
+
+    it('no production default exists — missing ID always throws', () => {
+      const store = createStore([]);
+      assert.throws(
+        () => resolveTimerDisplayProfile(store, undefined),
+        (err: Error) => {
+          assert.equal(err.message.includes('Timer display profile ID is required'), true);
           return true;
         },
       );
@@ -249,9 +269,15 @@ describe('question-engine', () => {
       assert.equal(score, 0);
     });
 
-    it('MCQ-M: rejects duplicate selections', () => {
+    it('MCQ-M: scorer prevents duplicate credit — repeated correct ID credited once', () => {
       const score = scoreReadingMultipleChoiceMultiple(['A', 'A', 'A'], ['A'], profile);
       assert.equal(score, 1);
+    });
+
+    it('MCQ-M: scorer prevents duplicate deduction — repeated incorrect ID deducted once', () => {
+      const unclampedProfile = makeScoringProfile({ minimumResult: -1 });
+      const score = scoreReadingMultipleChoiceMultiple(['B', 'B'], ['A'], unclampedProfile);
+      assert.equal(score, -0.25);
     });
 
     it('MCQ-S: scores correct answer with correctCredit', () => {
@@ -303,9 +329,15 @@ describe('question-engine', () => {
       assert.equal(score, 2);
     });
 
-    it('MCQ-M: rejects duplicate selections', () => {
+    it('MCQ-M: scorer prevents duplicate credit — repeated correct ID credited once', () => {
       const score = scoreListeningMultipleChoiceMultiple(['A', 'A'], ['A'], profile);
       assert.equal(score, 1);
+    });
+
+    it('MCQ-M: scorer prevents duplicate deduction — repeated incorrect ID deducted once', () => {
+      const unclampedProfile = makeListeningScoringProfile({ minimumResult: -1 });
+      const score = scoreListeningMultipleChoiceMultiple(['B', 'B'], ['A'], unclampedProfile);
+      assert.equal(score, -0.25);
     });
 
     it('MCQ-S: scores correctly', () => {
@@ -404,8 +436,8 @@ describe('question-engine', () => {
     });
   });
 
-  describe('handler duplicate/unknown rejection', () => {
-    it('reading MCQ-M rejects duplicate selected keys', () => {
+  describe('handler duplicate rejection', () => {
+    it('reading handler rejects duplicate correct selection — invalid', () => {
       const handler = createReadingMultipleChoiceMultipleHandler();
       const question = handler.parseQuestion({
         type: 'reading_multiple_answers',
@@ -425,12 +457,43 @@ describe('question-engine', () => {
         sessionMode: 'learning',
         allowsEmptySubmission: false,
         question,
+        questionVersionId: 'qv_1' as QuestionVersionId,
+        modeProfile: { id: 'mp_1', version: 1, mode: 'learning' },
+        scoringProfile: null,
       });
       assert.equal(result.valid, false);
       assert.ok(result.reason?.includes('Duplicate'));
     });
 
-    it('reading MCQ-M rejects unknown selected key', () => {
+    it('reading handler rejects duplicate incorrect selection — invalid', () => {
+      const handler = createReadingMultipleChoiceMultipleHandler();
+      const question = handler.parseQuestion({
+        type: 'reading_multiple_answers',
+        instructions: 'Select all',
+        passage: { id: 'p1', text: 'Test', wordCount: 1 },
+        questionStem: 'Test?',
+        options: [
+          { key: 'A', text: 'Option A' },
+          { key: 'B', text: 'Option B' },
+        ],
+        minSelections: 1,
+        maxSelections: 2,
+      });
+      const response = { selectedKeys: ['Z', 'Z'] };
+      const result = handler.validateSubmission({
+        response,
+        sessionMode: 'learning',
+        allowsEmptySubmission: false,
+        question,
+        questionVersionId: 'qv_1' as QuestionVersionId,
+        modeProfile: { id: 'mp_1', version: 1, mode: 'learning' },
+        scoringProfile: null,
+      });
+      assert.equal(result.valid, false);
+      assert.ok(result.reason?.includes('Duplicate'));
+    });
+
+    it('reading handler rejects unknown selected key — invalid', () => {
       const handler = createReadingMultipleChoiceMultipleHandler();
       const question = handler.parseQuestion({
         type: 'reading_multiple_answers',
@@ -450,12 +513,15 @@ describe('question-engine', () => {
         sessionMode: 'learning',
         allowsEmptySubmission: false,
         question,
+        questionVersionId: 'qv_1' as QuestionVersionId,
+        modeProfile: { id: 'mp_1', version: 1, mode: 'learning' },
+        scoringProfile: null,
       });
       assert.equal(result.valid, false);
       assert.ok(result.reason?.includes('Unknown'));
     });
 
-    it('reorder rejects duplicate IDs', () => {
+    it('reorder handler rejects duplicate IDs — invalid', () => {
       const handler = createReorderParagraphHandler();
       const question = handler.parseQuestion({
         type: 'reorder_paragraph',
@@ -471,12 +537,15 @@ describe('question-engine', () => {
         sessionMode: 'learning',
         allowsEmptySubmission: false,
         question,
+        questionVersionId: 'qv_1' as QuestionVersionId,
+        modeProfile: { id: 'mp_1', version: 1, mode: 'learning' },
+        scoringProfile: null,
       });
       assert.equal(result.valid, false);
       assert.ok(result.reason?.includes('Duplicate'));
     });
 
-    it('reorder rejects unknown IDs', () => {
+    it('reorder handler rejects unknown IDs — invalid', () => {
       const handler = createReorderParagraphHandler();
       const question = handler.parseQuestion({
         type: 'reorder_paragraph',
@@ -492,12 +561,15 @@ describe('question-engine', () => {
         sessionMode: 'learning',
         allowsEmptySubmission: false,
         question,
+        questionVersionId: 'qv_1' as QuestionVersionId,
+        modeProfile: { id: 'mp_1', version: 1, mode: 'learning' },
+        scoringProfile: null,
       });
       assert.equal(result.valid, false);
       assert.ok(result.reason?.includes('Unknown'));
     });
 
-    it('listening MCQ-M rejects duplicate and unknown keys', () => {
+    it('listening handler rejects duplicate selections — invalid', () => {
       const handler = createListeningMultipleAnswersHandler();
       const question = handler.parseQuestion({
         type: 'listening_multiple_answers',
@@ -510,23 +582,71 @@ describe('question-engine', () => {
         minSelections: 1,
         maxSelections: 2,
       });
-      const responseDup = { selectedKeys: ['A', 'A'] };
-      const resultDup = handler.validateSubmission({
-        response: responseDup,
+      const response = { selectedKeys: ['A', 'A'] };
+      const result = handler.validateSubmission({
+        response,
         sessionMode: 'learning',
         allowsEmptySubmission: false,
         question,
+        questionVersionId: 'qv_1' as QuestionVersionId,
+        modeProfile: { id: 'mp_1', version: 1, mode: 'learning' },
+        scoringProfile: null,
       });
-      assert.equal(resultDup.valid, false);
+      assert.equal(result.valid, false);
+      assert.ok(result.reason?.includes('Duplicate'));
+    });
 
-      const responseUnknown = { selectedKeys: ['X'] };
-      const resultUnknown = handler.validateSubmission({
-        response: responseUnknown,
+    it('listening handler rejects unknown selected key — invalid', () => {
+      const handler = createListeningMultipleAnswersHandler();
+      const question = handler.parseQuestion({
+        type: 'listening_multiple_answers',
+        instructions: 'Select all',
+        questionStem: 'Test?',
+        options: [
+          { key: 'A', text: 'Option A' },
+          { key: 'B', text: 'Option B' },
+        ],
+        minSelections: 1,
+        maxSelections: 2,
+      });
+      const response = { selectedKeys: ['X'] };
+      const result = handler.validateSubmission({
+        response,
         sessionMode: 'learning',
         allowsEmptySubmission: false,
         question,
+        questionVersionId: 'qv_1' as QuestionVersionId,
+        modeProfile: { id: 'mp_1', version: 1, mode: 'learning' },
+        scoringProfile: null,
       });
-      assert.equal(resultUnknown.valid, false);
+      assert.equal(result.valid, false);
+      assert.ok(result.reason?.includes('Unknown'));
+    });
+
+    it('empty response remains valid where permitted', () => {
+      const handler = createReadingMultipleChoiceMultipleHandler();
+      const question = handler.parseQuestion({
+        type: 'reading_multiple_answers',
+        instructions: 'Select all',
+        passage: { id: 'p1', text: 'Test', wordCount: 1 },
+        questionStem: 'Test?',
+        options: [
+          { key: 'A', text: 'Option A' },
+          { key: 'B', text: 'Option B' },
+        ],
+        minSelections: 1,
+        maxSelections: 2,
+      });
+      const result = handler.validateSubmission({
+        response: { selectedKeys: [] },
+        sessionMode: 'learning',
+        allowsEmptySubmission: true,
+        question,
+        questionVersionId: 'qv_1' as QuestionVersionId,
+        modeProfile: { id: 'mp_1', version: 1, mode: 'learning' },
+        scoringProfile: null,
+      });
+      assert.equal(result.valid, true);
     });
   });
 });

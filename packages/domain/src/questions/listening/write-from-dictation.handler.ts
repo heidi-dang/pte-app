@@ -26,14 +26,17 @@ export function createWriteFromDictationHandler(): QuestionTypeHandler<
     },
 
     getResponseState(response: WriteFromDictationResponse): 'empty' | 'incomplete' | 'complete' | 'submitted' {
-      if (response.words.trim().length === 0) return 'empty';
+      if (response.words.length === 0) return 'empty';
       return 'complete';
     },
 
     validateSubmission(
       input: SubmissionValidationInput<WriteFromDictationResponse, WriteFromDictationQuestion>,
     ): SubmissionValidationResult {
-      return validateListeningSubmission(input, (r) => r.words.trim().length === 0);
+      const base = validateListeningSubmission(input, (r) => r.words.length === 0);
+      if (!base.valid) return base;
+
+      return { valid: true };
     },
   };
 }

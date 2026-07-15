@@ -46,12 +46,10 @@ export function createReorderParagraphHandler(): QuestionTypeHandler<
         seen.add(id);
       }
 
-      if (question) {
-        const validIds = new Set(question.items.map((item) => item.id));
-        for (const id of response.orderedIds) {
-          if (!validIds.has(id)) {
-            return { valid: false, reason: `Unknown paragraph ID: ${id}` };
-          }
+      const validIds = new Set(question.items.map((item) => item.id));
+      for (const id of response.orderedIds) {
+        if (!validIds.has(id)) {
+          return { valid: false, reason: `Unknown paragraph ID: ${id}` };
         }
       }
 

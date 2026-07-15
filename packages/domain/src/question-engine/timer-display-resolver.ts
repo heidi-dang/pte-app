@@ -5,16 +5,18 @@ export type TimerDisplayProfileStore = {
   get(id: string): TimerDisplayProfile | undefined;
 };
 
-const DEFAULT_TIMER_DISPLAY_PROFILE: TimerDisplayProfile = {
-  refreshIntervalMs: 1000,
-  warningThresholdsMs: [60_000, 30_000, 10_000],
-};
-
+/**
+ * Production resolver requires an explicit profile ID.
+ * Undefined or unknown IDs throw MISSING_TIMER_DISPLAY_PROFILE.
+ * No implicit timing defaults exist in production code.
+ */
 export function resolveTimerDisplayProfile(
   store: TimerDisplayProfileStore,
   profileId: string | undefined,
 ): TimerDisplayProfile {
-  if (!profileId) return DEFAULT_TIMER_DISPLAY_PROFILE;
+  if (!profileId) {
+    throw createEngineError('MISSING_TIMER_DISPLAY_PROFILE', 'Timer display profile ID is required');
+  }
   const profile = store.get(profileId);
   if (!profile) {
     throw createEngineError('MISSING_TIMER_DISPLAY_PROFILE', `No timer display profile found for id '${profileId}'`);

@@ -40,19 +40,17 @@ export function createReadingFillBlanksHandler(): QuestionTypeHandler<
       if (!base.valid) return base;
 
       const { response, question } = input;
-      if (question) {
-        const validTokenIds = new Set(question.tokens.map((t) => t.id));
-        const usedTokens = new Set<string>();
-        for (const tokenId of Object.values(response.placements)) {
-          if (tokenId === null || tokenId === undefined) continue;
-          if (!validTokenIds.has(tokenId)) {
-            return { valid: false, reason: `Unknown token ID: ${tokenId}` };
-          }
-          if (usedTokens.has(tokenId)) {
-            return { valid: false, reason: `Duplicate token placement: ${tokenId}` };
-          }
-          usedTokens.add(tokenId);
+      const validTokenIds = new Set(question.tokens.map((t) => t.id));
+      const usedTokens = new Set<string>();
+      for (const tokenId of Object.values(response.placements)) {
+        if (tokenId === null || tokenId === undefined) continue;
+        if (!validTokenIds.has(tokenId)) {
+          return { valid: false, reason: `Unknown token ID: ${tokenId}` };
         }
+        if (usedTokens.has(tokenId)) {
+          return { valid: false, reason: `Duplicate token placement: ${tokenId}` };
+        }
+        usedTokens.add(tokenId);
       }
 
       return { valid: true };

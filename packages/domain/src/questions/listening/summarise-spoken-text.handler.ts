@@ -26,14 +26,24 @@ export function createSummariseSpokenTextHandler(): QuestionTypeHandler<
     },
 
     getResponseState(response: SummariseSpokenTextResponse): 'empty' | 'incomplete' | 'complete' | 'submitted' {
-      if (response.summary.trim().length === 0) return 'empty';
-      return 'incomplete';
+      if (response.summary.length === 0) return 'empty';
+      return 'complete';
     },
 
     validateSubmission(
       input: SubmissionValidationInput<SummariseSpokenTextResponse, SummariseSpokenTextQuestion>,
     ): SubmissionValidationResult {
-      return validateListeningSubmission(input, (r) => r.summary.trim().length === 0);
+      const base = validateListeningSubmission(input, (r) => r.summary.length === 0);
+      if (!base.valid) return base;
+
+      const { response, question } = input;
+      const wordCount = response.summary.trim().split(/\s+/).filter(Boolean).length;
+
+      if (wordCount > question.maxWords) {
+        return { valid: false, reason: `Word count ${wordCount} exceeds maximum ${question.maxWords}` };
+      }
+
+      return { valid: true };
     },
   };
 }

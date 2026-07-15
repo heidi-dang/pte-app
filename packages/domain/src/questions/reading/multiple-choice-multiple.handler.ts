@@ -6,25 +6,6 @@ import {
 } from '@pte-app/schemas';
 import { READING_MANIFEST_BASE, validateReadingSubmission } from './common.js';
 
-export interface McmScoringProfile {
-  correctCredit: number;
-  incorrectDeduction: number;
-  minimumResult: number;
-  maximumResult: number;
-}
-
-const DEFAULT_MCM_SCORING: McmScoringProfile = {
-  correctCredit: 1,
-  incorrectDeduction: 0.25,
-  minimumResult: 0,
-  maximumResult: 1,
-};
-
-export function getMcmScoringProfile(profileId?: string): McmScoringProfile {
-  void profileId;
-  return DEFAULT_MCM_SCORING;
-}
-
 export function createReadingMultipleChoiceMultipleHandler(): QuestionTypeHandler<
   ReadingMultipleChoiceMultipleQuestion,
   ReadingMultipleChoiceMultipleResponse
@@ -70,19 +51,17 @@ export function createReadingMultipleChoiceMultipleHandler(): QuestionTypeHandle
         seen.add(key);
       }
 
-      if (question) {
-        const validKeys = new Set(question.options.map((o) => o.key));
-        for (const key of response.selectedKeys) {
-          if (!validKeys.has(key)) {
-            return { valid: false, reason: `Unknown selected key: ${key}` };
-          }
+      const validKeys = new Set(question.options.map((o) => o.key));
+      for (const key of response.selectedKeys) {
+        if (!validKeys.has(key)) {
+          return { valid: false, reason: `Unknown selected key: ${key}` };
         }
-        if (response.selectedKeys.length > question.maxSelections) {
-          return {
-            valid: false,
-            reason: `Too many selections: ${response.selectedKeys.length} > ${question.maxSelections}`,
-          };
-        }
+      }
+      if (response.selectedKeys.length > question.maxSelections) {
+        return {
+          valid: false,
+          reason: `Too many selections: ${response.selectedKeys.length} > ${question.maxSelections}`,
+        };
       }
 
       return { valid: true };

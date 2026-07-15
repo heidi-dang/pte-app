@@ -46,19 +46,17 @@ export function createListeningMultipleAnswersHandler(): QuestionTypeHandler<
         seen.add(key);
       }
 
-      if (question) {
-        const validKeys = new Set(question.options.map((o) => o.key));
-        for (const key of response.selectedKeys) {
-          if (!validKeys.has(key)) {
-            return { valid: false, reason: `Unknown selected key: ${key}` };
-          }
+      const validKeys = new Set(question.options.map((o) => o.key));
+      for (const key of response.selectedKeys) {
+        if (!validKeys.has(key)) {
+          return { valid: false, reason: `Unknown selected key: ${key}` };
         }
-        if (response.selectedKeys.length > question.maxSelections) {
-          return {
-            valid: false,
-            reason: `Too many selections: ${response.selectedKeys.length} > ${question.maxSelections}`,
-          };
-        }
+      }
+      if (response.selectedKeys.length > question.maxSelections) {
+        return {
+          valid: false,
+          reason: `Too many selections: ${response.selectedKeys.length} > ${question.maxSelections}`,
+        };
       }
 
       return { valid: true };

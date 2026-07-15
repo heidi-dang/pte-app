@@ -46,11 +46,9 @@ export function createHighlightIncorrectWordsHandler(): QuestionTypeHandler<
         seen.add(idx);
       }
 
-      if (question) {
-        for (const idx of response.flaggedWordIndices) {
-          if (idx < 0 || idx >= question.wordCount) {
-            return { valid: false, reason: `Flagged word index out of range: ${idx}` };
-          }
+      for (const idx of response.flaggedWordIndices) {
+        if (idx < 0 || idx >= question.wordCount) {
+          return { valid: false, reason: `Flagged word index out of range: ${idx}` };
         }
       }
 
