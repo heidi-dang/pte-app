@@ -22,7 +22,7 @@ RUN mkdir -p apps/web/public
 RUN npm run build
 
 FROM base AS deps-prod
-RUN npm ci --ignore-scripts --omit=dev && npm cache clean --force
+RUN npm ci --ignore-scripts --omit=dev && npm rebuild bcrypt && npm cache clean --force
 
 FROM node:24-alpine AS runtime-base
 WORKDIR /app
@@ -33,6 +33,7 @@ COPY package.json /app/package.json
 FROM runtime-base AS packages-layer
 COPY --from=build /app/packages/contracts/dist /app/packages/contracts/dist
 COPY --from=build /app/packages/database/dist /app/packages/database/dist
+COPY --from=build /app/packages/database/src/migrations /app/packages/database/dist/migrations
 COPY --from=build /app/packages/design-system/dist /app/packages/design-system/dist
 COPY --from=build /app/packages/domain/dist /app/packages/domain/dist
 COPY --from=build /app/packages/provenance/dist /app/packages/provenance/dist
