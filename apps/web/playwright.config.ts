@@ -13,8 +13,8 @@ export default defineConfig({
   retries: 0,
   workers: 1,
   reporter: 'list',
-  globalSetup: resolve(__dirname, 'global-setup'),
-  globalTeardown: resolve(__dirname, 'global-teardown'),
+  globalSetup: resolve(__dirname, 'e2e', 'global-setup'),
+  globalTeardown: resolve(__dirname, 'e2e', 'global-teardown'),
   use: {
     baseURL: process.env.E2E_WEB_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
