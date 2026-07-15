@@ -36,9 +36,9 @@ Dev 2 branch: `feat/dev2-phase-i-j-k-structure` (56 files)
 ### Shared files (2):
 
 1. **`packages/database/src/migrations/runner.ts`**
-   - Phase H adds: `await loadMigration('0004', 'phase_h')`
+   - Phase H adds: `await loadMigration('0005', 'phase_h')` (renumbered from 0004)
    - Dev 2 adds: `await loadMigration('0004', 'question_engine')`
-   - Collision: Both use migration number 0004. Resolution: The second branch merged will need to renumber to 0005. Both migrations are additive and non-overlapping in table scope.
+   - Resolution: Phase H migration renumbered to 0005. Dev 2 retains 0004. Both can merge without collision. Either branch can merge independently without silently skipping the other migration. Ordering is deterministic.
 
 2. **`services/api/src/app.ts`**
    - Phase H adds: `import { phaseHPlugin } from './phase-h/plugin.js'` and `await app.register(phaseHPlugin, { db: dbConnection })`

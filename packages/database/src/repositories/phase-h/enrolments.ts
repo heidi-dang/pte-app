@@ -15,7 +15,7 @@ export async function createEnrolment(
   const id = randomUUID() as EnrolmentId;
 
   const result = await connection.pool.query<Record<string, unknown>>(
-    `INSERT INTO enrolments (id, user_id, course_id, course_version_id, enrolled_at, status)
+    `INSERT INTO course_enrolments (id, user_id, course_id, course_version_id, enrolled_at, status)
      VALUES ($1, $2, $3, $4, NOW(), 'active')
      ON CONFLICT (user_id, course_id) DO NOTHING
      RETURNING id, user_id as "userId", course_id as "courseId",
@@ -30,7 +30,7 @@ export async function createEnrolment(
       `SELECT id, user_id as "userId", course_id as "courseId",
         course_version_id as "courseVersionId", enrolled_at as "enrolledAt",
         completed_at as "completedAt", status
-       FROM enrolments WHERE user_id = $1 AND course_id = $2`,
+       FROM course_enrolments WHERE user_id = $1 AND course_id = $2`,
       [input.userId, input.courseId],
     );
     const existingRow = existing.rows[0];
@@ -49,7 +49,7 @@ export async function getEnrolment(
     `SELECT id, user_id as "userId", course_id as "courseId",
       course_version_id as "courseVersionId", enrolled_at as "enrolledAt",
       completed_at as "completedAt", status
-     FROM enrolments WHERE user_id = $1 AND course_id = $2`,
+     FROM course_enrolments WHERE user_id = $1 AND course_id = $2`,
     [userId, courseId],
   );
   return result.rows[0] as unknown as EnrolmentRecord | undefined;
@@ -63,7 +63,7 @@ export async function listEnrolmentsForUser(
     `SELECT id, user_id as "userId", course_id as "courseId",
       course_version_id as "courseVersionId", enrolled_at as "enrolledAt",
       completed_at as "completedAt", status
-     FROM enrolments WHERE user_id = $1
+     FROM course_enrolments WHERE user_id = $1
      ORDER BY enrolled_at DESC`,
     [userId],
   );
@@ -76,7 +76,7 @@ export async function completeEnrolment(
   courseId: CourseId,
 ): Promise<EnrolmentRecord | undefined> {
   const result = await connection.pool.query<Record<string, unknown>>(
-    `UPDATE enrolments SET status = 'completed', completed_at = NOW()
+    `UPDATE course_enrolments SET status = 'completed', completed_at = NOW()
      WHERE user_id = $1 AND course_id = $2
      RETURNING id, user_id as "userId", course_id as "courseId",
        course_version_id as "courseVersionId", enrolled_at as "enrolledAt",

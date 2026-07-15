@@ -15,6 +15,8 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
   const [error, setError] = useState('');
   const [currentBlock, setCurrentBlock] = useState(0);
   const [completed, setCompleted] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
+  const [versionId, setVersionId] = useState<string>('');
 
   async function load() {
     setLoading(true);
@@ -22,9 +24,11 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
       const res = await fetch(`${API_URL}/learn/lessons/${id}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Lesson not found');
       const data = await res.json();
-      setLesson(data.lesson as Record<string, unknown>);
+      const lessonData = data.lesson as Record<string, unknown>;
+      setLesson(lessonData);
       setBlocks((data.blocks as Array<Record<string, unknown>>) || []);
       setProgress((data.progress as Record<string, unknown>) || null);
+      setVersionId((lessonData.versionId as string) || '');
       if (data.progress && (data.progress as Record<string, unknown>).blockPosition !== undefined) {
         setCurrentBlock((data.progress as Record<string, unknown>).blockPosition as number);
       }
@@ -42,9 +46,13 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
     load();
   }, [id]);
 
-  async function saveProgress(blockIdx: number) {
-    const mutationId = `progress-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const pct = blocks.length > 0 ? Math.round(((blockIdx + 1) / blocks.length) * 100) : 0;
+  async function saveProgress(blockIdx: number, mutationId?: string) {
+    const mutId = mutationId || `progress-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const existingBlocks = blocks;
+    const blockPosition = blockIdx;
+    const pct = existingBlocks.length > 0 ? Math.round(((blockPosition + 1) / existingBlocks.length) * 100) : 0;
+
+    setSaveStatus('saving');
     try {
       const res = await fetch(`${API_URL}/learn/progress`, {
         method: 'POST',
@@ -52,37 +60,46 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           lessonId: id,
-          blockId: blocks[blockIdx]?.id,
-          blockPosition: blockIdx,
+          blockId: existingBlocks[blockPosition]?.id,
+          blockPosition,
           progressPercentage: pct,
-          mutationId,
-          lessonVersionId: 'v1',
+          mutationId: mutId,
+          lessonVersionId: versionId,
           courseId: lesson?.courseId,
           moduleId: lesson?.moduleId,
           enrolmentId: progress?.enrolmentId,
         }),
       });
-      if (res.ok) setProgress(await res.json());
+      if (!res.ok) throw new Error('Save failed');
+      const data = await res.json();
+      setProgress(data);
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
     } catch {
-      /* best-effort progress save */
+      setSaveStatus('failed');
     }
   }
 
   async function handleComplete() {
+    setSaveStatus('saving');
     try {
       const res = await fetch(`${API_URL}/learn/lessons/${id}/complete`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (res.ok) {
-        setCompleted(true);
-        const data = await res.json();
-        setProgress(data.progress as Record<string, unknown>);
-      }
+      if (!res.ok) throw new Error('Complete failed');
+      const data = await res.json();
+      setCompleted(true);
+      setProgress(data.progress as Record<string, unknown>);
+      setSaveStatus('saved');
     } catch {
-      /* best-effort */
+      setSaveStatus('failed');
     }
+  }
+
+  function handleRetrySave() {
+    saveProgress(currentBlock);
   }
 
   if (loading)
@@ -114,6 +131,31 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
         <div style={{ marginBottom: '1rem' }}>
           <Progress value={pct} data-testid="lesson-progress-bar" />
           <span style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>{pct}% complete</span>
+          {saveStatus !== 'idle' && (
+            <span
+              data-testid="save-status"
+              style={{
+                marginLeft: '1rem',
+                fontSize: '0.875rem',
+                color: saveStatus === 'failed' ? 'var(--color-error, red)' : 'var(--color-muted)',
+              }}
+            >
+              {saveStatus === 'saving' && 'Saving...'}
+              {saveStatus === 'saved' && 'Saved'}
+              {saveStatus === 'failed' && (
+                <span>
+                  Save failed.
+                  <Button
+                    data-testid="retry-save"
+                    onClick={handleRetrySave}
+                    style={{ marginLeft: '0.5rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                  >
+                    Retry
+                  </Button>
+                </span>
+              )}
+            </span>
+          )}
         </div>
         {block ? (
           <Card data-testid="lesson-block" style={{ marginBottom: '1rem', padding: '1.5rem' }}>
@@ -128,7 +170,14 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
             {(block.blockType as string) === 'video' && (
               <div data-testid="block-video">
                 <h2>{block.title as string}</h2>
-                <div style={{ padding: '1rem', background: '#f5f5f5', borderRadius: '4px', textAlign: 'center' }}>
+                <div
+                  style={{
+                    padding: '1rem',
+                    background: '#f5f5f5',
+                    borderRadius: '4px',
+                    textAlign: 'center',
+                  }}
+                >
                   Video content: {((block.content as Record<string, unknown>)?.title as string) || 'Untitled'}
                 </div>
                 {(block.content as Record<string, unknown>)?.transcript != null && (
@@ -144,7 +193,13 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
             {(block.blockType as string) === 'audio' && (
               <div data-testid="block-audio">
                 <h2>{block.title as string}</h2>
-                <div style={{ padding: '1rem', background: '#f5f5f5', borderRadius: '4px' }}>
+                <div
+                  style={{
+                    padding: '1rem',
+                    background: '#f5f5f5',
+                    borderRadius: '4px',
+                  }}
+                >
                   Audio content: {((block.content as Record<string, unknown>)?.title as string) || 'Untitled'}
                   <p style={{ fontSize: '0.8rem', color: 'var(--color-muted)' }}>Audio playback available</p>
                 </div>
@@ -209,10 +264,16 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {progress && (
             <Badge
-              variant={(progress as Record<string, unknown>).status === 'completed' ? 'success' : 'warning'}
+              variant={
+                completed
+                  ? 'success'
+                  : (progress as Record<string, unknown>).status === 'completed'
+                    ? 'success'
+                    : 'warning'
+              }
               data-testid="progress-status"
             >
-              {completed ? 'completed' : ((progress as Record<string, unknown>).status as string)}
+              {completed ? 'completed' : (progress.status as string)}
             </Badge>
           )}
           {completed && (
