@@ -214,7 +214,7 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     const course = lesson.courseId ? await repo.courses.getCourseById(db, lesson.courseId) : null;
 
     let decision;
-    if (course && isStaff(auth)) {
+    if (course && (isStaff(auth) || isTeacher(auth.roles))) {
       decision = { allowed: true, newActivityAllowed: true };
     } else if (course) {
       decision = await getEntitlementDecision(db, auth.userId, course.accessLevel || 'free', course.id);
@@ -328,8 +328,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     }
 
     // Reject stale revisions
-    if (existing && body.revision !== undefined && (body.revision as number) < existing.revision) {
-      return reply.status(409).send({ error: 'Stale update', currentRevision: existing.revision });
+    if (existing && body.revision !== undefined && (body.revision as number) < (existing.version || 0)) {
+      return reply.status(409).send({ error: 'Stale update', currentRevision: existing.version });
     }
 
     const pct = blocks.length > 0 ? Math.round(((blockPosition + 1) / blocks.length) * 100) : 0;
