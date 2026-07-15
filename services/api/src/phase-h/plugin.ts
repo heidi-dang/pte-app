@@ -444,14 +444,12 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
       reqId(request),
     );
     if (!pubResult.eligible) {
-      return reply
-        .status(400)
-        .send({
-          error: 'Publication not eligible',
-          blockers: pubResult.blockers,
-          warnings: pubResult.warnings,
-          decisionId: pubResult.decisionId,
-        });
+      return reply.status(400).send({
+        error: 'Publication not eligible',
+        blockers: pubResult.blockers,
+        warnings: pubResult.warnings,
+        decisionId: pubResult.decisionId,
+      });
     }
     const published = await repo.courses.publishCourse(db, course.id);
     return reply.status(200).send({ course: published, decisionId: pubResult.decisionId });
@@ -531,14 +529,12 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
       reqId(request),
     );
     if (!pubResult.eligible) {
-      return reply
-        .status(400)
-        .send({
-          error: 'Publication not eligible',
-          blockers: pubResult.blockers,
-          warnings: pubResult.warnings,
-          decisionId: pubResult.decisionId,
-        });
+      return reply.status(400).send({
+        error: 'Publication not eligible',
+        blockers: pubResult.blockers,
+        warnings: pubResult.warnings,
+        decisionId: pubResult.decisionId,
+      });
     }
     const published = await repo.lessons.publishLesson(db, lesson.id);
     return reply.status(200).send({ lesson: published, decisionId: pubResult.decisionId });
