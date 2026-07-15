@@ -231,9 +231,6 @@ print(json.dumps(out))
       echo "ERROR: Failed to create $name: $err_msg" >&2
       exit 1
     fi
-      echo "ERROR: Failed to create $name: $err_msg" >&2
-      exit 1
-    fi
   fi
 done
 

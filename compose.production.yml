@@ -143,6 +143,8 @@ services:
       - '${CADDY_HTTPS_PORT:-443}:443'
     volumes:
       - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./secrets/origin.pem:/etc/caddy/certs/origin.pem:ro
+      - ./secrets/origin-key.pem:/etc/caddy/certs/origin-key.pem:ro
       - caddydata:/data
       - caddyconfig:/config
     env_file:
