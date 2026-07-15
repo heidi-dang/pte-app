@@ -1,6 +1,7 @@
 export { resolveAttemptReference, collectAttemptReferences } from './result-resolver.js';
 export { buildScoreTrendSet, detectProfileChanges, isProfileCompatible } from './score-trend.js';
-export { calculateMasteryLevels, buildMasterySnapshot } from './mastery-calculator.js';
+export { calculateSkillMastery, calculateTaskMastery, buildMasterySnapshot } from './mastery-calculator.js';
+export type { SkillEvidence } from './mastery-calculator.js';
 export { buildTraitAnalysis } from './trait-analysis.js';
 export { buildWeaknessReport } from './weakness-report.js';
 export { filterAttemptHistory } from './attempt-history.js';

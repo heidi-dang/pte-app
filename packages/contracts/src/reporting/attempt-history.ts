@@ -1,5 +1,3 @@
-import type { AttemptHistoryId } from './identifiers.js';
-
 export interface AttemptHistoryFilter {
   taskTypes?: string[];
   skills?: string[];

@@ -1,2 +1,12 @@
 export { calculateAgreement } from './agreement-metrics.js';
 export { evaluatePromotionGate } from './promotion-gate.js';
+export { validateDatasetSamples } from './dataset-validator.js';
+export { analyzeSubgroup } from './subgroup-analysis.js';
+export { detectBias } from './bias-analysis.js';
+export { detectDrift } from './drift-detector.js';
+export { compareProfiles } from './profile-comparison.js';
+export { calculateCalibrationBuckets } from './confidence-calibrator.js';
+export { evaluateDiagnosticQuality } from './diagnostic-quality.js';
+export { evaluateEffectiveness } from './study-plan-effectiveness.js';
+export { buildCalibrationReport, finalizeReport } from './report-builder.js';
+export { canRollback, createRollbackDecision } from './rollback-evaluator.js';

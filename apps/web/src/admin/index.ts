@@ -1,1 +1,9 @@
 export { AdminShell } from './admin-shell.js';
+export { AdminUsers } from './users.js';
+export { AdminEntitlements } from './entitlements.js';
+export { ContentAdministration } from './content-administration.js';
+export { ScoringJobs } from './scoring-jobs.js';
+export { Moderation } from './moderation.js';
+export { AuditLog } from './audit-log.js';
+export { ImpersonationBanner } from './impersonation-banner.js';
+export { SensitiveActionDialog } from './sensitive-action-dialog.js';

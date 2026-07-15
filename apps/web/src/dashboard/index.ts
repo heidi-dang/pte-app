@@ -1,5 +1,13 @@
 export { DashboardShell } from './dashboard-shell.js';
 export { RecentActivity } from './recent-activity.js';
+export { StudyPlanProgress } from './study-plan-progress.js';
 export { EstimatedScoreTrend } from './estimated-score-trend.js';
 export { SkillMastery } from './skill-mastery.js';
+export { TaskTypeMastery } from './task-type-mastery.js';
+export { TraitAnalysis } from './trait-analysis.js';
+export { WeaknessSummary } from './weakness-summary.js';
+export { AttemptHistory } from './attempt-history.js';
+export { MockComparison } from './mock-comparison.js';
 export { DataFreshness } from './data-freshness.js';
+export { AccessibleChart } from './accessible-chart.js';
+export { ReportExport } from './report-export.js';

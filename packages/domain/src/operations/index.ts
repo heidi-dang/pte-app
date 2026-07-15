@@ -1,2 +1,14 @@
 export { isNotificationBlocked } from './notification-policy.js';
 export { canTransition } from './support-case-state-machine.js';
+export { resolvePreference, isInQuietHours } from './preference-resolver.js';
+export { renderTemplate } from './template-rendering.js';
+export { canTransitionDelivery } from './delivery-state-machine.js';
+export { shouldRetry, nextRetryDelay } from './retry-policy.js';
+export { canRecoverScoring, recoveryResultType } from './failed-scoring-recovery.js';
+export { canRepairMedia } from './media-repair.js';
+export { canTransitionIncident } from './incident-state-machine.js';
+export { verifyBackupIntegrity, requiresRestorationEvidence } from './backup-verification.js';
+export { validateRestorationPlan } from './restoration-plan.js';
+export { canExportAudit } from './audit-export.js';
+export { isEligibleForRetention, previewRetention } from './retention-policy.js';
+export { isProgressStale, estimateCompletion } from './admin-progress.js';
