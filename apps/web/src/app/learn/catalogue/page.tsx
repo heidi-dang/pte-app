@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Container, Card, Input, Badge, Button } from '@pte-app/design-system';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { api } from '@/lib/phase-h-client';
 
 function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: number): T {
   let timer: ReturnType<typeof setTimeout>;
@@ -18,6 +17,7 @@ export default function CourseCatalogue() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -25,21 +25,11 @@ export default function CourseCatalogue() {
     const doFetch = () => {
       setLoading(true);
       setError('');
-      fetch(`${API_URL}/learn/catalogue?search=${encodeURIComponent(search)}`, {
-        credentials: 'include',
-        signal: controller.signal,
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error('Failed to load');
-          return res.json();
-        })
+      api
+        .catalogue({ search: search || undefined })
         .then((data) => {
           if (!active) return;
-          setCourses(
-            (data as { courses?: Array<Record<string, unknown>> }).courses ||
-              (data as Array<Record<string, unknown>>) ||
-              [],
-          );
+          setCourses((data as { courses?: Array<Record<string, unknown>> }).courses || []);
         })
         .catch((err) => {
           if (!active) return;
@@ -56,7 +46,11 @@ export default function CourseCatalogue() {
       active = false;
       controller.abort();
     };
-  }, [search]);
+  }, [search, retryKey]);
+
+  function handleRetry() {
+    setRetryKey((k) => k + 1);
+  }
 
   return (
     <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
@@ -86,7 +80,7 @@ export default function CourseCatalogue() {
         {error && (
           <div data-testid="catalogue-error" style={{ marginBottom: '1rem' }}>
             <p style={{ color: 'var(--color-error, red)' }}>{error}</p>
-            <Button data-testid="catalogue-retry" onClick={() => setSearch((s) => s + '')}>
+            <Button data-testid="catalogue-retry" onClick={handleRetry}>
               Retry
             </Button>
           </div>

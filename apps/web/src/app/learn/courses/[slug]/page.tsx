@@ -2,8 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import { Container, Card, Button, Badge } from '@pte-app/design-system';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { api } from '@/lib/phase-h-client';
 
 export default function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -12,45 +11,26 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
   const [error, setError] = useState('');
 
   useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const res = await fetch(`${API_URL}/learn/courses/${slug}`, { credentials: 'include' });
-        if (!res.ok) throw new Error('Not found');
-        setData(await res.json());
-      } catch (err: any) {
-        setError(err.message || 'Not found');
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
+    api
+      .getCourse(slug)
+      .then((d) => {
+        setData(d);
+        setError('');
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, [slug]);
-
-  async function enrol() {
-    if (!data?.course?.id) return;
-    try {
-      const res = await fetch(`${API_URL}/learn/courses/${data.course.id}/enrol`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Enrolment failed');
-      setData({ ...data, enrolment: await res.json() });
-    } catch (err: any) {
-      setError(err.message);
-    }
-  }
 
   if (loading)
     return (
       <Container>
-        <p>Loading...</p>
+        <p data-testid="course-loading">Loading...</p>
       </Container>
     );
   if (error)
     return (
       <Container>
-        <p style={{ color: 'var(--color-danger)' }}>{error}</p>
+        <p data-testid="course-error">{error}</p>
       </Container>
     );
   if (!data?.course)
@@ -60,37 +40,74 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
       </Container>
     );
 
-  const c = data.course;
+  const { course, modules, enrolment } = data;
+  const isEnrolled = enrolment?.status === 'active';
+
   return (
     <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
       <Container>
-        <h1>{c.title}</h1>
-        <p>{c.summary}</p>
+        <h1 data-testid="course-title" style={{ marginBottom: '0.5rem' }}>
+          {course.title}
+        </h1>
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-          <Badge variant={c.accessLevel === 'free' ? 'success' : 'warning'}>{c.accessLevel}</Badge>
-          <Badge variant="default">{c.difficulty}</Badge>
+          <Badge variant={course.accessLevel === 'free' ? 'success' : 'warning'}>{course.accessLevel}</Badge>
+          <Badge>{course.difficulty}</Badge>
+          <span style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>
+            {course.estimatedDurationMinutes} min
+          </span>
         </div>
-        {!data.enrolment && (
-          <Button data-testid="btn-enrol" onClick={enrol}>
+        <p style={{ marginBottom: '1.5rem' }}>{course.description}</p>
+
+        {!isEnrolled ? (
+          <Button data-testid="btn-enrol" onClick={() => api.enrol(course.id)}>
             Enrol Now
           </Button>
+        ) : (
+          <Button
+            data-testid="btn-resume"
+            onClick={() =>
+              api.resumeProgress(course.id).then((r) => {
+                if (r.lessonId) window.location.href = `/learn/lessons/${r.lessonId}`;
+              })
+            }
+          >
+            Resume / Start
+          </Button>
         )}
-        {data.enrolment && <Badge variant="success">Enrolled</Badge>}
-        {data.modules &&
-          data.modules.map((m: any) => (
-            <Card key={m.id} style={{ marginBottom: '1rem', marginTop: '1rem' }}>
-              <h3>{m.title}</h3>
-              {m.lessons &&
-                m.lessons.map((l: any) => (
-                  <div key={l.id} style={{ padding: '0.25rem 0' }}>
-                    <a href={`/learn/lessons/${l.id}`} style={{ color: 'var(--color-primary)' }}>
-                      {l.title}
-                    </a>
-                  </div>
-                ))}
-            </Card>
-          ))}
-        <a href="/learn/catalogue">Back to catalogue</a>
+
+        <h2 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Modules</h2>
+        {(modules || []).map((mod: any, mi: number) => (
+          <Card key={mod.id} style={{ marginBottom: '1rem', padding: '1rem' }}>
+            <h3>
+              Module {mi + 1}: {mod.title}
+            </h3>
+            {(mod.lessons || []).map((les: any) => (
+              <div
+                key={les.id}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '0.5rem 0',
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <span>
+                  {les.title} {les.isOptional && <Badge variant="warning">Optional</Badge>}
+                </span>
+                {isEnrolled && (
+                  <Button
+                    onClick={() => {
+                      window.location.href = `/learn/lessons/${les.id}`;
+                    }}
+                  >
+                    Start
+                  </Button>
+                )}
+              </div>
+            ))}
+          </Card>
+        ))}
       </Container>
     </main>
   );

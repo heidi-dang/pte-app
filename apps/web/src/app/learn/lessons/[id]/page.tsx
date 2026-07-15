@@ -3,8 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { Container, Card, Button, Badge, Alert, Progress } from '@pte-app/design-system';
 import { InteractiveBlock } from '@/components/InteractiveBlock';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { api } from '@/lib/phase-h-client';
 
 export default function LessonViewerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -17,13 +16,12 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
   const [completed, setCompleted] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
   const [versionId, setVersionId] = useState<string>('');
+  const [lastMutId, setLastMutId] = useState<string>('');
 
   async function load() {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/learn/lessons/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Lesson not found');
-      const data = await res.json();
+      const data = await api.getLesson(id);
       const lessonData = data.lesson as Record<string, unknown>;
       setLesson(lessonData);
       setBlocks((data.blocks as Array<Record<string, unknown>>) || []);
@@ -32,9 +30,7 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
       if (data.progress && (data.progress as Record<string, unknown>).blockPosition !== undefined) {
         setCurrentBlock((data.progress as Record<string, unknown>).blockPosition as number);
       }
-      if ((data.progress as Record<string, unknown>)?.status === 'completed') {
-        setCompleted(true);
-      }
+      if ((data.progress as Record<string, unknown>)?.status === 'completed') setCompleted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Not found');
     } finally {
@@ -46,32 +42,19 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
     load();
   }, [id]);
 
-  async function saveProgress(blockIdx: number, mutationId?: string) {
-    const mutId = mutationId || `progress-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const existingBlocks = blocks;
-    const blockPosition = blockIdx;
-    const pct = existingBlocks.length > 0 ? Math.round(((blockPosition + 1) / existingBlocks.length) * 100) : 0;
-
+  async function saveProgress(blockIdx: number, reuseMutId?: boolean) {
+    const mutId =
+      reuseMutId && lastMutId ? lastMutId : `progress-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    if (!reuseMutId) setLastMutId(mutId);
     setSaveStatus('saving');
     try {
-      const res = await fetch(`${API_URL}/learn/progress`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lessonId: id,
-          blockId: existingBlocks[blockPosition]?.id,
-          blockPosition,
-          progressPercentage: pct,
-          mutationId: mutId,
-          lessonVersionId: versionId,
-          courseId: lesson?.courseId,
-          moduleId: lesson?.moduleId,
-          enrolmentId: progress?.enrolmentId,
-        }),
+      const data = await api.updateProgress({
+        lessonId: id,
+        mutationId: mutId,
+        lessonVersionId: versionId,
+        blockId: blocks[blockIdx]?.id,
+        blockPosition: blockIdx,
       });
-      if (!res.ok) throw new Error('Save failed');
-      const data = await res.json();
       setProgress(data);
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 2000);
@@ -83,23 +66,13 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
   async function handleComplete() {
     setSaveStatus('saving');
     try {
-      const res = await fetch(`${API_URL}/learn/lessons/${id}/complete`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!res.ok) throw new Error('Complete failed');
-      const data = await res.json();
+      const data = await api.completeLesson(id);
       setCompleted(true);
       setProgress(data.progress as Record<string, unknown>);
       setSaveStatus('saved');
     } catch {
       setSaveStatus('failed');
     }
-  }
-
-  function handleRetrySave() {
-    saveProgress(currentBlock);
   }
 
   if (loading)
@@ -144,10 +117,10 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
               {saveStatus === 'saved' && 'Saved'}
               {saveStatus === 'failed' && (
                 <span>
-                  Save failed.
+                  Save failed.{' '}
                   <Button
                     data-testid="retry-save"
-                    onClick={handleRetrySave}
+                    onClick={() => saveProgress(currentBlock, true)}
                     style={{ marginLeft: '0.5rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
                   >
                     Retry
@@ -170,14 +143,7 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
             {(block.blockType as string) === 'video' && (
               <div data-testid="block-video">
                 <h2>{block.title as string}</h2>
-                <div
-                  style={{
-                    padding: '1rem',
-                    background: '#f5f5f5',
-                    borderRadius: '4px',
-                    textAlign: 'center',
-                  }}
-                >
+                <div style={{ padding: '1rem', background: '#f5f5f5', borderRadius: '4px', textAlign: 'center' }}>
                   Video content: {((block.content as Record<string, unknown>)?.title as string) || 'Untitled'}
                 </div>
                 {(block.content as Record<string, unknown>)?.transcript != null && (
@@ -193,13 +159,7 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
             {(block.blockType as string) === 'audio' && (
               <div data-testid="block-audio">
                 <h2>{block.title as string}</h2>
-                <div
-                  style={{
-                    padding: '1rem',
-                    background: '#f5f5f5',
-                    borderRadius: '4px',
-                  }}
-                >
+                <div style={{ padding: '1rem', background: '#f5f5f5', borderRadius: '4px' }}>
                   Audio content: {((block.content as Record<string, unknown>)?.title as string) || 'Untitled'}
                   <p style={{ fontSize: '0.8rem', color: 'var(--color-muted)' }}>Audio playback available</p>
                 </div>
