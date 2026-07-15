@@ -18,7 +18,7 @@ import type { UploadSessionState } from './questions/speaking/upload-session.js'
 import { countWords, isComplete, isEmpty, isIncomplete } from './questions/writing/word-count.js';
 import { normaliseText } from './questions/writing/response-normalisation.js';
 import { isLearningToolAvailable } from './questions/writing/writing-profile.js';
-import { scoreObjective } from './scoring/engine.js';
+import { scoreObjective, ScoringValidationError } from './scoring/engine.js';
 import { rescore } from './scoring/rescore.js';
 import type {
   ScoringProfile,
@@ -54,12 +54,9 @@ function makeScoringProfile(overrides: Partial<ScoringProfile> = {}): ScoringPro
     rules: [
       {
         ruleType: 'multiple-answer-negative-marking',
-        params: {
-          kind: 'multiple-answer' as const,
-          correctCredit: 1,
-          incorrectDeduction: 0.25,
-          duplicateAction: 'reject',
-        },
+        correctCredit: 1,
+        incorrectDeduction: 0.25,
+        duplicateAction: 'reject',
       },
     ],
     normalisation: { enabled: false, method: 'none' },
@@ -76,7 +73,9 @@ function makeBinaryProfile(overrides: Partial<ScoringProfile> = {}): ScoringProf
     rules: [
       {
         ruleType: 'binary-correct-incorrect',
-        params: { kind: 'binary' as const, correctCredit: 1, incorrectDeduction: 0, duplicateAction: 'reject' },
+        correctCredit: 1,
+        incorrectDeduction: 0,
+        duplicateAction: 'reject',
       },
     ],
     ...overrides,
@@ -344,7 +343,9 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       rules: [
         {
           ruleType: 'binary-correct-incorrect',
-          params: { kind: 'binary' as const, correctCredit: 2, incorrectDeduction: 0, duplicateAction: 'reject' },
+          correctCredit: 2,
+          incorrectDeduction: 0,
+          duplicateAction: 'reject',
         },
       ],
     });
@@ -352,7 +353,9 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       rules: [
         {
           ruleType: 'binary-correct-incorrect',
-          params: { kind: 'binary' as const, correctCredit: 5, incorrectDeduction: 0, duplicateAction: 'reject' },
+          correctCredit: 5,
+          incorrectDeduction: 0,
+          duplicateAction: 'reject',
         },
       ],
     });
@@ -366,12 +369,9 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       rules: [
         {
           ruleType: 'multiple-answer-negative-marking',
-          params: {
-            kind: 'multiple-answer' as const,
-            correctCredit: 1,
-            incorrectDeduction: 1,
-            duplicateAction: 'reject',
-          },
+          correctCredit: 1,
+          incorrectDeduction: 1,
+          duplicateAction: 'reject',
         },
       ],
     });
@@ -390,7 +390,9 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       rules: [
         {
           ruleType: 'per-blank',
-          params: { kind: 'per-blank', blankCredit: 1, casePolicy: 'insensitive', whitespacePolicy: 'collapse' },
+          blankCredit: 1,
+          casePolicy: 'insensitive',
+          whitespacePolicy: 'collapse',
         },
       ],
     });
@@ -409,7 +411,9 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       rules: [
         {
           ruleType: 'per-word',
-          params: { kind: 'per-word', wordCredit: 0.5, casePolicy: 'insensitive', punctuationPolicy: 'strip' },
+          wordCredit: 0.5,
+          casePolicy: 'insensitive',
+          punctuationPolicy: 'strip',
         },
       ],
     });
@@ -425,7 +429,7 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
 
   it('adjacent-pair scoring from profile', () => {
     const profile = makeScoringProfile({
-      rules: [{ ruleType: 'adjacent-pair', params: { kind: 'adjacent-pair', correctCredit: 1 } }],
+      rules: [{ ruleType: 'adjacent-pair', correctCredit: 1 }],
     });
     const input: ScoringInput = {
       questionVersionId: 'qv1' as QuestionVersionId,
@@ -437,7 +441,7 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
     assert.equal(result.rawResult, 2);
   });
 
-  it('duplicate selections are rejected', () => {
+  it('duplicate selections throw DUPLICATE_SELECTION', () => {
     const profile = makeBinaryProfile();
     const input: ScoringInput = {
       questionVersionId: 'qv1' as QuestionVersionId,
@@ -445,8 +449,10 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       selectedAnswers: ['A', 'A'],
       correctAnswers: ['A'],
     };
-    const result = scoreObjective(input, profile, 'att_1');
-    assert.equal(result.rawResult, 1);
+    assert.throws(
+      () => scoreObjective(input, profile, 'att_1'),
+      (e: unknown) => e instanceof ScoringValidationError && e.code === 'DUPLICATE_SELECTION',
+    );
   });
 
   it('rejects unknown answer identifiers when validAnswerIdentifiers provided', () => {
@@ -458,7 +464,10 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       correctAnswers: ['A'],
       context: { validAnswerIdentifiers: ['A', 'B', 'C'] },
     };
-    assert.throws(() => scoreObjective(input, profile, 'att_1'), /Unknown answer identifier/);
+    assert.throws(
+      () => scoreObjective(input, profile, 'att_1'),
+      (e: unknown) => e instanceof ScoringValidationError && e.code === 'UNKNOWN_ANSWER_IDENTIFIER',
+    );
   });
 
   it('no-response follows profile', () => {
@@ -481,7 +490,9 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       rules: [
         {
           ruleType: 'per-blank',
-          params: { kind: 'per-blank', blankCredit: 0.333, casePolicy: 'insensitive', whitespacePolicy: 'collapse' },
+          blankCredit: 0.333,
+          casePolicy: 'insensitive',
+          whitespacePolicy: 'collapse',
         },
       ],
       rounding: { method: 'round', decimalPlaces: 2 },
@@ -502,12 +513,9 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       rules: [
         {
           ruleType: 'bogus-rule' as never,
-          params: {
-            kind: 'binary' as const,
-            correctCredit: 1,
-            incorrectDeduction: 0,
-            duplicateAction: 'reject' as const,
-          },
+          correctCredit: 1,
+          incorrectDeduction: 0,
+          duplicateAction: 'reject' as const,
         },
       ],
     });
@@ -517,7 +525,10 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       selectedAnswers: ['A'],
       correctAnswers: ['A'],
     };
-    assert.throws(() => scoreObjective(input, profile, 'att_1'), /Unsupported rule type/);
+    assert.throws(
+      () => scoreObjective(input, profile, 'att_1'),
+      (e: unknown) => e instanceof ScoringValidationError && e.code === 'RULE_CONFIGURATION_MISMATCH',
+    );
   });
 
   it('rejects empty rules', () => {
@@ -528,7 +539,10 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       selectedAnswers: ['A'],
       correctAnswers: ['A'],
     };
-    assert.throws(() => scoreObjective(input, profile, 'att_1'), /at least one rule/);
+    assert.throws(
+      () => scoreObjective(input, profile, 'att_1'),
+      (e: unknown) => e instanceof ScoringValidationError && e.code === 'RULE_CONFIGURATION_MISMATCH',
+    );
   });
 
   it('rescore creates separate result', () => {
@@ -586,12 +600,14 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
   });
 
   describe('duplicate policies (reject / deduplicate / allow)', () => {
-    it('reject: skips duplicate selections entirely', () => {
+    it('binary reject: duplicate correct ID throws', () => {
       const profile = makeBinaryProfile({
         rules: [
           {
             ruleType: 'binary-correct-incorrect',
-            params: { kind: 'binary', correctCredit: 1, incorrectDeduction: 0, duplicateAction: 'reject' },
+            correctCredit: 1,
+            incorrectDeduction: 0,
+            duplicateAction: 'reject',
           },
         ],
       });
@@ -601,15 +617,66 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
         selectedAnswers: ['A', 'A'],
         correctAnswers: ['A'],
       };
-      assert.equal(scoreObjective(input, profile, 'att_1').rawResult, 1);
+      assert.throws(
+        () => scoreObjective(input, profile, 'att_1'),
+        (e: unknown) => e instanceof ScoringValidationError && e.code === 'DUPLICATE_SELECTION',
+      );
     });
 
-    it('deduplicate: counts one copy of each unique value', () => {
+    it('binary reject: duplicate incorrect ID throws', () => {
       const profile = makeBinaryProfile({
         rules: [
           {
             ruleType: 'binary-correct-incorrect',
-            params: { kind: 'binary', correctCredit: 1, incorrectDeduction: 0, duplicateAction: 'deduplicate' },
+            correctCredit: 1,
+            incorrectDeduction: 0,
+            duplicateAction: 'reject',
+          },
+        ],
+      });
+      const input: ScoringInput = {
+        questionVersionId: 'qv1' as QuestionVersionId,
+        taskType: 'reading_single_answer',
+        selectedAnswers: ['Z', 'Z'],
+        correctAnswers: ['A'],
+      };
+      assert.throws(
+        () => scoreObjective(input, profile, 'att_1'),
+        (e: unknown) => e instanceof ScoringValidationError && e.code === 'DUPLICATE_SELECTION',
+      );
+    });
+
+    it('multiple-answer reject throws', () => {
+      const profile = makeScoringProfile({
+        rules: [
+          {
+            ruleType: 'multiple-answer-negative-marking',
+            correctCredit: 1,
+            incorrectDeduction: 0.25,
+            duplicateAction: 'reject',
+          },
+        ],
+      });
+      const input: ScoringInput = {
+        questionVersionId: 'qv1' as QuestionVersionId,
+        taskType: 'reading_multiple_answers',
+        selectedAnswers: ['A', 'A'],
+        correctAnswers: ['A', 'C'],
+      };
+      assert.throws(
+        () => scoreObjective(input, profile, 'att_1'),
+        (e: unknown) => e instanceof ScoringValidationError && e.code === 'DUPLICATE_SELECTION',
+      );
+    });
+
+    it('deduplicate credits once', () => {
+      const profile = makeBinaryProfile({
+        rules: [
+          {
+            ruleType: 'binary-correct-incorrect',
+            correctCredit: 1,
+            incorrectDeduction: 0,
+            duplicateAction: 'deduplicate',
           },
         ],
       });
@@ -622,22 +689,89 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       assert.equal(scoreObjective(input, profile, 'att_1').rawResult, 2);
     });
 
-    it('allow: counts every occurrence separately', () => {
+    it('deduplicate deducts once', () => {
       const profile = makeBinaryProfile({
         rules: [
           {
             ruleType: 'binary-correct-incorrect',
-            params: { kind: 'binary', correctCredit: 1, incorrectDeduction: 1, duplicateAction: 'allow' },
+            correctCredit: 0,
+            incorrectDeduction: 1,
+            duplicateAction: 'deduplicate',
           },
         ],
       });
       const input: ScoringInput = {
         questionVersionId: 'qv1' as QuestionVersionId,
         taskType: 'reading_single_answer',
-        selectedAnswers: ['A', 'A', 'B'],
+        selectedAnswers: ['Z', 'Z', 'W'],
         correctAnswers: ['A'],
       };
-      assert.equal(scoreObjective(input, profile, 'att_1').rawResult, 1);
+      assert.equal(scoreObjective(input, profile, 'att_1').rawResult, -2); // -1 for Z, -1 for W
+    });
+
+    it('allow credits every occurrence', () => {
+      const profile = makeBinaryProfile({
+        rules: [
+          {
+            ruleType: 'binary-correct-incorrect',
+            correctCredit: 1,
+            incorrectDeduction: 0,
+            duplicateAction: 'allow',
+          },
+        ],
+      });
+      const input: ScoringInput = {
+        questionVersionId: 'qv1' as QuestionVersionId,
+        taskType: 'reading_single_answer',
+        selectedAnswers: ['A', 'A'],
+        correctAnswers: ['A'],
+      };
+      assert.equal(scoreObjective(input, profile, 'att_1').rawResult, 2);
+    });
+
+    it('allow deducts every occurrence', () => {
+      const profile = makeBinaryProfile({
+        rules: [
+          {
+            ruleType: 'binary-correct-incorrect',
+            correctCredit: 0,
+            incorrectDeduction: 1,
+            duplicateAction: 'allow',
+          },
+        ],
+      });
+      const input: ScoringInput = {
+        questionVersionId: 'qv1' as QuestionVersionId,
+        taskType: 'reading_single_answer',
+        selectedAnswers: ['Z', 'Z'],
+        correctAnswers: ['A'],
+      };
+      assert.equal(scoreObjective(input, profile, 'att_1').rawResult, -2);
+    });
+
+    it('input array remains unchanged after rejection', () => {
+      const profile = makeBinaryProfile({
+        rules: [
+          {
+            ruleType: 'binary-correct-incorrect',
+            correctCredit: 1,
+            incorrectDeduction: 0,
+            duplicateAction: 'reject',
+          },
+        ],
+      });
+      const input: ScoringInput = {
+        questionVersionId: 'qv1' as QuestionVersionId,
+        taskType: 'reading_single_answer',
+        selectedAnswers: ['A', 'A'],
+        correctAnswers: ['A'],
+      };
+      const snapshot = [...(input.selectedAnswers as string[])];
+      assert.throws(
+        () => scoreObjective(input, profile, 'att_1'),
+        (e: unknown) => e instanceof ScoringValidationError,
+      );
+      assert.deepEqual(input.selectedAnswers, snapshot);
     });
   });
 
@@ -646,7 +780,9 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       rules: [
         {
           ruleType: 'per-word',
-          params: { kind: 'per-word', wordCredit: 1, casePolicy: 'insensitive', punctuationPolicy: 'strip' },
+          wordCredit: 1,
+          casePolicy: 'insensitive',
+          punctuationPolicy: 'strip',
         },
       ],
     });
@@ -666,7 +802,9 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
       rules: [
         {
           ruleType: 'binary-correct-incorrect',
-          params: { kind: 'binary', correctCredit: 1, incorrectDeduction: 0, duplicateAction: 'allow' },
+          correctCredit: 1,
+          incorrectDeduction: 0,
+          duplicateAction: 'allow',
         },
       ],
     });
@@ -678,6 +816,39 @@ describe('Phase N — Profile-Driven Scoring Engine', () => {
     };
     // 'allow' counts both occurrences
     assert.equal(scoreObjective(input, profile, 'att_1').rawResult, 2);
+  });
+
+  describe('rule mismatch and evidence consistency', () => {
+    it('all valid rule definitions parse and execute', () => {
+      const profile = makeScoringProfile({
+        rules: [
+          { ruleType: 'per-blank', blankCredit: 1, casePolicy: 'insensitive', whitespacePolicy: 'collapse' },
+          { ruleType: 'per-word', wordCredit: 0.5, casePolicy: 'insensitive', punctuationPolicy: 'strip' },
+          { ruleType: 'adjacent-pair', correctCredit: 1 },
+        ],
+      });
+      const input: ScoringInput = {
+        questionVersionId: 'qv1' as QuestionVersionId,
+        taskType: 'fill_in_blanks',
+        selectedAnswers: ['a'],
+        correctAnswers: ['a'],
+      };
+      assert.ok(scoreObjective(input, profile, 'att_1'));
+    });
+
+    it('evidence rule type equals executed rule type', () => {
+      const profile = makeBinaryProfile();
+      const input: ScoringInput = {
+        questionVersionId: 'qv1' as QuestionVersionId,
+        taskType: 'reading_single_answer',
+        selectedAnswers: ['A'],
+        correctAnswers: ['A'],
+      };
+      const result = scoreObjective(input, profile, 'att_1');
+      for (const ev of result.componentEvidence) {
+        assert.match(ev.ruleType, /^(binary-correct-incorrect|multiple-answer-negative-marking)$/);
+      }
+    });
   });
 });
 
