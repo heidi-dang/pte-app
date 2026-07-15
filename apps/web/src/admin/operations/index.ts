@@ -1,2 +1,11 @@
 export { OperationsDashboard } from './operations-dashboard.js';
 export { FailedJobs } from './failed-jobs.js';
+export { RetryAction } from './retry-action.js';
+export { ScoringRecovery } from './scoring-recovery.js';
+export { MediaRepair } from './media-repair.js';
+export { Incidents } from './incidents.js';
+export { BackupVerification } from './backup-verification.js';
+export { RestorationRunbooks } from './restoration-runbooks.js';
+export { AuditExports } from './audit-exports.js';
+export { RetentionJobs } from './retention-jobs.js';
+export { AdministrativeProgress } from './administrative-progress.js';

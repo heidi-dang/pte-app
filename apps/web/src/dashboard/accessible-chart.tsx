@@ -9,7 +9,7 @@ interface AccessibleChartProps {
   status?: string;
 }
 
-export function AccessibleChart({ title, summary, dataPoints, type, status }: AccessibleChartProps) {
+export function AccessibleChart({ title, summary, dataPoints, type: _type, status }: AccessibleChartProps) {
   return (
     <figure aria-label={title} role="img">
       <figcaption>{title}</figcaption>

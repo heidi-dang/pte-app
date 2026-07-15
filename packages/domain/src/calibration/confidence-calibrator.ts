@@ -15,7 +15,7 @@ export function calculateCalibrationBuckets(
     const indices = predictions.map((p, i) => ({ p, i })).filter((x) => x.p >= b.min && x.p <= b.max);
     const sampleCount = indices.length;
     const observedAgreement =
-      sampleCount > 0 ? indices.filter((x) => Math.abs(x.p - outcomes[x.i]!) <= 0.1).length / sampleCount : 0;
+      sampleCount > 0 ? indices.filter((x) => Math.abs(x.p - outcomes[x.i]) <= 0.1).length / sampleCount : 0;
     return { label: b.label, predictedMin: b.min, predictedMax: b.max, observedAgreement, sampleCount };
   });
 }

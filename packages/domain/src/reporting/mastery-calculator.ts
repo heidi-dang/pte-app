@@ -1,104 +1,116 @@
-import type { MasteryProfile, MasteryLevel, MasterySnapshot, MasterySnapshotId, MasteryId } from '@pte-app/contracts';
+import type {
+  MasteryProfile,
+  MasteryLevel,
+  MasterySnapshot,
+  MasterySnapshotId,
+  MasteryId,
+  MasteryEvidence,
+  EvidencePolicy,
+} from '@pte-app/contracts';
 
-export interface SkillEvidence {
-  skillId: string;
-  skillName: string;
-  taskId: string;
-  resultId: string;
-  estimatedScore: number;
-  confidence: number;
-  profileVersion: number;
-  completenessStatus: 'complete' | 'partial' | 'failed';
-  timestamp: string;
-}
-
-export function calculateSkillMastery(profile: MasteryProfile, evidence: SkillEvidence[]): MasteryLevel[] {
-  const groups = groupBySkillId(evidence);
+export function calculateSkillMastery(profile: MasteryProfile, evidence: MasteryEvidence[]): MasteryLevel[] {
+  const groups = groupBy<MasteryEvidence>(evidence, (e) => e.skillId);
   return Object.entries(groups).map(([skillId, items]) =>
-    computeLevel(profile, skillId, items[0]?.skillName ?? skillId, items),
+    computeLevel(profile, skillId, items[0]?.skillName ?? id ?? skillId, items),
   );
 }
 
-export function calculateTaskMastery(profile: MasteryProfile, evidence: SkillEvidence[]): MasteryLevel[] {
-  const groups = groupByTaskId(evidence);
+export function calculateTaskMastery(profile: MasteryProfile, evidence: MasteryEvidence[]): MasteryLevel[] {
+  const groups = groupBy<MasteryEvidence>(evidence, (e) => e.taskId);
   return Object.entries(groups).map(([taskId, items]) =>
-    computeLevel(profile, taskId, items[0]?.skillName ?? taskId, items),
+    computeLevel(profile, taskId, items[0]?.taskName ?? taskId, items),
   );
 }
 
-function groupBySkillId(evidence: SkillEvidence[]): Record<string, SkillEvidence[]> {
-  const map: Record<string, SkillEvidence[]> = {};
-  for (const e of evidence) {
-    if (!map[e.skillId]) map[e.skillId] = [];
-    map[e.skillId]!.push(e);
+function groupBy<T>(items: T[], keyFn: (item: T) => string): Record<string, T[]> {
+  const map: Record<string, T[]> = {};
+  for (const item of items) {
+    const key = keyFn(item);
+    const group = map[key];
+    if (group) {
+      group.push(item);
+    } else {
+      map[key] = [item];
+    }
   }
   return map;
 }
 
-function groupByTaskId(evidence: SkillEvidence[]): Record<string, SkillEvidence[]> {
-  const map: Record<string, SkillEvidence[]> = {};
-  for (const e of evidence) {
-    if (!map[e.taskId]) map[e.taskId] = [];
-    map[e.taskId]!.push(e);
-  }
-  return map;
-}
+function computeLevel(profile: MasteryProfile, id: string, name: string, items: MasteryEvidence[]): MasteryLevel {
+  const policy = profile.evidencePolicy;
+  const totalEvidence = items.length;
 
-function computeLevel(profile: MasteryProfile, id: string, name: string, items: SkillEvidence[]): MasteryLevel {
-  const evidenceCount = items.length;
-  const hasEvidence = evidenceCount >= profile.minimumEvidence;
+  const eligible = items.filter((e) => isEligible(e, policy));
+  const partialEvidence = items.filter((e) => e.completenessStatus === 'partial').length;
+  const failedEvidence = items.filter((e) => e.completenessStatus === 'failed').length;
+  const excludedEvidence = totalEvidence - eligible.length;
 
-  if (!hasEvidence) {
+  const hasMinimum = eligible.length >= policy.minimumEvidence;
+
+  if (!hasMinimum) {
     return {
       skillId: id,
       skillName: name,
-      level: -1,
-      confidence: 0,
-      evidenceCount,
-      minimumRequired: profile.minimumEvidence,
       status: 'insufficient',
-      lastUpdated: items.reduce((latest, e) => (e.timestamp > latest ? e.timestamp : latest), ''),
-      contributingAttempts: items.map((e) => ({
-        resultId: e.resultId,
-        questionVersionId: e.taskId,
-        taskType: e.skillId,
-        completedAt: e.timestamp,
-        estimatedScore: e.estimatedScore,
-      })),
+      level: null,
+      confidence: 0,
+      evidenceCount: eligible.length,
+      minimumRequired: policy.minimumEvidence,
+      lastUpdated: latestTimestamp(items),
+      contributingAttempts: items,
+      totalEvidence,
+      eligibleEvidence: eligible.length,
+      partialEvidence,
+      failedEvidence,
+      excludedEvidence,
     };
   }
 
-  const meanScore = items.reduce((sum, e) => sum + e.estimatedScore, 0) / items.length;
-  const meanConfidence = items.reduce((sum, e) => sum + e.confidence, 0) / items.length;
-  const adjusted = meanScore * meanConfidence;
+  const meanScore = eligible.reduce((sum, e) => sum + e.estimatedTrainingScore, 0) / eligible.length;
+  const meanConfidence = eligible.reduce((sum, e) => sum + e.confidence, 0) / eligible.length;
+  const adjusted = applyConfidenceWeighting(meanScore, meanConfidence, policy);
   const level = assignLevel(profile, adjusted);
 
-  let status: 'sufficient' | 'insufficient' | 'partial';
-  if (meanConfidence < profile.minimumConfidence) {
+  let status: 'partial' | 'sufficient';
+  if (meanConfidence < policy.minimumConfidence || partialEvidence > 0) {
     status = 'partial';
-  } else if (evidenceCount >= profile.minimumEvidence) {
-    status = 'sufficient';
   } else {
-    status = 'insufficient';
+    status = 'sufficient';
   }
 
   return {
     skillId: id,
     skillName: name,
+    status,
     level,
     confidence: meanConfidence,
-    evidenceCount,
-    minimumRequired: profile.minimumEvidence,
-    status,
-    lastUpdated: items.reduce((latest, e) => (e.timestamp > latest ? e.timestamp : latest), ''),
-    contributingAttempts: items.map((e) => ({
-      resultId: e.resultId,
-      questionVersionId: e.taskId,
-      taskType: e.skillId,
-      completedAt: e.timestamp,
-      estimatedScore: e.estimatedScore,
-    })),
+    evidenceCount: eligible.length,
+    minimumRequired: policy.minimumEvidence,
+    lastUpdated: latestTimestamp(items),
+    contributingAttempts: items,
+    totalEvidence,
+    eligibleEvidence: eligible.length,
+    partialEvidence,
+    failedEvidence,
+    excludedEvidence,
   };
+}
+
+function isEligible(evidence: MasteryEvidence, policy: EvidencePolicy): boolean {
+  if (evidence.completenessStatus === 'failed') {
+    return policy.failedResultPolicy === 'include-with-disclosure';
+  }
+  if (evidence.completenessStatus === 'partial') {
+    return policy.partialResultPolicy !== 'exclude';
+  }
+  return true;
+}
+
+function applyConfidenceWeighting(score: number, confidence: number, policy: EvidencePolicy): number {
+  if (policy.confidenceWeightingPolicy === 'weighted') {
+    return score * confidence;
+  }
+  return score;
 }
 
 function assignLevel(profile: MasteryProfile, score: number): number {
@@ -109,10 +121,14 @@ function assignLevel(profile: MasteryProfile, score: number): number {
   return 0;
 }
 
+function latestTimestamp(items: MasteryEvidence[]): string {
+  return items.reduce((latest, e) => (e.timestamp > latest ? e.timestamp : latest), '');
+}
+
 export function buildMasterySnapshot(
   profile: MasteryProfile,
   userId: string,
-  evidence: SkillEvidence[],
+  evidence: MasteryEvidence[],
   dataFreshness: 'fresh' | 'stale' | 'unknown',
   idGenerator: () => string = () => crypto.randomUUID(),
   timestampGenerator: () => string = () => new Date().toISOString(),
@@ -121,7 +137,7 @@ export function buildMasterySnapshot(
   const partialData = levels.some((l) => l.status === 'insufficient');
   const warnings: string[] = [];
   if (partialData) warnings.push('Some skills have insufficient evidence');
-  if (levels.some((l) => l.level === -1)) warnings.push('Some skills could not be assigned a level');
+  if (levels.some((l) => l.status === 'insufficient')) warnings.push('Some skills could not be assigned a level');
 
   return {
     id: idGenerator() as MasterySnapshotId,

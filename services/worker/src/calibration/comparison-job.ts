@@ -1,3 +1,1 @@
-export async function runComparison(): Promise<void> {
-  // Structural stub - profile comparison
-}
+export async function runComparison(): Promise<void> {}

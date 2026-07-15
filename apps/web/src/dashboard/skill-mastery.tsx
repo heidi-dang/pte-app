@@ -1,11 +1,15 @@
 'use client';
 import React from 'react';
 
-export function SkillMastery({
-  levels,
-}: {
-  levels: Array<{ skillName: string; status: string; level: number; confidence: number }>;
-}) {
+interface MasteryLevelDisplay {
+  skillName: string;
+  level: number | null;
+  status: string;
+  confidence: number;
+  evidenceCount: number;
+}
+
+export function SkillMastery({ levels }: { levels: MasteryLevelDisplay[] }) {
   return (
     <section aria-label="Skill mastery">
       <h2>Skill Mastery</h2>
@@ -15,7 +19,12 @@ export function SkillMastery({
         <ul>
           {levels.map((l) => (
             <li key={l.skillName}>
-              {l.skillName}: Level {l.level} ({l.status})
+              {l.skillName}: {l.level !== null ? `Level ${l.level}` : 'Insufficient evidence'} ({l.status})
+              {l.status === 'insufficient' && <span role="alert"> — insufficient evidence</span>}
+              <span>
+                {' '}
+                — confidence: {l.confidence.toFixed(2)}, evidence: {l.evidenceCount}
+              </span>
             </li>
           ))}
         </ul>

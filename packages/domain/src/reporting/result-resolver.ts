@@ -1,29 +1,15 @@
-import type { AttemptReference, MasteryLevel } from '@pte-app/contracts';
-
-export function resolveAttemptReference(result: {
+export interface AttemptRef {
   resultId: string;
   questionVersionId: string;
   taskType: string;
   completedAt: string;
-  estimatedScore: number;
-}): AttemptReference {
-  return {
-    resultId: result.resultId,
-    questionVersionId: result.questionVersionId,
-    taskType: result.taskType,
-    completedAt: result.completedAt,
-    estimatedScore: result.estimatedScore,
-  };
+  estimatedTrainingScore: number;
 }
 
-export function collectAttemptReferences(
-  results: Array<{
-    resultId: string;
-    questionVersionId: string;
-    taskType: string;
-    completedAt: string;
-    estimatedScore: number;
-  }>,
-): AttemptReference[] {
+export function resolveAttemptReference(result: AttemptRef): AttemptRef {
+  return { ...result };
+}
+
+export function collectAttemptReferences(results: AttemptRef[]): AttemptRef[] {
   return results.map(resolveAttemptReference);
 }

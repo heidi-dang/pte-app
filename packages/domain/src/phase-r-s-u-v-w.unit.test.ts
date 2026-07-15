@@ -11,12 +11,8 @@ import type {
   WeaknessReportId,
 } from '@pte-app/contracts';
 import { buildScoreTrendSet, isProfileCompatible } from './reporting/score-trend.js';
-import {
-  calculateSkillMastery,
-  calculateTaskMastery,
-  buildMasterySnapshot,
-  type SkillEvidence,
-} from './reporting/mastery-calculator.js';
+import { calculateSkillMastery, calculateTaskMastery, buildMasterySnapshot } from './reporting/mastery-calculator.js';
+import type { MasteryEvidence, EvidencePolicy } from '@pte-app/contracts';
 import { evaluateFreshness } from './reporting/freshness.js';
 import { hasPartialData, labelScore } from './reporting/partial-data.js';
 import { buildCompositeReport } from './reporting/report-builder.js';
@@ -54,14 +50,21 @@ import { requiresRestorationEvidence } from './operations/backup-verification.js
 import { isEligibleForRetention, previewRetention } from './operations/retention-policy.js';
 import { isProgressStale } from './operations/admin-progress.js';
 
-const makeEv = (overrides: Partial<SkillEvidence> = {}): SkillEvidence => ({
+const makeEv = (overrides: Partial<MasteryEvidence> = {}): MasteryEvidence => ({
+  attemptId: 'att1',
+  resultId: 'r1',
+  questionVersionId: 'qv1',
+  taskId: 'task1',
+  taskType: 'reading_single_answer',
+  taskName: 'Reading Task',
   skillId: 'reading',
   skillName: 'Reading',
-  taskId: 'task1',
-  resultId: 'r1',
-  estimatedScore: 0.7,
+  estimatedTrainingScore: 0.7,
   confidence: 0.8,
-  profileVersion: 1,
+  scoringProfileId: 'sp1',
+  scoringProfileVersion: 1,
+  evaluationProfileId: null,
+  evaluationProfileVersion: null,
   completenessStatus: 'complete',
   timestamp: '2025-01-01T00:00:00Z',
   ...overrides,
@@ -70,8 +73,15 @@ const makeEv = (overrides: Partial<SkillEvidence> = {}): SkillEvidence => ({
 const makeProfile = (overrides: Partial<MasteryProfile> = {}): MasteryProfile => ({
   id: 'mp1' as MasteryId,
   version: 1,
-  minimumEvidence: 3,
-  minimumConfidence: 0.5,
+  evidencePolicy: {
+    completeResultPolicy: 'include',
+    partialResultPolicy: 'include',
+    failedResultPolicy: 'exclude',
+    minimumEvidence: 3,
+    minimumConfidence: 0.5,
+    scoreNormalisationPolicy: 'none',
+    confidenceWeightingPolicy: 'none',
+  },
   levelDefinitions: { '1': { threshold: 0.5, label: '1' }, '2': { threshold: 0.8, label: '2' } },
   staleDataThresholdDays: 30,
   ...overrides,
@@ -79,36 +89,88 @@ const makeProfile = (overrides: Partial<MasteryProfile> = {}): MasteryProfile =>
 
 describe('Phase R — Dashboard and Mastery', () => {
   it('no synthetic mastery score', () => {
-    const levels = calculateSkillMastery(makeProfile(), [makeEv({ estimatedScore: 0.6 })]);
+    const levels = calculateSkillMastery(makeProfile(), [makeEv({ estimatedTrainingScore: 0.6 })]);
     assert.equal(levels[0]?.status, 'insufficient');
-    assert.equal(levels[0]?.level, -1);
+    assert.equal(levels[0]?.level, null);
   });
 
   it('distinct task and skill mastery', () => {
     const ev = [makeEv({ skillId: 'reading', taskId: 'task1' }), makeEv({ skillId: 'reading', taskId: 'task2' })];
-    const skillLevels = calculateSkillMastery(makeProfile({ minimumEvidence: 1 }), ev);
-    const taskLevels = calculateTaskMastery(makeProfile({ minimumEvidence: 1 }), ev);
+    const policy = {
+      completeResultPolicy: 'include' as const,
+      partialResultPolicy: 'include' as const,
+      failedResultPolicy: 'exclude' as const,
+      minimumEvidence: 1,
+      minimumConfidence: 0.5,
+      scoreNormalisationPolicy: 'none' as const,
+      confidenceWeightingPolicy: 'none' as const,
+    };
+    const skillLevels = calculateSkillMastery(makeProfile({ evidencePolicy: policy }), ev);
+    const taskLevels = calculateTaskMastery(makeProfile({ evidencePolicy: policy }), ev);
     assert.equal(skillLevels.length, 1);
     assert.equal(taskLevels.length, 2);
+    assert.equal(taskLevels[0]?.skillId, 'task1');
+    assert.equal(taskLevels[1]?.skillId, 'task2');
   });
 
   it('insufficient evidence produces no level', () => {
-    const ev = [makeEv({ estimatedScore: 0.6 })];
-    const levels = calculateSkillMastery(makeProfile({ minimumEvidence: 10 }), ev);
+    const ev = [makeEv({ estimatedTrainingScore: 0.6 })];
+    const levels = calculateSkillMastery(
+      makeProfile({
+        evidencePolicy: {
+          completeResultPolicy: 'include',
+          partialResultPolicy: 'include',
+          failedResultPolicy: 'exclude',
+          minimumEvidence: 10,
+          minimumConfidence: 0.5,
+          scoreNormalisationPolicy: 'none',
+          confidenceWeightingPolicy: 'none',
+        },
+      }),
+      ev,
+    );
     assert.equal(levels[0]?.status, 'insufficient');
-    assert.equal(levels[0]?.level, -1);
+    assert.equal(levels[0]?.level, null);
     assert.equal(levels[0]?.confidence, 0);
   });
 
   it('sufficient evidence produces level', () => {
-    const ev = Array.from({ length: 5 }, (_, i) => makeEv({ estimatedScore: 0.7 + i * 0.02 }));
-    const levels = calculateSkillMastery(makeProfile({ minimumEvidence: 3 }), ev);
+    const ev = Array.from({ length: 5 }, (_, i) => makeEv({ estimatedTrainingScore: 0.7 + i * 0.02 }));
+    const levels = calculateSkillMastery(
+      makeProfile({
+        evidencePolicy: {
+          completeResultPolicy: 'include',
+          partialResultPolicy: 'include',
+          failedResultPolicy: 'exclude',
+          minimumEvidence: 3,
+          minimumConfidence: 0.5,
+          scoreNormalisationPolicy: 'none',
+          confidenceWeightingPolicy: 'none',
+        },
+      }),
+      ev,
+    );
     assert.equal(levels[0]?.status, 'sufficient');
-    assert.ok(levels[0]?.level >= 0);
+    assert.ok((levels[0] as any)?.level >= 0);
   });
 
   it('mastery snapshot with insufficient evidence', () => {
-    const snapshot = buildMasterySnapshot(makeProfile({ minimumEvidence: 10 }), 'user1', [makeEv()], 'fresh');
+    const snapshot = buildMasterySnapshot(
+      makeProfile({
+        evidencePolicy: {
+          completeResultPolicy: 'include',
+          partialResultPolicy: 'include',
+          failedResultPolicy: 'exclude',
+          minimumEvidence: 10,
+          minimumConfidence: 0.5,
+          scoreNormalisationPolicy: 'none',
+          confidenceWeightingPolicy: 'none',
+        },
+      }),
+      'user1',
+      [makeEv()],
+      'fresh',
+    );
     assert.ok(snapshot.partialData);
     assert.ok(snapshot.warnings.length > 0);
   });
@@ -117,7 +179,17 @@ describe('Phase R — Dashboard and Mastery', () => {
     const idGen = () => 'injected-id';
     const tsGen = () => '2025-01-01T00:00:00Z';
     const snapshot = buildMasterySnapshot(
-      makeProfile({ minimumEvidence: 0 }),
+      makeProfile({
+        evidencePolicy: {
+          completeResultPolicy: 'include',
+          partialResultPolicy: 'include',
+          failedResultPolicy: 'exclude',
+          minimumEvidence: 1,
+          minimumConfidence: 0.5,
+          scoreNormalisationPolicy: 'none',
+          confidenceWeightingPolicy: 'none',
+        },
+      }),
       'user1',
       [makeEv()],
       'fresh',
@@ -126,6 +198,115 @@ describe('Phase R — Dashboard and Mastery', () => {
     );
     assert.equal(snapshot.id, 'injected-id');
     assert.equal(snapshot.calculatedAt, '2025-01-01T00:00:00Z');
+  });
+
+  it('failed evidence excluded by default', () => {
+    const ev = [
+      makeEv({ completenessStatus: 'failed', estimatedTrainingScore: 0.1 }),
+      makeEv({ completenessStatus: 'failed', estimatedTrainingScore: 0.2 }),
+    ];
+    const levels = calculateSkillMastery(
+      makeProfile({
+        evidencePolicy: {
+          completeResultPolicy: 'include',
+          partialResultPolicy: 'include',
+          failedResultPolicy: 'exclude',
+          minimumEvidence: 1,
+          minimumConfidence: 0.5,
+          scoreNormalisationPolicy: 'none',
+          confidenceWeightingPolicy: 'none',
+        },
+      }),
+      ev,
+    );
+    assert.equal(levels[0]?.status, 'insufficient');
+    assert.equal(levels[0]?.eligibleEvidence, 0);
+    assert.equal(levels[0]?.failedEvidence, 2);
+  });
+
+  it('failed evidence included with disclosure', () => {
+    const ev = [makeEv({ completenessStatus: 'failed', estimatedTrainingScore: 0.1 })];
+    const levels = calculateSkillMastery(
+      makeProfile({
+        evidencePolicy: {
+          completeResultPolicy: 'include',
+          partialResultPolicy: 'include',
+          failedResultPolicy: 'include-with-disclosure',
+          minimumEvidence: 1,
+          minimumConfidence: 0.5,
+          scoreNormalisationPolicy: 'none',
+          confidenceWeightingPolicy: 'none',
+        },
+      }),
+      ev,
+    );
+    assert.equal(levels[0]?.eligibleEvidence, 1);
+    assert.equal(levels[0]?.failedEvidence, 1);
+  });
+
+  it('partial evidence policy excludes', () => {
+    const ev = [makeEv({ completenessStatus: 'partial' })];
+    const levels = calculateSkillMastery(
+      makeProfile({
+        evidencePolicy: {
+          completeResultPolicy: 'include',
+          partialResultPolicy: 'exclude',
+          failedResultPolicy: 'exclude',
+          minimumEvidence: 1,
+          minimumConfidence: 0.5,
+          scoreNormalisationPolicy: 'none',
+          confidenceWeightingPolicy: 'none',
+        },
+      }),
+      ev,
+    );
+    assert.equal(levels[0]?.eligibleEvidence, 0);
+    assert.equal(levels[0]?.partialEvidence, 1);
+  });
+
+  it('true question-version lineage preserved', () => {
+    const ev = [makeEv({ questionVersionId: 'qv_custom_1' })];
+    const policy = {
+      completeResultPolicy: 'include' as const,
+      partialResultPolicy: 'include' as const,
+      failedResultPolicy: 'exclude' as const,
+      minimumEvidence: 1,
+      minimumConfidence: 0.5,
+      scoreNormalisationPolicy: 'none' as const,
+      confidenceWeightingPolicy: 'none' as const,
+    };
+    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: policy }), ev);
+    assert.equal(levels[0]?.contributingAttempts[0]?.questionVersionId, 'qv_custom_1');
+  });
+
+  it('true task-type lineage preserved', () => {
+    const ev = [makeEv({ taskType: 'reading_multiple_answers' })];
+    const policy = {
+      completeResultPolicy: 'include' as const,
+      partialResultPolicy: 'include' as const,
+      failedResultPolicy: 'exclude' as const,
+      minimumEvidence: 1,
+      minimumConfidence: 0.5,
+      scoreNormalisationPolicy: 'none' as const,
+      confidenceWeightingPolicy: 'none' as const,
+    };
+    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: policy }), ev);
+    assert.equal(levels[0]?.contributingAttempts[0]?.taskType, 'reading_multiple_answers');
+  });
+
+  it('lineage: source result references preserved in mastery', () => {
+    const ev = Array.from({ length: 3 }, (_, i) => makeEv({ resultId: `res${i}`, estimatedTrainingScore: 0.7 }));
+    const policy = {
+      completeResultPolicy: 'include' as const,
+      partialResultPolicy: 'include' as const,
+      failedResultPolicy: 'exclude' as const,
+      minimumEvidence: 3,
+      minimumConfidence: 0.5,
+      scoreNormalisationPolicy: 'none' as const,
+      confidenceWeightingPolicy: 'none' as const,
+    };
+    const levels = calculateSkillMastery(makeProfile({ evidencePolicy: policy }), ev);
+    assert.equal(levels[0]?.contributingAttempts[0]?.resultId, 'res0');
   });
 
   it('score trend with compatible profile', () => {
@@ -233,12 +414,6 @@ describe('Phase R — Dashboard and Mastery', () => {
     });
     assert.ok(report.partialData);
     assert.ok(report.warnings.length > 0);
-  });
-
-  it('lineage: source result references preserved in mastery', () => {
-    const ev = Array.from({ length: 3 }, (_, i) => makeEv({ resultId: `res${i}`, estimatedScore: 0.7 }));
-    const levels = calculateSkillMastery(makeProfile({ minimumEvidence: 3 }), ev);
-    assert.equal(levels[0]?.contributingAttempts[0]?.resultId, 'res0');
   });
 });
 

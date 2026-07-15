@@ -17,8 +17,8 @@ export function calculateAgreement(
     };
   }
 
-  const absoluteMatches = reviewerScores.filter((s, i) => s === referenceScores[i]!).length;
-  const toleranceMatches = reviewerScores.filter((s, i) => Math.abs(s - referenceScores[i]!) <= tolerance).length;
+  const absoluteMatches = reviewerScores.filter((s, i) => s === referenceScores[i]).length;
+  const toleranceMatches = reviewerScores.filter((s, i) => Math.abs(s - referenceScores[i]) <= tolerance).length;
 
   return {
     absoluteAgreement: absoluteMatches / reviewerScores.length,

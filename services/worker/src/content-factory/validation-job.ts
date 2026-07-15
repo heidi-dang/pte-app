@@ -1,9 +1,9 @@
 import type { ValidationRun } from '@pte-app/contracts';
-export async function runValidation(_contentId: string, _version: number): Promise<ValidationRun> {
+export async function runValidation(contentId: string, _version: number): Promise<ValidationRun> {
   return {
     id: crypto.randomUUID(),
     contentId,
-    version,
+    version: 1,
     checks: [],
     status: 'passed',
     startedAt: new Date().toISOString(),

@@ -1,4 +1,4 @@
 import type { ScoringRecoveryRequest } from '@pte-app/contracts';
-export async function executeScoringRecovery(_request: ScoringRecoveryRequest): Promise<void> {
+export async function executeScoringRecovery(request: ScoringRecoveryRequest): Promise<void> {
   if (request.status !== 'requested') return;
 }

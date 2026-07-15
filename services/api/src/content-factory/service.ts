@@ -1,4 +1,4 @@
-import type { ContentDraft } from '@pte-app/contracts';
+import type { ContentDraft, ContentLifecycleState } from '@pte-app/contracts';
 import type { ContentFactoryRepository } from './repository.js';
 
 export class ContentFactoryService {

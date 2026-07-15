@@ -1,5 +1,3 @@
-import type { DataFreshnessStatus } from '@pte-app/contracts';
-
 export function hasPartialData(levels: Array<{ status: string }>): boolean {
   return levels.some((l) => l.status === 'insufficient' || l.status === 'partial');
 }

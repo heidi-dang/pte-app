@@ -1,3 +1,13 @@
 export { CalibrationDashboard } from './calibration-dashboard.js';
 export { DatasetList } from './dataset-list.js';
+export { SampleReview } from './sample-review.js';
+export { AgreementMetricsDisplay } from './agreement-metrics.js';
+export { SubgroupAnalysis } from './subgroup-analysis.js';
+export { DriftStatus } from './drift-status.js';
+export { ProfileComparisonDisplay } from './profile-comparison.js';
+export { ConfidenceCalibration } from './confidence-calibration.js';
+export { DiagnosticQualityDisplay } from './diagnostic-quality.js';
+export { StudyPlanEffectiveness } from './study-plan-effectiveness.js';
 export { PromotionGate } from './promotion-gate.js';
+export { RollbackStatus } from './rollback-status.js';
+export { CalibrationReportHistory } from './report-history.js';

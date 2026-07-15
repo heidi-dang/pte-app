@@ -1,4 +1,4 @@
-import type { TeacherAssignment, AssignmentTarget } from '@pte-app/contracts';
+import type { TeacherAssignment } from '@pte-app/contracts';
 
 export function createAssignment(teacherId: string, title: string, instructions: string): TeacherAssignment {
   return {
