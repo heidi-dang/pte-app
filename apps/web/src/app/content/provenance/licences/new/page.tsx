@@ -56,9 +56,9 @@ export default function NewLicenceForm() {
     <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
       <Container>
         <h1 style={{ marginBottom: '1.5rem' }}>New Licence</h1>
-        {error && <Alert>{error}</Alert>}
+        {error && <Alert data-testid="licence-error">{error}</Alert>}
         {success && (
-          <Alert>
+          <Alert data-testid="licence-success">
             Licence created.{' '}
             <a href={`/content/provenance/licences/${createdId}`} data-testid="view-licence-link">
               View licence

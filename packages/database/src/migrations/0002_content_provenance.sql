@@ -13,6 +13,7 @@ CREATE TABLE content_sources (
   created_by UUID NOT NULL REFERENCES users(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  evidence_ids UUID[] NOT NULL DEFAULT '{}',
   version INTEGER NOT NULL DEFAULT 1
 );
 

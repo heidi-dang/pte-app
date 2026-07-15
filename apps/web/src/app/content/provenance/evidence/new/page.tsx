@@ -51,9 +51,9 @@ export default function NewEvidenceForm() {
     <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
       <Container>
         <h1 style={{ marginBottom: '1.5rem' }}>Attach Evidence</h1>
-        {error && <Alert>{error}</Alert>}
+        {error && <Alert data-testid="evidence-error">{error}</Alert>}
         {success && (
-          <Alert>
+          <Alert data-testid="evidence-success">
             Evidence created. ID: <span data-testid="evidence-created-id">{createdId}</span>
           </Alert>
         )}

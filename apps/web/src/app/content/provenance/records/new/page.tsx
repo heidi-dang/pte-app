@@ -59,9 +59,9 @@ export default function NewRecordForm() {
     <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
       <Container>
         <h1 style={{ marginBottom: '1.5rem' }}>Create Provenance Record</h1>
-        {error && <Alert>{error}</Alert>}
+        {error && <Alert data-testid="provenance-error">{error}</Alert>}
         {success && (
-          <Alert>
+          <Alert data-testid="provenance-success">
             Record created.{' '}
             <a href={`/content/provenance/records/${createdId}`} data-testid="view-record-link">
               View record
