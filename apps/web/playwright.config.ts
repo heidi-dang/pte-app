@@ -1,4 +1,8 @@
 import { defineConfig } from '@playwright/test';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   testDir: './e2e',
@@ -9,8 +13,8 @@ export default defineConfig({
   retries: 0,
   workers: 1,
   reporter: 'list',
-  globalSetup: require.resolve('./global-setup'),
-  globalTeardown: require.resolve('./global-teardown'),
+  globalSetup: resolve(__dirname, 'global-setup'),
+  globalTeardown: resolve(__dirname, 'global-teardown'),
   use: {
     baseURL: process.env.E2E_WEB_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
