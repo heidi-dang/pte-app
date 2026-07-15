@@ -7,34 +7,16 @@ export default async function ReportsPage() {
   return (
     <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
       <Container>
-        <h1 style={{ marginBottom: '1.5rem' }}>Audit Report</h1>
-        <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem', marginBottom: '1rem' }}>
-          Generate and view provenance audit reports. Reports include totals, blocked content, missing evidence, pending
-          reviews, and historical changes.
-        </p>
-        <Card>
-          <h3>Report Generation</h3>
-          <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem', marginBottom: '1rem' }}>
-            Click generate to create a new audit report from the current system state.
-          </p>
-          <button
-            style={{
-              padding: '0.5rem 1rem',
-              background: 'var(--color-primary)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-          >
-            Generate Report
-          </button>
+        <h1 style={{ marginBottom: '1.5rem' }}>Audit Reports</h1>
+        <Card data-testid="audit-report">
+          <div data-testid="audit-sequence" style={{ padding: '1rem' }}>
+            <p style={{ color: 'var(--color-muted)' }}>Action sequence loads from the audit API endpoint.</p>
+          </div>
         </Card>
-        <div style={{ marginTop: '1.5rem' }}>
-          <Card>
-            <h3>Report History</h3>
-            <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem' }}>Previous audit reports appear here.</p>
-          </Card>
+        <div style={{ marginTop: '1rem' }}>
+          <a href="/content/provenance" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+            Back to dashboard
+          </a>
         </div>
       </Container>
     </main>

@@ -56,6 +56,10 @@ export type BlockerCode =
   | 'ATTRIBUTION_REQUIRED'
   | 'EVIDENCE_MISSING'
   | 'EVIDENCE_INVALID'
+  | 'EVIDENCE_NOT_FOUND'
+  | 'EVIDENCE_REQUIRED_TYPE_MISSING'
+  | 'EVIDENCE_SUPERSEDED'
+  | 'EVIDENCE_RETENTION_INVALID'
   | 'SIMILARITY_CHECK_PENDING'
   | 'SIMILARITY_THRESHOLD_EXCEEDED'
   | 'PROHIBITED_CONTENT_MATCH'
@@ -226,7 +230,7 @@ export interface PublicationDecision {
   readonly id: PublicationDecisionId;
   readonly contentId: ContentId;
   readonly contentVersionId: ContentVersionId;
-  readonly provenanceRecordId: ProvenanceId;
+  readonly provenanceRecordId: ProvenanceId | null;
   readonly policyId: PolicyId;
   readonly policyVersion: PolicyVersion;
   readonly eligible: boolean;

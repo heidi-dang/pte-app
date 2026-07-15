@@ -16,31 +16,34 @@ export default async function ProvenanceDashboard() {
             marginBottom: '2rem',
           }}
         >
-          <Card>
+          <Card data-testid="dash-sources">
             <h3>Sources</h3>
             <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem' }}>Manage content sources</p>
             <a
               href="/content/provenance/sources"
+              data-testid="dash-sources-link"
               style={{ color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.875rem' }}
             >
               View register
             </a>
           </Card>
-          <Card>
+          <Card data-testid="dash-licences">
             <h3>Licences</h3>
             <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem' }}>Manage content licences</p>
             <a
               href="/content/provenance/licences"
+              data-testid="dash-licences-link"
               style={{ color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.875rem' }}
             >
               View register
             </a>
           </Card>
-          <Card>
+          <Card data-testid="dash-review">
             <h3>Review Queue</h3>
             <Badge variant="warning">Pending review</Badge>
             <a
               href="/content/provenance/review"
+              data-testid="dash-review-link"
               style={{
                 color: 'var(--color-primary)',
                 textDecoration: 'none',
@@ -52,21 +55,23 @@ export default async function ProvenanceDashboard() {
               Open queue
             </a>
           </Card>
-          <Card>
+          <Card data-testid="dash-reverification">
             <h3>Re-verification</h3>
             <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem' }}>Pending re-verification jobs</p>
             <a
               href="/content/provenance/reverification"
+              data-testid="dash-reverification-link"
               style={{ color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.875rem' }}
             >
               View queue
             </a>
           </Card>
-          <Card>
+          <Card data-testid="dash-reports">
             <h3>Audit Reports</h3>
             <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem' }}>View audit trail and reports</p>
             <a
               href="/content/provenance/reports"
+              data-testid="dash-reports-link"
               style={{ color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.875rem' }}
             >
               Generate report

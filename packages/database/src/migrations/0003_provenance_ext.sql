@@ -1,3 +1,6 @@
+ALTER TABLE content_publication_decisions ALTER COLUMN provenance_id DROP NOT NULL;
+ALTER TABLE content_publication_decisions ADD CONSTRAINT ck_pub_decision_prov_required
+  CHECK (provenance_id IS NOT NULL OR eligible = false);
 ALTER TABLE content_publication_decisions ADD COLUMN IF NOT EXISTS actor_id UUID;
 ALTER TABLE content_publication_decisions ADD COLUMN IF NOT EXISTS request_id UUID;
 ALTER TABLE content_reverification_jobs ADD COLUMN IF NOT EXISTS attempt INTEGER NOT NULL DEFAULT 1;

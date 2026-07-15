@@ -9,15 +9,14 @@ export default async function LicencesPage() {
       <Container>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h1>Licence Register</h1>
-          <a href="/content/provenance/licences/new">
-            <Button>Add Licence</Button>
+          <a href="/content/provenance/licences/new" data-testid="new-licence-link">
+            <Button>Create Licence</Button>
           </a>
         </div>
-        <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem', marginBottom: '1rem' }}>
-          All content licences must be registered. Licences can be superseded, revoked, or expired.
-        </p>
-        <Card>
-          <p style={{ color: 'var(--color-muted)' }}>Licence list loads from the content-provenance API.</p>
+        <Card data-testid="licence-list">
+          <p style={{ color: 'var(--color-muted)' }}>
+            Licence list loads from the content-provenance API. Create a licence to begin.
+          </p>
         </Card>
       </Container>
     </main>

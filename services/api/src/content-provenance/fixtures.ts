@@ -1,8 +1,8 @@
-import type { ProvenancePolicy, SourceType, LicenceType } from '@pte-app/contracts';
+import type { ProvenancePolicy, PolicyId, PolicyVersion, SourceType, LicenceType } from '@pte-app/contracts';
 
 export const LOCAL_DEV_POLICY = Object.freeze({
-  id: '00000000-0000-0000-0000-000000000001' as any,
-  version: '1.0.0' as any,
+  id: '00000000-0000-0000-0000-000000000001' as PolicyId,
+  version: '1.0.0' as PolicyVersion,
   status: 'active' as const,
   effectiveFrom: '2024-01-01T00:00:00.000Z',
   effectiveUntil: null,

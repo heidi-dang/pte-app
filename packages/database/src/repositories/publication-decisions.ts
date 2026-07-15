@@ -18,7 +18,7 @@ export async function createPublicationDecision(
     id: PublicationDecisionId;
     contentId: ContentId;
     contentVersionId: ContentVersionId;
-    provenanceRecordId: ProvenanceId;
+    provenanceRecordId: ProvenanceId | null;
     policyId: PolicyId;
     policyVersion: PolicyVersion;
     eligible: boolean;
@@ -63,7 +63,7 @@ export async function createPublicationDecision(
     id: row.id as PublicationDecisionId,
     contentId: row.contentId as ContentId,
     contentVersionId: row.contentVersionId as ContentVersionId,
-    provenanceRecordId: row.provenanceRecordId as ProvenanceId,
+    provenanceRecordId: (row.provenanceRecordId as ProvenanceId) ?? null,
     policyId: input.policyId,
     policyVersion: row.policyVersion as PolicyVersion,
     eligible: row.eligible as boolean,
@@ -93,7 +93,7 @@ export async function getPublicationDecisionById(
     id: row.id as PublicationDecisionId,
     contentId: row.contentId as ContentId,
     contentVersionId: row.contentVersionId as ContentVersionId,
-    provenanceRecordId: row.provenanceRecordId as ProvenanceId,
+    provenanceRecordId: (row.provenanceRecordId as ProvenanceId) ?? null,
     policyId: '' as PolicyId,
     policyVersion: row.policyVersion as PolicyVersion,
     eligible: row.eligible as boolean,
@@ -123,7 +123,7 @@ export async function listDecisionsForContent(
     id: row.id as PublicationDecisionId,
     contentId: row.contentId as ContentId,
     contentVersionId: row.contentVersionId as ContentVersionId,
-    provenanceRecordId: row.provenanceRecordId as ProvenanceId,
+    provenanceRecordId: (row.provenanceRecordId as ProvenanceId) ?? null,
     policyId: '' as PolicyId,
     policyVersion: row.policyVersion as PolicyVersion,
     eligible: row.eligible as boolean,

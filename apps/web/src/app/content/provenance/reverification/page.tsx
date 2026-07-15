@@ -1,22 +1,26 @@
-import { Container, Card, Badge } from '@pte-app/design-system';
+import { Container, Card } from '@pte-app/design-system';
 import { requireRole } from '../../../../lib/role-guard';
 
-export default async function ReverificationPage() {
+export default async function ReVerificationPage() {
   await requireRole('/content');
 
   return (
     <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
       <Container>
         <h1 style={{ marginBottom: '1.5rem' }}>Re-verification Queue</h1>
-        <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem', marginBottom: '1rem' }}>
-          Re-verification jobs created when licences expire, are revoked, sources are disputed, or policies change.
+        <p style={{ color: 'var(--color-muted)', marginBottom: '1rem' }}>
+          Items requiring re-verification after licence or content changes.
         </p>
-        <Card>
-          <p style={{ color: 'var(--color-muted)' }}>Pending re-verification jobs load from the API.</p>
-          <div style={{ marginTop: '1rem' }}>
-            <Badge variant="default">No pending jobs</Badge>
+        <Card data-testid="reverification-queue-list">
+          <div data-testid="reverification-queue-empty" style={{ padding: '1rem' }}>
+            <p style={{ color: 'var(--color-muted)' }}>No items awaiting re-verification.</p>
           </div>
         </Card>
+        <div style={{ marginTop: '1rem' }}>
+          <a href="/content/provenance" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+            Back to dashboard
+          </a>
+        </div>
       </Container>
     </main>
   );
