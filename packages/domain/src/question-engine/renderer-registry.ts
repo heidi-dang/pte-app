@@ -16,7 +16,7 @@ export function createHandlerRegistry(): HandlerRegistry {
       if (handlers.has(type)) {
         throw createEngineError(
           'INVALID_RESPONSE_PAYLOAD', // or standard registration duplicate error
-          `Handler for question type '${type}' is already registered`
+          `Handler for question type '${type}' is already registered`,
         );
       }
       handlers.set(type, handler);
@@ -24,10 +24,7 @@ export function createHandlerRegistry(): HandlerRegistry {
     resolve(type: string): QuestionTypeHandler {
       const handler = handlers.get(type);
       if (!handler) {
-        throw createEngineError(
-          'UNSUPPORTED_QUESTION_TYPE',
-          `No question type handler registered for type '${type}'`
-        );
+        throw createEngineError('UNSUPPORTED_QUESTION_TYPE', `No question type handler registered for type '${type}'`);
       }
       return handler;
     },

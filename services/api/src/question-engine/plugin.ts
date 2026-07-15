@@ -8,12 +8,12 @@ import { registerRoutes } from './routes.js';
 
 export async function questionEnginePlugin(
   app: FastifyInstance,
-  options: { db: DatabaseConnection; registry: HandlerRegistry }
+  options: { db: DatabaseConnection; registry: HandlerRegistry },
 ): Promise<void> {
   const { db, registry } = options;
-  
+
   const repo = new QuestionSessionRepository(db);
-  
+
   // Default configuration for session modes
   const accessPolicy = new DefaultQuestionAccessPolicy({
     allowedModes: ['learning', 'review', 'timed-practice', 'section-test', 'mock'],

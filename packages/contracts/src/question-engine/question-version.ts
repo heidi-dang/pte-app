@@ -1,6 +1,6 @@
 // packages/contracts/src/question-engine/question-version.ts
 
-import { QuestionVersionId, QuestionId } from './identifiers';
+import { QuestionVersionId, QuestionId } from './identifiers.js';
 
 export interface QuestionVersion {
   id: QuestionVersionId;

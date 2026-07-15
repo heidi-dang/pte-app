@@ -36,7 +36,7 @@ export function markPlaybackCompleted(right: PlaybackRight, now: string): Playba
 
 export function recordPlaybackFailure(
   right: PlaybackRight,
-  after: 'before-consumption' | 'after-consumption'
+  after: 'before-consumption' | 'after-consumption',
 ): PlaybackRight {
   const state = after === 'before-consumption' ? 'failed-before-consumption' : 'failed-after-consumption';
   return {

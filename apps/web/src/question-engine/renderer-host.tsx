@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, type ComponentType } from 'react';
-import type { QuestionRendererProps, WebQuestionRenderer } from './types.js';
+import type { QuestionRendererProps } from './types.js';
 import type { WebRendererRegistry } from './renderer-registry.js';
 
 export interface RendererHostProps<TQuestion = unknown, TResponse = unknown> {
@@ -52,9 +52,9 @@ export function RendererHost<TQuestion = unknown, TResponse = unknown>({
       <Renderer
         question={question}
         response={response}
+        onChange={onResponseChange ?? (() => {})}
         sessionMode={sessionMode}
-        isReadOnly={isReadOnly}
-        onResponseChange={onResponseChange}
+        disabled={isReadOnly}
       />
     </div>
   );

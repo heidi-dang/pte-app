@@ -1,5 +1,5 @@
 import type { SessionState } from '@pte-app/contracts';
-import { createEngineError, QuestionEngineError } from './errors.js';
+import { createEngineError } from './errors.js';
 
 export const VALID_TRANSITIONS: Record<SessionState, SessionState[]> = {
   created: ['active', 'abandoned', 'failed'],
@@ -17,7 +17,7 @@ export function validateTransition(current: SessionState, next: SessionState): v
   if (!allowed.includes(next)) {
     throw createEngineError(
       'INVALID_SESSION_TRANSITION',
-      `Cannot transition from session state '${current}' to '${next}'`
+      `Cannot transition from session state '${current}' to '${next}'`,
     );
   }
 }

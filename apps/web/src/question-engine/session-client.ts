@@ -7,7 +7,7 @@ import type {
   ResponseState,
   QuestionSessionId,
   QuestionVersionId,
-  IdempotencyKey
+  IdempotencyKey,
 } from '@pte-app/contracts';
 
 export class QuestionSessionClient {
@@ -22,7 +22,7 @@ export class QuestionSessionClient {
       timingProfileId?: string;
       playbackProfileId?: string;
       scoringProfileId?: string;
-    }
+    },
   ): Promise<QuestionSession> {
     const res = await fetch(`${this.baseUrl}/question-sessions/start`, {
       method: 'POST',
@@ -44,7 +44,7 @@ export class QuestionSessionClient {
     questionVersionId: QuestionVersionId,
     response: unknown,
     state: ResponseState,
-    revision: number
+    revision: number,
   ): Promise<QuestionResponseEnvelope> {
     const res = await fetch(`${this.baseUrl}/question-sessions/${sessionId}/responses`, {
       method: 'POST',
@@ -66,7 +66,7 @@ export class QuestionSessionClient {
   public async submitSession(
     sessionId: QuestionSessionId,
     idempotencyKey: IdempotencyKey,
-    requestFingerprint: string
+    requestFingerprint: string,
   ): Promise<SubmissionResult> {
     const res = await fetch(`${this.baseUrl}/question-sessions/${sessionId}/submit`, {
       method: 'POST',
@@ -77,9 +77,7 @@ export class QuestionSessionClient {
     return res.json();
   }
 
-  public async getReview(
-    sessionId: QuestionSessionId
-  ): Promise<{
+  public async getReview(sessionId: QuestionSessionId): Promise<{
     session: QuestionSession;
     response: QuestionResponseEnvelope | null;
     submission: SubmissionResult | null;

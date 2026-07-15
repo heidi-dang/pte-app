@@ -6,8 +6,8 @@ export { QuestionSessionClient } from './session-client.js';
 
 // Controllers
 export { createAutosaveController } from './autosave-controller.js';
-export type { AutosaveController, AutosaveControllerOptions } from './autosave-controller.js';
-export { createPlaybackController, PlaybackController } from './playback-controller.js';
+export type { AutosaveOptions } from './autosave-controller.js';
+export { createPlaybackController } from './playback-controller.js';
 export type { PlaybackControllerOptions } from './playback-controller.js';
 export { IndexedDbRecoveryStore } from './recovery-controller.js';
 export type { LocalRecoverySnapshot, QuestionRecoveryStore } from './recovery-controller.js';

@@ -1,4 +1,4 @@
-import { QuestionSubmissionId, QuestionSessionId, QuestionVersionId, IdempotencyKey } from './identifiers';
+import { QuestionSubmissionId, QuestionSessionId, QuestionVersionId, IdempotencyKey } from './identifiers.js';
 
 export type SubmissionStatus = 'accepted' | 'rejected' | 'duplicate';
 

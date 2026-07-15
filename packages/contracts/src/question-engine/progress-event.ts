@@ -1,4 +1,4 @@
-import { QuestionEventId, QuestionSessionId, EventSequence } from './identifiers';
+import { QuestionEventId, QuestionSessionId, EventSequence } from './identifiers.js';
 
 export type QuestionProgressEventType =
   | 'session.created'

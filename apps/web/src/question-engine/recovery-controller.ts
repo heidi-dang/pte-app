@@ -54,19 +54,14 @@ export class IndexedDbRecoveryStore implements QuestionRecoveryStore {
   }
 
   public async save(snapshot: LocalRecoverySnapshot): Promise<void> {
-    try {
-      const db = await this.getDB();
-      return new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(this.storeName, 'readwrite');
-        const store = tx.objectStore(this.storeName);
-        const req = store.put(snapshot);
-        req.onerror = () => reject(req.error);
-        req.onsuccess = () => resolve();
-      });
-    } catch (err) {
-      // Fail silently or propagate? We propagate but try/catch protects shell
-      throw err;
-    }
+    const db = await this.getDB();
+    return new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(this.storeName, 'readwrite');
+      const store = tx.objectStore(this.storeName);
+      const req = store.put(snapshot);
+      req.onerror = () => reject(req.error);
+      req.onsuccess = () => resolve();
+    });
   }
 
   public async clear(sessionId: QuestionSessionId): Promise<void> {

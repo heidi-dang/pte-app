@@ -1,13 +1,7 @@
-import { PlaybackRightId, PlaybackProfileId } from './identifiers';
+import { PlaybackRightId, PlaybackProfileId } from './identifiers.js';
 
 export type PlaybackState =
-  | 'allowed'
-  | 'ready'
-  | 'started'
-  | 'consumed'
-  | 'completed'
-  | 'failed-before-consumption'
-  | 'failed-after-consumption';
+  'allowed' | 'ready' | 'started' | 'consumed' | 'completed' | 'failed-before-consumption' | 'failed-after-consumption';
 
 export interface PlaybackRight {
   id: PlaybackRightId;

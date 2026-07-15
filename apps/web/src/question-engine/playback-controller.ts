@@ -20,7 +20,10 @@ export function createPlaybackController(options: PlaybackControllerOptions) {
         throw err;
       }
     },
-    onPlaybackEvent(event: 'started' | 'completed' | 'failed', failureType?: 'before-consumption' | 'after-consumption') {
+    onPlaybackEvent(
+      event: 'started' | 'completed' | 'failed',
+      failureType?: 'before-consumption' | 'after-consumption',
+    ) {
       if (!right) return;
       if (event === 'started') {
         right.state = 'started';

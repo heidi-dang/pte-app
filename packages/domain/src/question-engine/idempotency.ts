@@ -24,7 +24,7 @@ export function createRequestFingerprint(payload: unknown): string {
 
 export function detectIdempotencyConflict(
   existing: IdempotencyRecord,
-  incomingFingerprint: string
+  incomingFingerprint: string,
 ): 'match' | 'conflict' {
   return existing.requestFingerprint === incomingFingerprint ? 'match' : 'conflict';
 }

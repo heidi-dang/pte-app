@@ -1,4 +1,4 @@
-import { TimingProfileId } from './identifiers';
+import { TimingProfileId } from './identifiers.js';
 
 export interface TimerState {
   timingProfileId: TimingProfileId;

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { type ReactNode } from 'react';
-import type { QuestionRendererProps } from './types.js';
 
 export interface QuestionShellProps {
   sessionId: string;

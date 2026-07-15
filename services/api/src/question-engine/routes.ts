@@ -1,8 +1,20 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type { QuestionSessionMode, IdempotencyKey, ResponseState, QuestionSessionId, QuestionVersionId } from '@pte-app/contracts';
+import type {
+  QuestionSessionMode,
+  IdempotencyKey,
+  ResponseState,
+  QuestionSessionId,
+  QuestionVersionId,
+} from '@pte-app/contracts';
 import { toHttpError } from './errors.js';
 import type { QuestionEngineService } from './service.js';
 import { serializeSession, serializeResponse, serializeSubmission } from './serializers.js';
+
+function requireUserId(request: FastifyRequest): string {
+  const userId = request.auth?.userId;
+  if (!userId) throw new Error('Unauthorized');
+  return userId;
+}
 
 export function registerRoutes(app: FastifyInstance, service: QuestionEngineService): void {
   // Pre-handler hook to ensure user is authenticated for all question-engine routes
@@ -14,7 +26,7 @@ export function registerRoutes(app: FastifyInstance, service: QuestionEngineServ
 
   // POST /question-sessions/start
   app.post('/question-sessions/start', async (request: FastifyRequest, reply: FastifyReply) => {
-    const userId = request.auth!.userId;
+    const userId = requireUserId(request);
     const body = request.body as {
       questionId?: string;
       versionId?: string;
@@ -45,7 +57,7 @@ export function registerRoutes(app: FastifyInstance, service: QuestionEngineServ
 
   // GET /question-sessions/:sessionId
   app.get('/question-sessions/:sessionId', async (request: FastifyRequest, reply: FastifyReply) => {
-    const userId = request.auth!.userId;
+    const userId = requireUserId(request);
     const { sessionId } = request.params as { sessionId: string };
 
     try {
@@ -59,7 +71,7 @@ export function registerRoutes(app: FastifyInstance, service: QuestionEngineServ
 
   // POST /question-sessions/:sessionId/responses
   app.post('/question-sessions/:sessionId/responses', async (request: FastifyRequest, reply: FastifyReply) => {
-    const userId = request.auth!.userId;
+    const userId = requireUserId(request);
     const { sessionId } = request.params as { sessionId: string };
     const body = request.body as {
       questionVersionId?: string;
@@ -79,7 +91,7 @@ export function registerRoutes(app: FastifyInstance, service: QuestionEngineServ
         body.questionVersionId as QuestionVersionId,
         body.response,
         body.state,
-        body.revision
+        body.revision,
       );
       return reply.status(200).send(serializeResponse(envelope));
     } catch (err) {
@@ -90,7 +102,7 @@ export function registerRoutes(app: FastifyInstance, service: QuestionEngineServ
 
   // POST /question-sessions/:sessionId/playback
   app.post('/question-sessions/:sessionId/playback', async (request: FastifyRequest, reply: FastifyReply) => {
-    const userId = request.auth!.userId;
+    const userId = requireUserId(request);
     const { sessionId } = request.params as { sessionId: string };
 
     try {
@@ -109,7 +121,7 @@ export function registerRoutes(app: FastifyInstance, service: QuestionEngineServ
 
   // POST /question-sessions/:sessionId/submit
   app.post('/question-sessions/:sessionId/submit', async (request: FastifyRequest, reply: FastifyReply) => {
-    const userId = request.auth!.userId;
+    const userId = requireUserId(request);
     const { sessionId } = request.params as { sessionId: string };
     const body = request.body as {
       idempotencyKey?: string;
@@ -125,7 +137,7 @@ export function registerRoutes(app: FastifyInstance, service: QuestionEngineServ
         sessionId as QuestionSessionId,
         userId,
         body.idempotencyKey as IdempotencyKey,
-        body.requestFingerprint
+        body.requestFingerprint,
       );
       return reply.status(200).send(serializeSubmission(result));
     } catch (err) {
@@ -136,7 +148,7 @@ export function registerRoutes(app: FastifyInstance, service: QuestionEngineServ
 
   // GET /question-sessions/:sessionId/review
   app.get('/question-sessions/:sessionId/review', async (request: FastifyRequest, reply: FastifyReply) => {
-    const userId = request.auth!.userId;
+    const userId = requireUserId(request);
     const { sessionId } = request.params as { sessionId: string };
 
     try {

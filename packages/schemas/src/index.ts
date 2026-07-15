@@ -43,3 +43,7 @@ export {
 } from './configuration.js';
 
 export * from './content-provenance.js';
+
+export * from './question-engine/index.js';
+
+export * from './questions/index.js';

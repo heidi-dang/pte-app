@@ -14,15 +14,15 @@ Phase I implements the Universal Question Engine — a reusable, session-oriente
 
 ## Packages
 
-| Package | Purpose | Runtime code |
-|---------|---------|-------------|
-| `@pte-app/contracts` (`question-engine/`) | Session, response, timer, playback, submission, renderer-manifest, and access-policy contract types | Type definitions only |
-| `@pte-app/contracts` (`questions/reading/`) | Reading task-type contracts: MCQ single, MCQ multiple, reorder paragraph, fill blanks, R&W fill blanks | Type definitions only |
-| `@pte-app/schemas` (`question-engine/`) | Zod validation schemas for all question-engine contracts | Schema definitions |
-| `@pte-app/schemas` (`questions/reading/`) | Zod validation schemas for reading question and response types | Schema definitions |
-| `@pte-app/domain` (`question-engine/`) | Session state machine, playback rights, idempotency, timer, event replay, renderer registry, errors | Pure functions |
-| `@pte-app/database` | Migration 0004 — question engine persistence tables | Migration SQL |
-| `@pte-app/web` (`question-engine/`) | React components: shell, timer, autosave, playback, recovery, renderer host, session client, progress announcer | Client components |
+| Package                                     | Purpose                                                                                                         | Runtime code          |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `@pte-app/contracts` (`question-engine/`)   | Session, response, timer, playback, submission, renderer-manifest, and access-policy contract types             | Type definitions only |
+| `@pte-app/contracts` (`questions/reading/`) | Reading task-type contracts: MCQ single, MCQ multiple, reorder paragraph, fill blanks, R&W fill blanks          | Type definitions only |
+| `@pte-app/schemas` (`question-engine/`)     | Zod validation schemas for all question-engine contracts                                                        | Schema definitions    |
+| `@pte-app/schemas` (`questions/reading/`)   | Zod validation schemas for reading question and response types                                                  | Schema definitions    |
+| `@pte-app/domain` (`question-engine/`)      | Session state machine, playback rights, idempotency, timer, event replay, renderer registry, errors             | Pure functions        |
+| `@pte-app/database`                         | Migration 0004 — question engine persistence tables                                                             | Migration SQL         |
+| `@pte-app/web` (`question-engine/`)         | React components: shell, timer, autosave, playback, recovery, renderer host, session client, progress announcer | Client components     |
 
 ## Design Principles
 
@@ -37,24 +37,24 @@ Phase I implements the Universal Question Engine — a reusable, session-oriente
 
 ## Tables
 
-| Table | Purpose |
-|-------|---------|
-| `question_sessions` | Session lifecycle: mode, state, timing/playback/scoring profile IDs, server deadline, state timestamps |
-| `question_session_responses` | Versioned response envelopes keyed by session + revision. UPSERT on conflict for autosave |
-| `question_session_submissions` | One per session. Stores final response payload, idempotency key, and request fingerprint |
-| `question_session_events` | Ordered event log. Unique on (session_id, sequence). Supports event-sourced replay |
-| `question_playback_rights` | Audio playback rights per session. Tracks allowed/consumed plays and failure state |
-| `question_idempotency_records` | Idempotency keys per session. Enables duplicate detection and conflict rejection |
+| Table                          | Purpose                                                                                                |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `question_sessions`            | Session lifecycle: mode, state, timing/playback/scoring profile IDs, server deadline, state timestamps |
+| `question_session_responses`   | Versioned response envelopes keyed by session + revision. UPSERT on conflict for autosave              |
+| `question_session_submissions` | One per session. Stores final response payload, idempotency key, and request fingerprint               |
+| `question_session_events`      | Ordered event log. Unique on (session_id, sequence). Supports event-sourced replay                     |
+| `question_playback_rights`     | Audio playback rights per session. Tracks allowed/consumed plays and failure state                     |
+| `question_idempotency_records` | Idempotency keys per session. Enables duplicate detection and conflict rejection                       |
 
 ## Session Modes
 
-| Mode | Pause | Feedback | Server deadline | Autosave | Empty submission | Playback |
-|------|-------|----------|----------------|----------|-----------------|----------|
-| `learning` | Yes | Yes (no correct answers) | No | Yes | No | Yes |
-| `review` | No | Yes (with correct answers) | No | No | No | Yes |
-| `timed-practice` | No | Yes (no correct answers) | Yes | Yes | No | No |
-| `section-test` | Yes | No | Yes | Yes | No | No |
-| `mock` | Yes | Yes (with correct answers) | No | Yes | Yes | Yes |
+| Mode             | Pause | Feedback                   | Server deadline | Autosave | Empty submission | Playback |
+| ---------------- | ----- | -------------------------- | --------------- | -------- | ---------------- | -------- |
+| `learning`       | Yes   | Yes (no correct answers)   | No              | Yes      | No               | Yes      |
+| `review`         | No    | Yes (with correct answers) | No              | No       | No               | Yes      |
+| `timed-practice` | No    | Yes (no correct answers)   | Yes             | Yes      | No               | No       |
+| `section-test`   | Yes   | No                         | Yes             | Yes      | No               | No       |
+| `mock`           | Yes   | Yes (with correct answers) | No              | Yes      | Yes              | Yes      |
 
 ## Session State Machine
 
@@ -96,15 +96,15 @@ session.abandoned
 
 The client maintains a local recovery snapshot in IndexedDB (`PteQuestionRecoveryDB`, object store `recoverySnapshots`) keyed by session ID. The snapshot captures:
 
-| Field | Purpose |
-|-------|---------|
-| `sessionId` | Session identifier for reconnection |
-| `lastAcknowledgedRevision` | Highest revision the server confirmed |
-| `pendingResponse` | Response payload not yet persisted |
-| `pendingResponseState` | State classification of the pending response |
-| `pendingEvents` | Events dispatched but not yet acknowledged |
-| `retryCount` | Number of recovery attempts |
-| `lastAttemptAt` | ISO-8601 timestamp of last recovery attempt |
+| Field                      | Purpose                                      |
+| -------------------------- | -------------------------------------------- |
+| `sessionId`                | Session identifier for reconnection          |
+| `lastAcknowledgedRevision` | Highest revision the server confirmed        |
+| `pendingResponse`          | Response payload not yet persisted           |
+| `pendingResponseState`     | State classification of the pending response |
+| `pendingEvents`            | Events dispatched but not yet acknowledged   |
+| `retryCount`               | Number of recovery attempts                  |
+| `lastAttemptAt`            | ISO-8601 timestamp of last recovery attempt  |
 
 On page reload or reconnection, the client loads the snapshot, reconciles it against the server state (using the server's latest response revision), and resumes from the confirmed checkpoint. Unsaved responses are re-dispatched. IndexedDB failures are caught and logged silently — the user is prompted to retry manually.
 
@@ -146,14 +146,15 @@ The timer component uses `setInterval` at 500ms resolution. Warning threshold is
 
 Audio playback rights are stored in `question_playback_rights` with a 1:1 relationship to sessions that include a `playbackProfileId`. The right tracks:
 
-| Field | Purpose |
-|-------|---------|
-| `allowed_plays` | Maximum permitted plays (typically 1 for mock, varies for learning) |
-| `consumed_plays` | Number of plays consumed so far |
-| `state` | One of: `allowed`, `ready`, `started`, `consumed`, `completed`, `failed-before-consumption`, `failed-after-consumption` |
-| `failure_state` | `before-consumption` or `after-consumption` if playback failed |
+| Field            | Purpose                                                                                                                 |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `allowed_plays`  | Maximum permitted plays (typically 1 for mock, varies for learning)                                                     |
+| `consumed_plays` | Number of plays consumed so far                                                                                         |
+| `state`          | One of: `allowed`, `ready`, `started`, `consumed`, `completed`, `failed-before-consumption`, `failed-after-consumption` |
+| `failure_state`  | `before-consumption` or `after-consumption` if playback failed                                                          |
 
 Key rules:
+
 - A right starts in `allowed` state with `consumedPlays = 0`.
 - On playback request, the service checks `canStartPlayback(right)` — returns false if state is `consumed`, `completed`, or `failed-after-consumption`.
 - If allowed, the state transitions to `started` and `consumedPlays` increments atomically.
@@ -163,14 +164,14 @@ Key rules:
 
 ## API Routes
 
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| POST | `/question-sessions/start` | Yes | Create and activate a new question session |
-| GET | `/question-sessions/:sessionId` | Yes | Retrieve session state |
-| POST | `/question-sessions/:sessionId/responses` | Yes | Autosave a response revision |
-| POST | `/question-sessions/:sessionId/playback` | Yes | Request and consume an audio playback right |
-| POST | `/question-sessions/:sessionId/submit` | Yes | Submit the session (idempotent) |
-| GET | `/question-sessions/:sessionId/review` | Yes | Retrieve post-submission review data |
+| Method | Path                                      | Auth | Purpose                                     |
+| ------ | ----------------------------------------- | ---- | ------------------------------------------- |
+| POST   | `/question-sessions/start`                | Yes  | Create and activate a new question session  |
+| GET    | `/question-sessions/:sessionId`           | Yes  | Retrieve session state                      |
+| POST   | `/question-sessions/:sessionId/responses` | Yes  | Autosave a response revision                |
+| POST   | `/question-sessions/:sessionId/playback`  | Yes  | Request and consume an audio playback right |
+| POST   | `/question-sessions/:sessionId/submit`    | Yes  | Submit the session (idempotent)             |
+| GET    | `/question-sessions/:sessionId/review`    | Yes  | Retrieve post-submission review data        |
 
 All routes require authentication. Owner validation is enforced at the service layer.
 
@@ -178,13 +179,13 @@ All routes require authentication. Owner validation is enforced at the service l
 
 Phase J provides contracts and Zod validation schemas for all PTE Academic reading task types. These are type definitions only — no renderer components are included.
 
-| Task type | Contract type ID | Response shape |
-|-----------|-----------------|----------------|
-| Multiple Choice, Single Answer | `reading_single_answer` | `selectedKey: string \| null` |
-| Multiple Choice, Multiple Answers | `reading_multiple_answers` | `selectedKeys: string[]` |
-| Re-order Paragraphs | `reorder_paragraph` | `orderedIds: string[]` |
-| Reading: Fill in the Blanks | `reading_fill_blanks` | `placements: Record<string, string \| null>` |
-| Reading & Writing: Fill in the Blanks | `reading_writing_fill_blanks` | `selections: Record<string, string>` |
+| Task type                             | Contract type ID              | Response shape                               |
+| ------------------------------------- | ----------------------------- | -------------------------------------------- |
+| Multiple Choice, Single Answer        | `reading_single_answer`       | `selectedKey: string \| null`                |
+| Multiple Choice, Multiple Answers     | `reading_multiple_answers`    | `selectedKeys: string[]`                     |
+| Re-order Paragraphs                   | `reorder_paragraph`           | `orderedIds: string[]`                       |
+| Reading: Fill in the Blanks           | `reading_fill_blanks`         | `placements: Record<string, string \| null>` |
+| Reading & Writing: Fill in the Blanks | `reading_writing_fill_blanks` | `selections: Record<string, string>`         |
 
 Correct answers are never embedded in question contracts delivered to the client. Each task type follows a common contract pattern: a `ReadingCommonContract` base provides `type`, `instructions`, and an optional `ReadingPassage` with `id`, `text`, and `wordCount`.
 
@@ -192,16 +193,16 @@ Correct answers are never embedded in question contracts delivered to the client
 
 Phase K provides contracts and Zod validation schemas for all PTE Academic listening task types. These are type definitions only — no renderer components are included.
 
-| Task type | Contract type ID | Response shape |
-|-----------|-----------------|----------------|
-| Summarise Spoken Text | `summarise_spoken_text` | `{ summary: string, wordCount: number }` |
-| Multiple Choice, Choose Single Answer | `listening_single_answer` | `{ selectedKey: string \| null }` |
-| Multiple Choice, Choose Multiple Answers | `listening_multiple_answers` | `{ selectedKeys: string[] }` |
-| Fill in the Blanks | `listening_fill_blanks` | `{ placements: Record<string, string \| null> }` |
-| Highlight Correct Summary | `highlight_correct_summary` | `{ selectedKey: string \| null }` |
-| Select Missing Word | `select_missing_word` | `{ selectedKey: string \| null }` |
-| Highlight Incorrect Words | `highlight_incorrect_words` | `{ flaggedWordIndices: number[] }` |
-| Write from Dictation | `write_from_dictation` | `{ words: string }` |
+| Task type                                | Contract type ID             | Response shape                                   |
+| ---------------------------------------- | ---------------------------- | ------------------------------------------------ |
+| Summarise Spoken Text                    | `summarise_spoken_text`      | `{ summary: string, wordCount: number }`         |
+| Multiple Choice, Choose Single Answer    | `listening_single_answer`    | `{ selectedKey: string \| null }`                |
+| Multiple Choice, Choose Multiple Answers | `listening_multiple_answers` | `{ selectedKeys: string[] }`                     |
+| Fill in the Blanks                       | `listening_fill_blanks`      | `{ placements: Record<string, string \| null> }` |
+| Highlight Correct Summary                | `highlight_correct_summary`  | `{ selectedKey: string \| null }`                |
+| Select Missing Word                      | `select_missing_word`        | `{ selectedKey: string \| null }`                |
+| Highlight Incorrect Words                | `highlight_incorrect_words`  | `{ flaggedWordIndices: number[] }`               |
+| Write from Dictation                     | `write_from_dictation`       | `{ words: string }`                              |
 
 Listening tasks share a common pattern: a `ListeningCommonContract` base provides `type`, `instructions`, and an optional `audioProfileId` linking to the playback configuration. Audio playback rights are managed by the question engine's playback subsystem — listening contracts do not duplicate playback state.
 

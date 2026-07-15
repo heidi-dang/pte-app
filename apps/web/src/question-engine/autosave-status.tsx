@@ -33,7 +33,10 @@ export function AutosaveStatus({ phase, lastSavedAt, errorMessage }: AutosaveSta
       aria-atomic="true"
       aria-label="Autosave status"
       role="status"
-      style={{ fontSize: '0.75rem', color: phase === 'error' ? 'var(--color-error, #b00020)' : 'var(--color-muted, #666)' }}
+      style={{
+        fontSize: '0.75rem',
+        color: phase === 'error' ? 'var(--color-error, #b00020)' : 'var(--color-muted, #666)',
+      }}
     >
       {phase === 'saving' && (
         <span aria-hidden="true" style={{ marginRight: '0.25rem' }}>

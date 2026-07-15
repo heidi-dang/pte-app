@@ -1,14 +1,8 @@
 // packages/contracts/src/question-engine/session-mode.ts
 
-export const QUESTION_SESSION_MODES = [
-  'learning',
-  'review',
-  'timed-practice',
-  'section-test',
-  'mock',
-] as const;
+export const QUESTION_SESSION_MODES = ['learning', 'review', 'timed-practice', 'section-test', 'mock'] as const;
 
-export type QuestionSessionMode = typeof QUESTION_SESSION_MODES[number];
+export type QuestionSessionMode = (typeof QUESTION_SESSION_MODES)[number];
 
 export interface SessionModeCapabilities {
   canPause: boolean;
@@ -73,4 +67,3 @@ export const QUESTION_SESSION_MODE_CAPABILITIES: Record<QuestionSessionMode, Ses
     allowsEmptySubmission: true,
   },
 };
-

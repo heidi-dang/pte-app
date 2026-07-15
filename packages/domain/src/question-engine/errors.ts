@@ -4,7 +4,7 @@ export class QuestionEngineError extends Error {
   constructor(
     public readonly code: QuestionEngineErrorCode,
     message: string,
-    public readonly details?: Record<string, unknown>
+    public readonly details?: Record<string, unknown>,
   ) {
     super(message);
     this.name = 'QuestionEngineError';
@@ -15,7 +15,7 @@ export class QuestionEngineError extends Error {
 export function createEngineError(
   code: QuestionEngineErrorCode,
   message: string,
-  details?: Record<string, unknown>
+  details?: Record<string, unknown>,
 ): QuestionEngineError {
   return new QuestionEngineError(code, message, details);
 }

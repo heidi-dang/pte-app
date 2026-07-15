@@ -27,7 +27,7 @@ export function createTimerSnapshot(
   timingProfileId: TimingProfileId,
   serverDeadline: string,
   serverNow: string,
-  warningThresholdMs: number
+  warningThresholdMs: number,
 ): TimerState {
   const remaining = calculateRemainingMilliseconds(serverDeadline, serverNow);
   const expired = remaining <= 0;

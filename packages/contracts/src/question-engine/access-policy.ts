@@ -1,4 +1,4 @@
-import { QuestionSessionId } from './identifiers';
+import { QuestionSessionId } from './identifiers.js';
 
 export interface QuestionAccessInput {
   userId: string;

@@ -1,4 +1,4 @@
-import { QuestionSessionId, QuestionVersionId, ResponseRevision } from './identifiers';
+import { QuestionSessionId, QuestionVersionId, ResponseRevision } from './identifiers.js';
 
 export type ResponseState = 'empty' | 'incomplete' | 'complete' | 'submitted';
 

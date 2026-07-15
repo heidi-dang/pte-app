@@ -1,18 +1,13 @@
 import type React from 'react';
-import type {
-  QuestionSession,
-  QuestionResponseEnvelope,
-  SubmissionResult,
-  PlaybackRight,
-  ResponseState,
-  QuestionRendererManifest
-} from '@pte-app/contracts';
+import type { ResponseState, QuestionRendererManifest } from '@pte-app/contracts';
 
 export interface QuestionRendererProps<TQuestion = any, TResponse = any> {
   question: TQuestion;
   response: TResponse;
   onChange: (response: TResponse, state: ResponseState) => void;
   disabled?: boolean;
+  sessionMode?: string;
+  isReadOnly?: boolean;
 }
 
 export interface QuestionReviewProps<TQuestion = any, TResponse = any> {

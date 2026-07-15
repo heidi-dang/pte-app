@@ -19,7 +19,7 @@ import type {
   ResponseRevision,
   QuestionEventId,
   EventSequence,
-  QuestionProgressEventType
+  QuestionProgressEventType,
 } from '@pte-app/contracts';
 import type { IdempotencyRecord } from '@pte-app/domain';
 
@@ -33,8 +33,17 @@ export class QuestionSessionRepository {
   constructor(private readonly connection: DatabaseConnection) {}
 
   public async createSession(
-    session: Omit<QuestionSession, 'createdAt' | 'updatedAt'> & { userId: string; questionId: QuestionId; questionVersionId: QuestionVersionId; questionType: string; timingProfileId?: string; playbackProfileId?: string; scoringProfileId?: string; serverDeadline?: string },
-    tx?: DatabaseClient
+    session: Omit<QuestionSession, 'createdAt' | 'updatedAt'> & {
+      userId: string;
+      questionId: QuestionId;
+      questionVersionId: QuestionVersionId;
+      questionType: string;
+      timingProfileId?: string;
+      playbackProfileId?: string;
+      scoringProfileId?: string;
+      serverDeadline?: string;
+    },
+    tx?: DatabaseClient,
   ): Promise<QuestionSession> {
     const q = tx || this.connection;
     const now = new Date().toISOString();
@@ -63,25 +72,19 @@ export class QuestionSessionRepository {
         session.expiredAt || null,
         session.abandonedAt || null,
         now,
-      ]
+      ],
     );
     return this.mapSessionRow(result.rows[0]);
   }
 
   public async getSession(id: QuestionSessionId, tx?: DatabaseClient): Promise<QuestionSession | null> {
     const q = tx || this.connection;
-    const result = await getPool(q).query(
-      `SELECT * FROM question_sessions WHERE id = $1`,
-      [id]
-    );
+    const result = await getPool(q).query(`SELECT * FROM question_sessions WHERE id = $1`, [id]);
     if (result.rows.length === 0) return null;
     return this.mapSessionRow(result.rows[0]);
   }
 
-  public async updateSession(
-    session: QuestionSession,
-    tx?: DatabaseClient
-  ): Promise<void> {
+  public async updateSession(session: QuestionSession, tx?: DatabaseClient): Promise<void> {
     const q = tx || this.connection;
     const now = new Date().toISOString();
     await getPool(q).query(
@@ -98,14 +101,11 @@ export class QuestionSessionRepository {
         session.abandonedAt || null,
         now,
         session.id,
-      ]
+      ],
     );
   }
 
-  public async saveResponse(
-    envelope: QuestionResponseEnvelope,
-    tx?: DatabaseClient
-  ): Promise<void> {
+  public async saveResponse(envelope: QuestionResponseEnvelope, tx?: DatabaseClient): Promise<void> {
     const q = tx || this.connection;
     const now = new Date().toISOString();
     await getPool(q).query(
@@ -121,15 +121,18 @@ export class QuestionSessionRepository {
         JSON.stringify(envelope.response),
         envelope.questionVersionId,
         now,
-      ]
+      ],
     );
   }
 
-  public async getLatestResponse(sessionId: QuestionSessionId, tx?: DatabaseClient): Promise<QuestionResponseEnvelope | null> {
+  public async getLatestResponse(
+    sessionId: QuestionSessionId,
+    tx?: DatabaseClient,
+  ): Promise<QuestionResponseEnvelope | null> {
     const q = tx || this.connection;
     const result = await getPool(q).query(
       `SELECT * FROM question_session_responses WHERE session_id = $1 ORDER BY revision DESC LIMIT 1`,
-      [sessionId]
+      [sessionId],
     );
     if (result.rows.length === 0) return null;
     return this.mapResponseRow(result.rows[0]);
@@ -140,7 +143,7 @@ export class QuestionSessionRepository {
     responsePayload: unknown,
     responseRevision: number,
     requestFingerprint: string,
-    tx?: DatabaseClient
+    tx?: DatabaseClient,
   ): Promise<void> {
     const q = tx || this.connection;
     await getPool(q).query(
@@ -155,16 +158,15 @@ export class QuestionSessionRepository {
         submission.idempotencyKey,
         requestFingerprint,
         submission.submittedAt,
-      ]
+      ],
     );
   }
 
   public async getSubmission(sessionId: QuestionSessionId, tx?: DatabaseClient): Promise<SubmissionResult | null> {
     const q = tx || this.connection;
-    const result = await getPool(q).query(
-      `SELECT * FROM question_session_submissions WHERE session_id = $1`,
-      [sessionId]
-    );
+    const result = await getPool(q).query(`SELECT * FROM question_session_submissions WHERE session_id = $1`, [
+      sessionId,
+    ]);
     if (result.rows.length === 0) return null;
     const row = result.rows[0];
     return {
@@ -182,14 +184,7 @@ export class QuestionSessionRepository {
     await getPool(q).query(
       `INSERT INTO question_session_events (id, session_id, sequence, event_type, event_payload, occurred_at)
        VALUES ($1, $2, $3, $4, $5, $6)`,
-      [
-        event.id,
-        event.sessionId,
-        event.sequence,
-        event.type,
-        JSON.stringify(event.payload),
-        event.occurredAt,
-      ]
+      [event.id, event.sessionId, event.sequence, event.type, JSON.stringify(event.payload), event.occurredAt],
     );
   }
 
@@ -197,9 +192,9 @@ export class QuestionSessionRepository {
     const q = tx || this.connection;
     const result = await getPool(q).query(
       `SELECT * FROM question_session_events WHERE session_id = $1 ORDER BY sequence ASC`,
-      [sessionId]
+      [sessionId],
     );
-    return result.rows.map(row => ({
+    return result.rows.map((row) => ({
       id: row.id as QuestionEventId,
       sessionId: row.session_id as QuestionSessionId,
       sequence: row.sequence as EventSequence,
@@ -230,16 +225,13 @@ export class QuestionSessionRepository {
         right.completedAt || null,
         right.failureState || null,
         now,
-      ]
+      ],
     );
   }
 
   public async getPlaybackRight(sessionId: QuestionSessionId, tx?: DatabaseClient): Promise<PlaybackRight | null> {
     const q = tx || this.connection;
-    const result = await getPool(q).query(
-      `SELECT * FROM question_playback_rights WHERE session_id = $1`,
-      [sessionId]
-    );
+    const result = await getPool(q).query(`SELECT * FROM question_playback_rights WHERE session_id = $1`, [sessionId]);
     if (result.rows.length === 0) return null;
     const row = result.rows[0];
     return {
@@ -267,19 +259,19 @@ export class QuestionSessionRepository {
         record.requestFingerprint,
         record.resultPayload,
         record.createdAt,
-      ]
+      ],
     );
   }
 
   public async findIdempotencyRecord(
     sessionId: QuestionSessionId,
     key: IdempotencyKey,
-    tx?: DatabaseClient
+    tx?: DatabaseClient,
   ): Promise<IdempotencyRecord | null> {
     const q = tx || this.connection;
     const result = await getPool(q).query(
       `SELECT * FROM question_idempotency_records WHERE session_id = $1 AND idempotency_key = $2`,
-      [sessionId, key]
+      [sessionId, key],
     );
     if (result.rows.length === 0) return null;
     const row = result.rows[0];
