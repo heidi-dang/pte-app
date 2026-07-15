@@ -5,6 +5,7 @@ import type { UserRole } from '../auth/rbac.js';
 import { hasPermission } from '../auth/rbac.js';
 import { requirePublicationEligibility } from '../content-provenance/publication-guard.js';
 import { getEntitlementDecision, cancelEntitlement } from './entitlements.js';
+import crypto from 'node:crypto';
 import type { ContentId, ContentVersionId, RequestId, UserId, CourseVersionId } from '@pte-app/contracts';
 
 type AnyRepo = Record<string, any>;
@@ -38,8 +39,24 @@ function getAuth(request: FastifyRequest, reply: FastifyReply) {
   return request.auth;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function uuidFromString(input: string): string {
+  const hash = crypto.createHash('sha256').update(input).digest('hex');
+  return [
+    hash.slice(0, 8),
+    hash.slice(8, 12),
+    `5${hash.slice(13, 16)}`,
+    `${((parseInt(hash.slice(16, 17), 16) & 0x3) | 0x8).toString(16)}${hash.slice(17, 20)}`,
+    hash.slice(20, 32),
+  ].join('-');
+}
+
 function reqId(request: FastifyRequest): RequestId {
-  return ((request.headers['x-request-id'] as string) ?? crypto.randomUUID()) as RequestId;
+  const header = (request.headers['x-request-id'] as string) ?? '';
+  if (UUID_RE.test(header)) return header as RequestId;
+  if (header) return uuidFromString(header) as RequestId;
+  return crypto.randomUUID() as RequestId;
 }
 
 // ─── Staff bypass ──────────────────────────────────────────
@@ -339,7 +356,9 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     const all = await repo.progress.listProgressForEnrolment(db, enrolment.id);
     const ip = (all || []).filter((p: any) => p.status !== 'completed');
     if (ip.length > 0) {
-      const latest = ip.sort((a: any, b: any) => (b.lastActivityAt || '').localeCompare(a.lastActivityAt || ''))[0];
+      const latest = ip.sort((a: any, b: any) =>
+        String(b.lastActivityAt || '').localeCompare(String(a.lastActivityAt || '')),
+      )[0];
       return reply.status(200).send({
         resumeType: 'in_progress',
         lessonId: latest.lessonId,

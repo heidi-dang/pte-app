@@ -6,6 +6,7 @@ import { licences, provenanceRepo as provenance, phaseH } from '@pte-app/databas
 import type { CourseVersionId, LessonId, LicenceType, OwnershipType } from '@pte-app/contracts';
 import {
   buildFixtures,
+  createUser,
   createEntitlement,
   cancelEntitlement,
   expireEntitlement,
@@ -89,6 +90,16 @@ async function register(email: string, password: string, displayName: string, ro
   });
   assert.ok(status === 201 || status === 409, `register expected 201 or 409, got ${status}: ${data.error}`);
   return { id: data.user?.id, email, password, roles: roles ?? [] };
+}
+
+async function createEnrolledStudent(label: string): Promise<{ token: string; user: TestUser }> {
+  const email = `student-${label}-${runId}@test.com`;
+  const password = 'StudentPass123';
+  const student = await register(email, password, `Student ${label}`);
+  const { token } = await login(email, password);
+  const enrol = await api(`/learn/courses/${fixtures.freeCourse.id}/enrol`, { method: 'POST', token });
+  assert.ok(enrol.status === 201 || enrol.status === 200, `enrol failed: ${enrol.data.error}`);
+  return { token, user: student };
 }
 
 let harness: TestHarness;
@@ -222,8 +233,11 @@ describe('Phase H API Integration', () => {
 
     it('wrong-scope entitlement is rejected', async () => {
       const otherCourse = await buildFixtures(harness.db, { runId: `${runId}-scope` });
-      await createEntitlement(harness.db, fixtures.student.id, otherCourse.paidCourse.id);
-      const { token } = await login(fixtures.student.email, fixtures.student.password);
+      const scopeStudent = await createUser(harness.db, `student-scope-${runId}@test.com`, 'StudentPass123', [
+        'student',
+      ]);
+      await createEntitlement(harness.db, scopeStudent.id, otherCourse.paidCourse.id);
+      const { token } = await login(scopeStudent.email, scopeStudent.password);
       const { status, data } = await api(`/learn/courses/${fixtures.paidCourse.slug}`, { token });
       assert.equal(status, 403);
       assert.equal(data.reason, 'ENTITLEMENT_SCOPE_MISMATCH');
@@ -393,7 +407,7 @@ describe('Phase H API Integration', () => {
         body: JSON.stringify({
           lessonId: fixtures.freeCourse.lessonIds[0],
           lessonVersionId: lesson.lesson.versionId,
-          mutationId,
+          mutationId: `stale-v2-${runId}`,
           blockId: lesson.blocks[0].id,
           blockPosition: 0,
           revision: 0,
@@ -430,7 +444,7 @@ describe('Phase H API Integration', () => {
 
   describe('Quiz', () => {
     it('required quiz accepts correct answers', async () => {
-      const { token } = await login(fixtures.student.email, fixtures.student.password);
+      const { token } = await createEnrolledStudent('quiz-correct');
       const { data: lesson } = await api(`/learn/lessons/${fixtures.freeCourse.lessonIds[0]}`, { token });
       const { status, data } = await api(`/learn/quiz/${lesson.quiz.id}/submit`, {
         method: 'POST',
@@ -446,7 +460,7 @@ describe('Phase H API Integration', () => {
     });
 
     it('duplicate concurrent quiz submission returns one attempt', async () => {
-      const { token } = await login(fixtures.student.email, fixtures.student.password);
+      const { token } = await createEnrolledStudent('quiz-conc');
       const { data: lesson } = await api(`/learn/lessons/${fixtures.freeCourse.lessonIds[0]}`, { token });
       const submissionId = `quiz-conc-${runId}`;
       const [a, b] = await Promise.all([
@@ -462,13 +476,25 @@ describe('Phase H API Integration', () => {
         }),
       ]);
       assert.ok(a.status === 200 && b.status === 200);
-      assert.ok(a.data.attempt.id || b.data.attempt.id);
-      if (a.data.attempt.id && b.data.attempt.id) assert.equal(a.data.attempt.id, b.data.attempt.id);
+      assert.ok(a.data.attempt?.id || b.data.attempt?.id);
+      if (a.data.attempt?.id && b.data.attempt?.id) assert.equal(a.data.attempt.id, b.data.attempt.id);
     });
 
     it('failed quiz prevents completion', async () => {
-      const { token } = await login(fixtures.student.email, fixtures.student.password);
+      const { token } = await createEnrolledStudent('quiz-fail');
       const { data: lesson } = await api(`/learn/lessons/${fixtures.freeCourse.lessonIds[0]}`, { token });
+      const lastIdx = lesson.blocks.length - 1;
+      await api('/learn/progress', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({
+          lessonId: fixtures.freeCourse.lessonIds[0],
+          lessonVersionId: lesson.lesson.versionId,
+          mutationId: `quiz-fail-progress-${runId}`,
+          blockId: lesson.blocks[lastIdx].id,
+          blockPosition: lastIdx,
+        }),
+      });
       await api(`/learn/quiz/${lesson.quiz.id}/submit`, {
         method: 'POST',
         token,
@@ -486,7 +512,7 @@ describe('Phase H API Integration', () => {
     });
 
     it('passed quiz permits completion', async () => {
-      const { token } = await login(fixtures.student.email, fixtures.student.password);
+      const { token } = await createEnrolledStudent('quiz-pass');
       const { data: lesson } = await api(`/learn/lessons/${fixtures.freeCourse.lessonIds[0]}`, { token });
       const lastIdx = lesson.blocks.length - 1;
       await api('/learn/progress', {
@@ -520,7 +546,7 @@ describe('Phase H API Integration', () => {
 
   describe('Completion', () => {
     it('incomplete blocks prevent completion', async () => {
-      const { token } = await login(fixtures.student.email, fixtures.student.password);
+      const { token } = await createEnrolledStudent('complete-incomplete');
       const { data: lesson } = await api(`/learn/lessons/${fixtures.freeCourse.lessonIds[0]}`, { token });
       await api(`/learn/quiz/${lesson.quiz.id}/submit`, {
         method: 'POST',
@@ -550,7 +576,7 @@ describe('Phase H API Integration', () => {
     });
 
     it('completion creates exact version-aware record', async () => {
-      const { token } = await login(fixtures.student.email, fixtures.student.password);
+      const { token } = await createEnrolledStudent('complete-version');
       const { data: lesson } = await api(`/learn/lessons/${fixtures.freeCourse.lessonIds[0]}`, { token });
       const lastIdx = lesson.blocks.length - 1;
       await api('/learn/progress', {
@@ -598,6 +624,12 @@ describe('Phase H API Integration', () => {
 
     it('prerequisite unlocks lesson 2 after lesson 1 completion', async () => {
       const { token } = await login(fixtures.student.email, fixtures.student.password);
+      await createPrerequisite(
+        harness.db,
+        fixtures.freeCourse.lessonIds[1] as LessonId,
+        fixtures.freeCourse.lessonIds[0] as LessonId,
+        fixtures.admin.id,
+      );
       const { data: lesson1 } = await api(`/learn/lessons/${fixtures.freeCourse.lessonIds[0]}`, { token });
       const lastIdx = lesson1.blocks.length - 1;
       await api('/learn/progress', {
