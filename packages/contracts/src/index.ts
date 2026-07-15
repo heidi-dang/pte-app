@@ -97,3 +97,9 @@ export * from './diagnostics/index.js';
 export * from './study-plan/index.js';
 
 export * from './mock-exams/index.js';
+
+export * from './reporting/index.js';
+export * from './staff/index.js';
+export * from './content-factory/index.js';
+export * from './calibration/index.js';
+export * from './operations/index.js';
