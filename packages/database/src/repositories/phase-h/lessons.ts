@@ -1,5 +1,5 @@
 import type { DatabaseConnection } from '../../client.js';
-import type { CourseId, CourseModuleId, LessonId, LessonRecord } from '@pte-app/contracts';
+import type { CourseId, CourseModuleId, LessonId, LessonVersionId, LessonRecord } from '@pte-app/contracts';
 import { randomUUID } from 'node:crypto';
 
 export interface CreateLessonInput {
@@ -21,6 +21,46 @@ export interface UpdateLessonInput {
   readonly orderPosition?: number;
   readonly isOptional?: boolean;
   readonly estimatedMinutes?: number;
+}
+
+async function insertLessonVersion(
+  connection: DatabaseConnection,
+  lessonId: LessonId,
+  version: number,
+  status: 'draft' | 'published' | 'retired',
+  snapshot: Record<string, unknown>,
+  createdBy: string,
+): Promise<LessonVersionId> {
+  const id = randomUUID() as LessonVersionId;
+  await connection.pool.query(
+    `INSERT INTO lesson_versions (id, lesson_id, version, status, snapshot, reason, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT (lesson_id, version) DO NOTHING`,
+    [
+      id,
+      lessonId,
+      version,
+      status,
+      JSON.stringify(snapshot),
+      status === 'published' ? 'published' : 'created',
+      createdBy,
+    ],
+  );
+  return id;
+}
+
+function lessonSnapshot(input: Partial<LessonRecord>): Record<string, unknown> {
+  return {
+    title: input.title ?? null,
+    slug: input.slug ?? null,
+    summary: input.summary ?? null,
+    orderPosition: input.orderPosition ?? null,
+    isOptional: input.isOptional ?? null,
+    estimatedMinutes: input.estimatedMinutes ?? null,
+    quizId: input.quizId ?? null,
+    status: input.status ?? null,
+    version: input.version ?? null,
+  };
 }
 
 export async function createLesson(connection: DatabaseConnection, input: CreateLessonInput): Promise<LessonRecord> {
@@ -65,7 +105,9 @@ export async function createLesson(connection: DatabaseConnection, input: Create
   );
   const row = result.rows[0];
   if (!row) throw new Error('Failed to create lesson');
-  return row as unknown as LessonRecord;
+  const record = row as unknown as LessonRecord;
+  await insertLessonVersion(connection, record.id, record.version, 'draft', lessonSnapshot(record), record.createdBy);
+  return record;
 }
 
 export async function getLessonById(connection: DatabaseConnection, id: LessonId): Promise<LessonRecord | undefined> {
@@ -160,7 +202,18 @@ export async function updateLesson(
        updated_at as "updatedAt"`,
     values,
   );
-  return result.rows[0] as unknown as LessonRecord | undefined;
+  const updated = result.rows[0] as unknown as LessonRecord | undefined;
+  if (updated) {
+    await insertLessonVersion(
+      connection,
+      updated.id,
+      updated.version,
+      'draft',
+      lessonSnapshot(updated),
+      updated.createdBy,
+    );
+  }
+  return updated;
 }
 
 export async function publishLesson(connection: DatabaseConnection, id: LessonId): Promise<LessonRecord | undefined> {
@@ -174,7 +227,30 @@ export async function publishLesson(connection: DatabaseConnection, id: LessonId
        updated_at as "updatedAt"`,
     [id],
   );
-  return result.rows[0] as unknown as LessonRecord | undefined;
+  const updated = result.rows[0] as unknown as LessonRecord | undefined;
+  if (updated) {
+    const draftVersion = await connection.pool.query<{ id: LessonVersionId; version: number }>(
+      `SELECT id, version FROM lesson_versions WHERE lesson_id = $1 AND status = 'draft' ORDER BY version DESC LIMIT 1`,
+      [id],
+    );
+    if (draftVersion.rows[0]) {
+      await connection.pool.query(
+        `UPDATE lesson_versions SET status = 'published', version = $1, snapshot = $2, reason = 'published'
+         WHERE id = $3`,
+        [updated.version, JSON.stringify(lessonSnapshot(updated)), draftVersion.rows[0].id],
+      );
+    } else {
+      await insertLessonVersion(
+        connection,
+        updated.id,
+        updated.version,
+        'published',
+        lessonSnapshot(updated),
+        updated.createdBy,
+      );
+    }
+  }
+  return updated;
 }
 
 export async function retireLesson(connection: DatabaseConnection, id: LessonId): Promise<LessonRecord | undefined> {
@@ -188,5 +264,16 @@ export async function retireLesson(connection: DatabaseConnection, id: LessonId)
        updated_at as "updatedAt"`,
     [id],
   );
-  return result.rows[0] as unknown as LessonRecord | undefined;
+  const updated = result.rows[0] as unknown as LessonRecord | undefined;
+  if (updated) {
+    await insertLessonVersion(
+      connection,
+      updated.id,
+      updated.version,
+      'retired',
+      lessonSnapshot(updated),
+      updated.createdBy,
+    );
+  }
+  return updated;
 }

@@ -26,7 +26,7 @@ export default function CourseCatalogue() {
       setLoading(true);
       setError('');
       api
-        .catalogue({ search: search || undefined })
+        .catalogue({ search: search || undefined, signal: controller.signal })
         .then((data) => {
           if (!active) return;
           setCourses((data as { courses?: Array<Record<string, unknown>> }).courses || []);

@@ -18,6 +18,7 @@ export async function loadMigrations(): Promise<Migration[]> {
     await loadMigration('0003', 'provenance_ext'),
     await loadMigration('0005', 'phase_h'),
     await loadMigration('0006', 'phase_h_entitlements'),
+    await loadMigration('0007', 'phase_h_version_status'),
   ];
 }
 

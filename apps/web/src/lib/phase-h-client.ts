@@ -34,34 +34,35 @@ export const api = {
     return request<any>(`/learn/courses/${slug}`, { signal });
   },
 
-  enrol(courseId: string) {
-    return request<any>(`/learn/courses/${courseId}/enrol`, { method: 'POST' });
+  enrol(courseId: string, signal?: AbortSignal) {
+    return request<any>(`/learn/courses/${courseId}/enrol`, { method: 'POST', signal });
   },
 
   getLesson(lessonId: string, signal?: AbortSignal) {
     return request<any>(`/learn/lessons/${lessonId}`, { signal });
   },
 
-  updateProgress(body: Record<string, unknown>) {
-    return request<any>('/learn/progress', { method: 'POST', body: JSON.stringify(body) });
+  updateProgress(body: Record<string, unknown>, signal?: AbortSignal) {
+    return request<any>('/learn/progress', { method: 'POST', body: JSON.stringify(body), signal });
   },
 
-  resumeProgress(courseId: string) {
-    return request<any>(`/learn/progress/resume/${courseId}`);
+  resumeProgress(courseId: string, signal?: AbortSignal) {
+    return request<any>(`/learn/progress/resume/${courseId}`, { signal });
   },
 
-  getProgress(lessonId: string) {
-    return request<any>(`/learn/progress/${lessonId}`);
+  getProgress(lessonId: string, signal?: AbortSignal) {
+    return request<any>(`/learn/progress/${lessonId}`, { signal });
   },
 
-  completeLesson(lessonId: string) {
-    return request<any>(`/learn/lessons/${lessonId}/complete`, { method: 'POST' });
+  completeLesson(lessonId: string, signal?: AbortSignal) {
+    return request<any>(`/learn/lessons/${lessonId}/complete`, { method: 'POST', signal });
   },
 
-  submitQuiz(quizId: string, submissionId: string, answers: number[][]) {
+  submitQuiz(quizId: string, submissionId: string, answers: number[][], signal?: AbortSignal) {
     return request<any>(`/learn/quiz/${quizId}/submit`, {
       method: 'POST',
       body: JSON.stringify({ submissionId, answers }),
+      signal,
     });
   },
 };

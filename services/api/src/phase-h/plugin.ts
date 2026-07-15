@@ -4,7 +4,7 @@ import { phaseH } from '@pte-app/database';
 import type { UserRole } from '../auth/rbac.js';
 import { hasPermission } from '../auth/rbac.js';
 import { requirePublicationEligibility } from '../content-provenance/publication-guard.js';
-import { getEntitlementDecision } from './entitlements.js';
+import { getEntitlementDecision, cancelEntitlement } from './entitlements.js';
 import type { ContentId, ContentVersionId, RequestId, UserId, CourseVersionId } from '@pte-app/contracts';
 
 type AnyRepo = Record<string, any>;
@@ -128,8 +128,26 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     }
 
     const modules = await repo.modules.listModulesForCourse(db, course.id);
+    const lessonsByModule = await Promise.all(modules.map((m: any) => repo.lessons.listLessonsForModule(db, m.id)));
     const enrolment = await repo.enrolments.getEnrolment(db, auth.userId, course.id);
-    return reply.status(200).send({ course, modules, enrolment, access: decision });
+
+    const lessonDetails: any[] = [];
+    for (let i = 0; i < modules.length; i++) {
+      const moduleLessons = lessonsByModule[i] || [];
+      for (const lesson of moduleLessons) {
+        const prereq = await repo.prerequisites.checkPrerequisites(db, lesson.id, auth.userId);
+        const progress = enrolment ? await repo.progress.getProgress(db, auth.userId, lesson.id) : undefined;
+        lessonDetails.push({
+          moduleId: modules[i].id,
+          lesson: lesson,
+          progress: progress || null,
+          locked: prereq.locked,
+          lockReason: prereq.reason,
+        });
+      }
+    }
+
+    return reply.status(200).send({ course, modules, lessons: lessonDetails, enrolment, access: decision });
   });
 
   // ═══════════════════════════════════════════════════════
@@ -188,6 +206,17 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     }
     if (!decision.allowed) return reply.status(403).send({ error: 'Forbidden', reason: decision.reason });
 
+    const prereq = await repo.prerequisites.checkPrerequisites(db, lesson.id, auth.userId);
+    if (prereq.locked) {
+      return reply
+        .status(403)
+        .send({
+          error: 'Prerequisite not satisfied',
+          reason: prereq.reason,
+          prerequisiteId: prereq.blockingPrerequisiteId,
+        });
+    }
+
     const lvId = await resolvePublishedLessonVersion(db, lesson.id);
     if (!lvId) return reply.status(400).send({ error: 'No published lesson version' });
 
@@ -238,6 +267,17 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
 
     const enrolment = await repo.enrolments.getEnrolment(db, auth.userId, lesson.courseId || '');
     if (!enrolment) return reply.status(403).send({ error: 'Not enrolled' });
+
+    const prereq = await repo.prerequisites.checkPrerequisites(db, lessonId, auth.userId);
+    if (prereq.locked) {
+      return reply
+        .status(403)
+        .send({
+          error: 'Prerequisite not satisfied',
+          reason: prereq.reason,
+          prerequisiteId: prereq.blockingPrerequisiteId,
+        });
+    }
 
     const lvId = (body.lessonVersionId as string) || (await resolvePublishedLessonVersion(db, lessonId));
     if (!lvId) return reply.status(400).send({ error: 'No published lesson version' });
@@ -339,6 +379,17 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     const enrolment = await repo.enrolments.getEnrolment(db, auth.userId, lesson.courseId || '');
     if (!enrolment) return reply.status(403).send({ error: 'Not enrolled' });
 
+    const prereq = await repo.prerequisites.checkPrerequisites(db, lessonId, auth.userId);
+    if (prereq.locked) {
+      return reply
+        .status(403)
+        .send({
+          error: 'Prerequisite not satisfied',
+          reason: prereq.reason,
+          prerequisiteId: prereq.blockingPrerequisiteId,
+        });
+    }
+
     const lvId = await resolvePublishedLessonVersion(db, lessonId);
     if (!lvId) return reply.status(400).send({ error: 'No published lesson version' });
 
@@ -363,6 +414,14 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   // ═══════════════════════════════════════════════════════
   // STUDENT: Quiz (secured)
   // ═══════════════════════════════════════════════════════
+  app.get('/learn/quiz/:quizId/items', async (request, reply) => {
+    const auth = getAuth(request, reply);
+    if (!auth) return;
+    const { quizId } = request.params as { quizId: string };
+    const items = await repo.quizzes.getQuizItems(db, quizId);
+    return reply.status(200).send({ items });
+  });
+
   app.post('/learn/quiz/:quizId/submit', async (request, reply) => {
     const auth = getAuth(request, reply);
     if (!auth) return;
@@ -389,6 +448,17 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
 
     const enrolment = await repo.enrolments.getEnrolment(db, auth.userId, lesson.courseId || '');
     if (!enrolment) return reply.status(403).send({ error: 'Not enrolled' });
+
+    const prereq = await repo.prerequisites.checkPrerequisites(db, lesson.id, auth.userId);
+    if (prereq.locked) {
+      return reply
+        .status(403)
+        .send({
+          error: 'Prerequisite not satisfied',
+          reason: prereq.reason,
+          prerequisiteId: prereq.blockingPrerequisiteId,
+        });
+    }
 
     const items = await repo.quizzes.getQuizItems(db, quizId);
     const answers = body.answers as number[][];
@@ -602,9 +672,10 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
         await repo.prerequisites.createPrerequisite(db, {
           lessonId: body.lessonId as string,
           prerequisiteType: (body.prerequisiteType as string) || 'lesson_completion',
-          prerequisiteLessonId: (body.prerequisiteLessonId as string) || null,
-          prerequisiteModuleId: (body.prerequisiteModuleId as string) || null,
-          prerequisiteCourseId: (body.prerequisiteCourseId as string) || null,
+          requiredLessonId: (body.requiredLessonId as string) || null,
+          requiredModuleId: (body.requiredModuleId as string) || null,
+          requiredCourseId: (body.requiredCourseId as string) || null,
+          createdBy: auth.userId,
         }),
       );
     } catch (err: any) {
@@ -646,4 +717,66 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     const { entityType, entityId } = request.params as { entityType: string; entityId: string };
     return reply.status(200).send(await repo.teacherNotes.getTeacherNotes(db, entityType as any, entityId));
   });
+
+  // ═══════════════════════════════════════════════════════
+  // STAFF: Entitlement lifecycle (for deterministic E2E)
+  // ═══════════════════════════════════════════════════════
+  app.post('/learn/admin/entitlements/cancel', async (request, reply) => {
+    const auth = getAuth(request, reply);
+    if (!auth) return;
+    if (!isAdmin(auth.roles)) return reply.status(403).send({ error: 'Forbidden' });
+    const body = request.body as Record<string, unknown>;
+    const userId = body.userId as string;
+    const courseId = body.courseId as string;
+    if (!userId || !courseId) return reply.status(400).send({ error: 'userId and courseId required' });
+    const result = await cancelEntitlementByScope(db, userId, 'course', courseId);
+    return reply.status(200).send({ ok: true, entitlement: result });
+  });
+
+  app.post('/learn/admin/entitlements/expire', async (request, reply) => {
+    const auth = getAuth(request, reply);
+    if (!auth) return;
+    if (!isAdmin(auth.roles)) return reply.status(403).send({ error: 'Forbidden' });
+    const body = request.body as Record<string, unknown>;
+    const userId = body.userId as string;
+    const courseId = body.courseId as string;
+    if (!userId || !courseId) return reply.status(400).send({ error: 'userId and courseId required' });
+    const result = await expireEntitlementByScope(db, userId, 'course', courseId);
+    return reply.status(200).send({ ok: true, entitlement: result });
+  });
+}
+
+async function cancelEntitlementByScope(
+  db: DatabaseConnection,
+  userId: string,
+  scopeType: string,
+  scopeValue: string,
+): Promise<import('./entitlements.js').EntitlementRecord | null> {
+  return cancelEntitlement(db, userId, scopeType, scopeValue);
+}
+
+async function expireEntitlementByScope(
+  db: DatabaseConnection,
+  userId: string,
+  scopeType: string,
+  scopeValue: string,
+): Promise<import('./entitlements.js').EntitlementRecord | null> {
+  const r = await db.pool.query<Record<string, unknown>>(
+    `UPDATE user_entitlements SET status = 'expired', expires_at = NOW()
+     WHERE user_id = $1 AND scope_type = $2 AND scope_value = $3 AND status = 'active'
+     RETURNING id, user_id, scope_type, scope_value, status, starts_at, expires_at, cancelled_at`,
+    [userId, scopeType, scopeValue],
+  );
+  if (!r.rows[0]) return null;
+  const row = r.rows[0];
+  return {
+    id: row.id as string,
+    userId: row.user_id as string,
+    scopeType: row.scope_type as string,
+    scopeValue: row.scope_value as string,
+    status: row.status as 'expired',
+    startsAt: row.starts_at as string,
+    expiresAt: row.expires_at as string | null,
+    cancelledAt: row.cancelled_at as string | null,
+  };
 }

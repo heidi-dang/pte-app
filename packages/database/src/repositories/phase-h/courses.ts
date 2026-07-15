@@ -1,5 +1,11 @@
 import type { DatabaseConnection } from '../../client.js';
-import type { CourseId, CourseAccessLevel, CourseRecord, CourseCatalogueResult } from '@pte-app/contracts';
+import type {
+  CourseId,
+  CourseVersionId,
+  CourseAccessLevel,
+  CourseRecord,
+  CourseCatalogueResult,
+} from '@pte-app/contracts';
 import { randomUUID } from 'node:crypto';
 
 export interface CreateCourseInput {
@@ -35,6 +41,47 @@ export interface SearchCoursesInput {
   readonly cursor?: string;
 }
 
+async function insertCourseVersion(
+  connection: DatabaseConnection,
+  courseId: CourseId,
+  version: number,
+  status: 'draft' | 'published' | 'retired',
+  snapshot: Record<string, unknown>,
+  createdBy: string,
+): Promise<CourseVersionId> {
+  const id = randomUUID() as CourseVersionId;
+  await connection.pool.query(
+    `INSERT INTO course_versions (id, course_id, version, status, snapshot, reason, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT (course_id, version) DO NOTHING`,
+    [
+      id,
+      courseId,
+      version,
+      status,
+      JSON.stringify(snapshot),
+      status === 'published' ? 'published' : 'created',
+      createdBy,
+    ],
+  );
+  return id;
+}
+
+function courseSnapshot(input: Partial<CourseRecord>): Record<string, unknown> {
+  return {
+    title: input.title ?? null,
+    summary: input.summary ?? null,
+    description: input.description ?? null,
+    accessLevel: input.accessLevel ?? null,
+    difficulty: input.difficulty ?? null,
+    estimatedDurationMinutes: input.estimatedDurationMinutes ?? null,
+    skillTags: input.skillTags ?? null,
+    thumbnailMediaId: input.thumbnailMediaId ?? null,
+    status: input.status ?? null,
+    version: input.version ?? null,
+  };
+}
+
 export async function createCourse(connection: DatabaseConnection, input: CreateCourseInput): Promise<CourseRecord> {
   const id = randomUUID() as CourseId;
   const result = await connection.pool.query<Record<string, unknown>>(
@@ -62,7 +109,9 @@ export async function createCourse(connection: DatabaseConnection, input: Create
   );
   const row = result.rows[0];
   if (!row) throw new Error('Failed to create course');
-  return row as unknown as CourseRecord;
+  const record = row as unknown as CourseRecord;
+  await insertCourseVersion(connection, record.id, record.version, 'draft', courseSnapshot(record), record.createdBy);
+  return record;
 }
 
 export async function getCourseById(connection: DatabaseConnection, id: CourseId): Promise<CourseRecord | undefined> {
@@ -256,7 +305,18 @@ export async function updateCourse(
        updated_at as "updatedAt", published_at as "publishedAt"`,
     values,
   );
-  return result.rows[0] as unknown as CourseRecord | undefined;
+  const updated = result.rows[0] as unknown as CourseRecord | undefined;
+  if (updated) {
+    await insertCourseVersion(
+      connection,
+      updated.id,
+      updated.version,
+      'draft',
+      courseSnapshot(updated),
+      updated.createdBy,
+    );
+  }
+  return updated;
 }
 
 export async function publishCourse(connection: DatabaseConnection, id: CourseId): Promise<CourseRecord | undefined> {
@@ -270,7 +330,18 @@ export async function publishCourse(connection: DatabaseConnection, id: CourseId
        updated_at as "updatedAt", published_at as "publishedAt"`,
     [id],
   );
-  return result.rows[0] as unknown as CourseRecord | undefined;
+  const updated = result.rows[0] as unknown as CourseRecord | undefined;
+  if (updated) {
+    await insertCourseVersion(
+      connection,
+      updated.id,
+      updated.version,
+      'published',
+      courseSnapshot(updated),
+      updated.createdBy,
+    );
+  }
+  return updated;
 }
 
 export async function retireCourse(connection: DatabaseConnection, id: CourseId): Promise<CourseRecord | undefined> {
@@ -284,5 +355,16 @@ export async function retireCourse(connection: DatabaseConnection, id: CourseId)
        updated_at as "updatedAt", published_at as "publishedAt"`,
     [id],
   );
-  return result.rows[0] as unknown as CourseRecord | undefined;
+  const updated = result.rows[0] as unknown as CourseRecord | undefined;
+  if (updated) {
+    await insertCourseVersion(
+      connection,
+      updated.id,
+      updated.version,
+      'retired',
+      courseSnapshot(updated),
+      updated.createdBy,
+    );
+  }
+  return updated;
 }
