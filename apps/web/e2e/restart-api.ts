@@ -32,8 +32,12 @@ async function waitForUrl(url: string, timeoutMs: number, expectedOk: boolean): 
 export async function restartApi(apiUrl: string): Promise<number> {
   let oldPid: number | undefined;
   if (existsSync(PIDS_PATH)) {
-    const pids = JSON.parse(readFileSync(PIDS_PATH, 'utf-8'));
-    oldPid = pids.api?.pid;
+    try {
+      const pids = JSON.parse(readFileSync(PIDS_PATH, 'utf-8'));
+      oldPid = pids.api?.pid;
+    } catch {
+      // ignore
+    }
   }
 
   if (oldPid && isAlive(oldPid)) {
@@ -63,8 +67,16 @@ export async function restartApi(apiUrl: string): Promise<number> {
     detached: true,
   });
 
+  child.stdout?.on('data', (d: Buffer) => process.stdout.write(`[api-restart] ${d}`));
+  child.stderr?.on('data', (d: Buffer) => process.stderr.write(`[api-restart] ${d}`));
+
   const started = await waitForUrl(`${apiUrl}/health/live`, 30000, true);
-  if (!started) throw new Error('API did not restart');
+  if (!started) {
+    child.kill('SIGKILL');
+    throw new Error(
+      `API did not restart at ${apiUrl} (pid ${child.pid ?? 'unknown'}, exit code ${child.exitCode ?? 'N/A'}, signal ${child.signalCode ?? 'N/A'})`,
+    );
+  }
   if (child.pid == null) throw new Error('Restarted API has no PID');
 
   return child.pid;

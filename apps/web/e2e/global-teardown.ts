@@ -1,11 +1,16 @@
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, unlinkSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { loadDatabaseConfig } from '@pte-app/database';
 import { resetTestDatabase } from '@pte-app/database/testing/setup';
 import { STATE_PATH, type E2EState } from './global-setup';
 
 function loadState(): E2EState | null {
   if (!existsSync(STATE_PATH)) return null;
-  return JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
+  try {
+    return JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
+  } catch {
+    return null;
+  }
 }
 
 function isAlive(pid: number): boolean {
@@ -73,6 +78,17 @@ async function main(): Promise<void> {
   } catch (err) {
     console.error('  ✗ Failed to reset test database:', err);
   }
+
+  // Clean up state files
+  for (const path of [STATE_PATH, resolve(process.cwd(), '.local-runtime', 'pids.json')]) {
+    try {
+      if (existsSync(path)) unlinkSync(path);
+    } catch {
+      // ignore
+    }
+  }
+
+  console.log('E2E teardown complete.');
 }
 
 export default main;

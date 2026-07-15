@@ -1,6 +1,6 @@
-import { defineConfig } from '@playwright/test';
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
+import { defineConfig, devices } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -12,12 +12,19 @@ export default defineConfig({
   forbidOnly: true,
   retries: 0,
   workers: 1,
-  reporter: 'list',
+  reporter: [['list'], ['html', { outputFolder: 'playwright-report' }]],
   globalSetup: resolve(__dirname, 'e2e', 'global-setup'),
   globalTeardown: resolve(__dirname, 'e2e', 'global-teardown'),
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
   use: {
     baseURL: process.env.E2E_WEB_URL || 'http://localhost:3000',
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
   },
 });

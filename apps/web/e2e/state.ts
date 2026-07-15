@@ -7,3 +7,5 @@ export function loadE2EState(): E2EState {
   }
   return JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
 }
+
+export type { E2EState } from './global-setup';
