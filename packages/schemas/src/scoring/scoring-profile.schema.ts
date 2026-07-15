@@ -2,57 +2,36 @@ import { z } from 'zod';
 
 const DuplicationActionSchema = z.enum(['reject', 'deduplicate', 'allow']);
 
-const BinaryParamsSchema = z.object({
-  kind: z.literal('binary'),
-  correctCredit: z.number(),
-  incorrectDeduction: z.number(),
-  duplicateAction: DuplicationActionSchema,
-});
-
-const MultipleAnswerParamsSchema = z.object({
-  kind: z.literal('multiple-answer'),
-  correctCredit: z.number(),
-  incorrectDeduction: z.number(),
-  duplicateAction: DuplicationActionSchema,
-});
-
-const PerBlankParamsSchema = z.object({
-  kind: z.literal('per-blank'),
-  blankCredit: z.number(),
-  casePolicy: z.enum(['insensitive', 'sensitive']),
-  whitespacePolicy: z.enum(['collapse', 'preserve']),
-});
-
-const PerWordParamsSchema = z.object({
-  kind: z.literal('per-word'),
-  wordCredit: z.number(),
-  casePolicy: z.enum(['insensitive', 'sensitive']),
-  punctuationPolicy: z.enum(['strip', 'preserve']),
-});
-
-const AdjacentPairParamsSchema = z.object({
-  kind: z.literal('adjacent-pair'),
-  correctCredit: z.number(),
-});
-
-export const ScoringRuleParamsSchema = z.discriminatedUnion('kind', [
-  BinaryParamsSchema,
-  MultipleAnswerParamsSchema,
-  PerBlankParamsSchema,
-  PerWordParamsSchema,
-  AdjacentPairParamsSchema,
+export const ScoringRuleDefinitionSchema = z.discriminatedUnion('ruleType', [
+  z.object({
+    ruleType: z.literal('binary-correct-incorrect'),
+    correctCredit: z.number(),
+    incorrectDeduction: z.number(),
+    duplicateAction: DuplicationActionSchema,
+  }),
+  z.object({
+    ruleType: z.literal('multiple-answer-negative-marking'),
+    correctCredit: z.number(),
+    incorrectDeduction: z.number(),
+    duplicateAction: DuplicationActionSchema,
+  }),
+  z.object({
+    ruleType: z.literal('per-blank'),
+    blankCredit: z.number(),
+    casePolicy: z.enum(['insensitive', 'sensitive']),
+    whitespacePolicy: z.enum(['collapse', 'preserve']),
+  }),
+  z.object({
+    ruleType: z.literal('per-word'),
+    wordCredit: z.number(),
+    casePolicy: z.enum(['insensitive', 'sensitive']),
+    punctuationPolicy: z.enum(['strip', 'preserve']),
+  }),
+  z.object({
+    ruleType: z.literal('adjacent-pair'),
+    correctCredit: z.number(),
+  }),
 ]);
-
-export const ScoringRuleDefinitionSchema = z.object({
-  ruleType: z.enum([
-    'binary-correct-incorrect',
-    'multiple-answer-negative-marking',
-    'per-blank',
-    'per-word',
-    'adjacent-pair',
-  ]),
-  params: ScoringRuleParamsSchema,
-});
 
 export const ScoringProfileSchema = z.object({
   id: z.string(),

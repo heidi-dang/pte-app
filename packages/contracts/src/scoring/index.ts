@@ -1,8 +1,10 @@
 export type {
+  DuplicationAction,
+  CasePolicy,
+  PunctuationPolicy,
+  WhitespacePolicy,
   ScoringProfile,
-  ScoringRuleType,
   ScoringRuleDefinition,
-  ScoringRuleParams,
   RoundingPolicy,
   NormalisationConfig,
   NoResponseBehaviour,

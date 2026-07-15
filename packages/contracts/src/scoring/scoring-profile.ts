@@ -1,7 +1,7 @@
 import type { ScoringProfileId } from '../question-engine/identifiers.js';
 
 export type DuplicationAction =
-  | 'reject' // duplicates are silently ignored
+  | 'reject' // duplicate selections invalidate the scoring input
   | 'deduplicate' // duplicates are removed; one copy counts
   | 'allow'; // all selection elements count
 
@@ -9,24 +9,40 @@ export type CasePolicy = 'insensitive' | 'sensitive';
 export type PunctuationPolicy = 'strip' | 'preserve';
 export type WhitespacePolicy = 'collapse' | 'preserve';
 
-export type ScoringRuleType =
-  'binary-correct-incorrect' | 'multiple-answer-negative-marking' | 'per-blank' | 'per-word' | 'adjacent-pair';
-
 /**
- * Discriminated per-rule parameter set.  Each rule type has its own
- * required fields; no generic optional bag.
+ * Discriminated scoring rule definition.
+ * `ruleType` is the authoritative discriminator; TS and Zod both
+ * guarantee that the parameters match the declared rule type.
  */
-export type ScoringRuleParams =
-  | { kind: 'binary'; correctCredit: number; incorrectDeduction: number; duplicateAction: DuplicationAction }
-  | { kind: 'multiple-answer'; correctCredit: number; incorrectDeduction: number; duplicateAction: DuplicationAction }
-  | { kind: 'per-blank'; blankCredit: number; casePolicy: CasePolicy; whitespacePolicy: WhitespacePolicy }
-  | { kind: 'per-word'; wordCredit: number; casePolicy: CasePolicy; punctuationPolicy: PunctuationPolicy }
-  | { kind: 'adjacent-pair'; correctCredit: number };
-
-export interface ScoringRuleDefinition {
-  ruleType: ScoringRuleType;
-  params: ScoringRuleParams;
-}
+export type ScoringRuleDefinition =
+  | {
+      ruleType: 'binary-correct-incorrect';
+      correctCredit: number;
+      incorrectDeduction: number;
+      duplicateAction: DuplicationAction;
+    }
+  | {
+      ruleType: 'multiple-answer-negative-marking';
+      correctCredit: number;
+      incorrectDeduction: number;
+      duplicateAction: DuplicationAction;
+    }
+  | {
+      ruleType: 'per-blank';
+      blankCredit: number;
+      casePolicy: CasePolicy;
+      whitespacePolicy: WhitespacePolicy;
+    }
+  | {
+      ruleType: 'per-word';
+      wordCredit: number;
+      casePolicy: CasePolicy;
+      punctuationPolicy: PunctuationPolicy;
+    }
+  | {
+      ruleType: 'adjacent-pair';
+      correctCredit: number;
+    };
 
 /**
  * Versioned scoring profile — controls all objective scoring behaviour.
