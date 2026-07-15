@@ -32,7 +32,7 @@ COPY package.json /app/package.json
 FROM runtime-base AS packages-layer
 COPY --from=build /app/packages/contracts/dist /app/packages/contracts/dist
 COPY --from=build /app/packages/database/dist /app/packages/database/dist
-COPY --from=build /app/packages/design-system/dist /app/packages/design-system/dist 2>/dev/null || true
+COPY --from=build /app/packages/design-system/dist /app/packages/design-system/dist
 COPY --from=build /app/packages/domain/dist /app/packages/domain/dist
 COPY --from=build /app/packages/provenance/dist /app/packages/provenance/dist
 COPY --from=build /app/packages/schemas/dist /app/packages/schemas/dist
