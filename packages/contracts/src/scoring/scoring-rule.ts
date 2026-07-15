@@ -1,3 +1,5 @@
+import type { ScoringRuleParams } from './scoring-profile.js';
+
 /**
  * Internal scoring rule interface used by the engine.
  */
@@ -9,7 +11,7 @@ export interface ScoringRule {
 export interface ScoringRuleInput {
   selectedAnswers: unknown;
   correctAnswers: unknown;
-  params: Record<string, unknown>;
+  params: ScoringRuleParams;
   context?: Record<string, unknown>;
 }
 

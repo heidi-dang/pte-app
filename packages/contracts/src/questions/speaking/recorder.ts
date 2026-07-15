@@ -1,11 +1,11 @@
-import type { ScoringProfileId } from '../../question-engine/identifiers.js';
+import type { RecordingProfileId, ScoringProfileId } from '../../question-engine/identifiers.js';
 
 /**
  * Recording profile versioned configuration.
  * Controls preparation, recording, upload and playback policies.
  */
 export interface RecordingProfile {
-  id: ScoringProfileId;
+  id: RecordingProfileId;
   version: number;
   preparationPolicy: PreparationPolicy;
   recordingPolicy: RecordingPolicy;

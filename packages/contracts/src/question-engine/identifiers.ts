@@ -10,6 +10,7 @@ export type QuestionEventId = string & { __brand: 'QuestionEventId' };
 export type PlaybackRightId = string & { __brand: 'PlaybackRightId' };
 export type TimingProfileId = string & { __brand: 'TimingProfileId' };
 export type PlaybackProfileId = string & { __brand: 'PlaybackProfileId' };
+export type RecordingProfileId = string & { __brand: 'RecordingProfileId' };
 export type ScoringProfileId = string & { __brand: 'ScoringProfileId' };
 export type IdempotencyKey = string & { __brand: 'IdempotencyKey' };
 export type ResponseRevision = number & { __brand: 'ResponseRevision' };

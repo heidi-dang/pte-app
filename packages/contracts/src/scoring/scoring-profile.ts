@@ -1,5 +1,33 @@
 import type { ScoringProfileId } from '../question-engine/identifiers.js';
 
+export type DuplicationAction =
+  | 'reject' // duplicates are silently ignored
+  | 'deduplicate' // duplicates are removed; one copy counts
+  | 'allow'; // all selection elements count
+
+export type CasePolicy = 'insensitive' | 'sensitive';
+export type PunctuationPolicy = 'strip' | 'preserve';
+export type WhitespacePolicy = 'collapse' | 'preserve';
+
+export type ScoringRuleType =
+  'binary-correct-incorrect' | 'multiple-answer-negative-marking' | 'per-blank' | 'per-word' | 'adjacent-pair';
+
+/**
+ * Discriminated per-rule parameter set.  Each rule type has its own
+ * required fields; no generic optional bag.
+ */
+export type ScoringRuleParams =
+  | { kind: 'binary'; correctCredit: number; incorrectDeduction: number; duplicateAction: DuplicationAction }
+  | { kind: 'multiple-answer'; correctCredit: number; incorrectDeduction: number; duplicateAction: DuplicationAction }
+  | { kind: 'per-blank'; blankCredit: number; casePolicy: CasePolicy; whitespacePolicy: WhitespacePolicy }
+  | { kind: 'per-word'; wordCredit: number; casePolicy: CasePolicy; punctuationPolicy: PunctuationPolicy }
+  | { kind: 'adjacent-pair'; correctCredit: number };
+
+export interface ScoringRuleDefinition {
+  ruleType: ScoringRuleType;
+  params: ScoringRuleParams;
+}
+
 /**
  * Versioned scoring profile — controls all objective scoring behaviour.
  * Every scoring operation is driven by explicit rule definitions.
@@ -7,43 +35,12 @@ import type { ScoringProfileId } from '../question-engine/identifiers.js';
 export interface ScoringProfile {
   id: ScoringProfileId;
   version: number;
-  /** Explicit rule definitions for this profile. */
   rules: ScoringRuleDefinition[];
-  /** Normalisation policy applied after rule evaluation. */
   normalisation: NormalisationConfig;
-  /** No-response behaviour. */
   noResponseBehaviour: NoResponseBehaviour;
-  /** Minimum bound applied after normalisation. */
   minimumResult: number;
-  /** Maximum bound applied after normalisation. */
   maximumResult: number;
-  /** Rounding policy applied last. */
   rounding: RoundingPolicy;
-}
-
-export type ScoringRuleType =
-  | 'binary-correct-incorrect'
-  | 'multiple-answer-negative-marking'
-  | 'per-blank'
-  | 'per-word'
-  | 'adjacent-pair'
-  | 'no-response';
-
-export interface ScoringRuleDefinition {
-  ruleType: ScoringRuleType;
-  /** Per-rule configured values. */
-  params: ScoringRuleParams;
-}
-
-export interface ScoringRuleParams {
-  correctCredit?: number;
-  incorrectDeduction?: number;
-  blankCredit?: number;
-  wordCredit?: number;
-  casePolicy?: 'insensitive' | 'sensitive';
-  punctuationPolicy?: 'strip' | 'preserve';
-  whitespacePolicy?: 'collapse' | 'preserve';
-  duplicatePolicy?: 'reject' | 'allow';
 }
 
 export interface RoundingPolicy {
