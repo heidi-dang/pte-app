@@ -16,7 +16,9 @@ export default async function LicenceDetailPage({ params }: { params: Promise<{ 
           </div>
         </Card>
         <div style={{ marginTop: '1rem' }}>
-          <a href="/content/provenance/licences" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Back to licences</a>
+          <a href="/content/provenance/licences" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+            Back to licences
+          </a>
         </div>
       </Container>
     </main>

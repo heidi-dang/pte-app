@@ -16,7 +16,9 @@ export default async function SourceDetailPage({ params }: { params: Promise<{ i
           </div>
         </Card>
         <div style={{ marginTop: '1rem' }}>
-          <a href="/content/provenance/sources" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Back to sources</a>
+          <a href="/content/provenance/sources" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+            Back to sources
+          </a>
         </div>
       </Container>
     </main>
