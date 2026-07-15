@@ -1,52 +1,85 @@
-import type { UploadSession, UploadChunk } from '@pte-app/contracts';
+import type { UploadSession } from '@pte-app/contracts';
 
-const acknowledgedSequences = new WeakMap<UploadSession, Set<number>>();
+/**
+ * Pure persisted upload session state.
+ * All acknowledgement state is explicit and survives reconstruction.
+ */
+export interface UploadSessionState {
+  session: UploadSession;
+  acknowledgedSequenceNumbers: number[];
+}
 
-export function createUploadSession(recordingId: string, totalChunks: number): UploadSession {
-  const now = new Date().toISOString();
+export function createUploadSession(
+  input: { recordingId: string; totalChunks: number },
+  generatedId: string,
+  timestamp: string,
+): UploadSessionState {
   const session: UploadSession = {
-    id: `us_${Date.now()}`,
-    recordingId,
-    totalChunks,
+    id: generatedId,
+    recordingId: input.recordingId,
+    totalChunks: input.totalChunks,
     acknowledgedChunks: 0,
     state: 'active',
-    createdAt: now,
-    updatedAt: now,
+    createdAt: timestamp,
+    updatedAt: timestamp,
   };
-  acknowledgedSequences.set(session, new Set());
-  return session;
+  return { session, acknowledgedSequenceNumbers: [] };
 }
 
-export function acknowledgeChunk(session: UploadSession, chunk: UploadChunk): UploadSession {
-  let known = acknowledgedSequences.get(session);
-  if (!known) {
-    known = new Set();
-    acknowledgedSequences.set(session, known);
+export function acknowledgeChunk(
+  state: UploadSessionState,
+  chunk: { sequenceNumber: number; acknowledgedAt: string },
+): UploadSessionState {
+  if (chunk.sequenceNumber < 0) {
+    throw new Error(`Invalid negative sequence number: ${chunk.sequenceNumber}`);
   }
-  if (known.has(chunk.sequenceNumber)) {
-    return session;
+  if (chunk.sequenceNumber >= state.session.totalChunks) {
+    throw new Error(`Sequence number ${chunk.sequenceNumber} exceeds total chunks ${state.session.totalChunks}`);
   }
-  known.add(chunk.sequenceNumber);
-  const updated: UploadSession = {
-    ...session,
-    acknowledgedChunks: session.acknowledgedChunks + 1,
-    updatedAt: new Date().toISOString(),
+  if (state.acknowledgedSequenceNumbers.includes(chunk.sequenceNumber)) {
+    return state;
+  }
+  const updatedNumbers = [...state.acknowledgedSequenceNumbers, chunk.sequenceNumber].sort((a, b) => a - b);
+  return {
+    session: {
+      ...state.session,
+      acknowledgedChunks: updatedNumbers.length,
+      updatedAt: chunk.acknowledgedAt,
+    },
+    acknowledgedSequenceNumbers: updatedNumbers,
   };
-  acknowledgedSequences.set(updated, known);
-  return updated;
 }
 
-export function isUploadComplete(session: UploadSession): boolean {
-  return session.acknowledgedChunks >= session.totalChunks && session.totalChunks > 0;
+export function isUploadComplete(state: UploadSessionState): boolean {
+  return state.acknowledgedSequenceNumbers.length >= state.session.totalChunks && state.session.totalChunks > 0;
 }
 
-export function detectMissingChunks(chunks: UploadChunk[], totalChunks: number): number[] {
-  const acknowledged = new Set(chunks.filter((c) => c.acknowledgedAt).map((c) => c.sequenceNumber));
+export function detectMissingChunks(state: UploadSessionState): number[] {
+  const acknowledged = new Set(state.acknowledgedSequenceNumbers);
   const missing: number[] = [];
-  for (let i = 0; i < totalChunks; i++) {
+  for (let i = 0; i < state.session.totalChunks; i++) {
     if (!acknowledged.has(i)) {
       missing.push(i);
     }
   }
   return missing;
+}
+
+export function canFinaliseUpload(state: UploadSessionState): boolean {
+  return isUploadComplete(state);
+}
+
+export function finaliseUpload(state: UploadSessionState, timestamp: string): UploadSessionState {
+  const missing = detectMissingChunks(state);
+  if (missing.length > 0) {
+    throw new Error(`Cannot finalise: missing chunks [${missing.join(', ')}]`);
+  }
+  return {
+    ...state,
+    session: {
+      ...state.session,
+      state: 'completed',
+      updatedAt: timestamp,
+    },
+  };
 }

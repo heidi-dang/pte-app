@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS recording_upload_sessions (
   recording_id TEXT NOT NULL REFERENCES speaking_recordings(id),
   total_chunks INTEGER NOT NULL DEFAULT 0,
   acknowledged_chunks INTEGER NOT NULL DEFAULT 0,
+  acknowledged_sequence_numbers TEXT NOT NULL DEFAULT '[]',
   state TEXT NOT NULL DEFAULT 'active',
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),

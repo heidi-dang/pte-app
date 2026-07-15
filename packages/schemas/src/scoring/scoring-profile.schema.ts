@@ -1,16 +1,32 @@
 import { z } from 'zod';
 
+export const ScoringRuleParamsSchema = z.object({
+  correctCredit: z.number().optional(),
+  incorrectDeduction: z.number().optional(),
+  blankCredit: z.number().optional(),
+  wordCredit: z.number().optional(),
+  casePolicy: z.enum(['insensitive', 'sensitive']).optional(),
+  punctuationPolicy: z.enum(['strip', 'preserve']).optional(),
+  whitespacePolicy: z.enum(['collapse', 'preserve']).optional(),
+  duplicatePolicy: z.enum(['reject', 'allow']).optional(),
+});
+
+export const ScoringRuleDefinitionSchema = z.object({
+  ruleType: z.enum([
+    'binary-correct-incorrect',
+    'multiple-answer-negative-marking',
+    'per-blank',
+    'per-word',
+    'adjacent-pair',
+    'no-response',
+  ]),
+  params: ScoringRuleParamsSchema,
+});
+
 export const ScoringProfileSchema = z.object({
   id: z.string(),
   version: z.number().int().min(1),
-  correctCredit: z.number(),
-  incorrectDeduction: z.number(),
-  minimumResult: z.number(),
-  maximumResult: z.number(),
-  rounding: z.object({
-    method: z.enum(['none', 'floor', 'ceil', 'round']),
-    decimalPlaces: z.number().int().min(0),
-  }),
+  rules: z.array(ScoringRuleDefinitionSchema).min(1),
   normalisation: z.object({
     enabled: z.boolean(),
     method: z.enum(['none', 'linear', 'z-score']),
@@ -20,6 +36,12 @@ export const ScoringProfileSchema = z.object({
   noResponseBehaviour: z.object({
     result: z.number(),
     reason: z.enum(['profile-default', 'penalty', 'zero']),
+  }),
+  minimumResult: z.number(),
+  maximumResult: z.number(),
+  rounding: z.object({
+    method: z.enum(['none', 'floor', 'ceil', 'round']),
+    decimalPlaces: z.number().int().min(0),
   }),
 });
 

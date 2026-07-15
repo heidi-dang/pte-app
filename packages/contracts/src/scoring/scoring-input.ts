@@ -8,6 +8,6 @@ export interface ScoringInput {
   taskType: string;
   selectedAnswers: unknown;
   correctAnswers: unknown;
-  /** Additional context (e.g., reorder positions). */
+  /** Additional context (e.g., reorder positions, blank positions). */
   context?: Record<string, unknown>;
 }

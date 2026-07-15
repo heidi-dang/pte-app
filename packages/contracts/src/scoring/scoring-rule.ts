@@ -1,15 +1,15 @@
 /**
- * Scoring rule interface for the centralised engine.
+ * Internal scoring rule interface used by the engine.
  */
 export interface ScoringRule {
   ruleType: string;
-  description: string;
   evaluate(input: ScoringRuleInput): ScoringRuleOutput;
 }
 
 export interface ScoringRuleInput {
   selectedAnswers: unknown;
   correctAnswers: unknown;
+  params: Record<string, unknown>;
   context?: Record<string, unknown>;
 }
 

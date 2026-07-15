@@ -3,22 +3,40 @@
 import React from 'react';
 import type { MockSession } from '@pte-app/contracts';
 
-function buildRecovery(session: MockSession) {
-  const now = Date.now();
-  const deadline = new Date(session.serverDeadline).getTime();
-  const remaining = Math.max(0, deadline - now);
-  const canResume = session.state === 'active' || session.state === 'section-transition';
-  return { canResume, remainingTimeMs: remaining };
+interface RecoverySnapshot {
+  session: MockSession;
+  serverNowAtSnapshot: string;
+  clientReceivedAt: string;
+}
+
+function computeRecovery(snapshot: RecoverySnapshot) {
+  const { session, serverNowAtSnapshot, clientReceivedAt } = snapshot;
+  const serverNowMs = new Date(serverNowAtSnapshot).getTime();
+  const clientReceivedMs = new Date(clientReceivedAt).getTime();
+  const clientNowMs = Date.now();
+
+  const elapsedSinceSnapshotMs = clientNowMs - clientReceivedMs;
+  const reconstructedServerNowMs = serverNowMs + elapsedSinceSnapshotMs;
+  const deadlineMs = new Date(session.serverDeadline).getTime();
+
+  const remaining = Math.max(0, deadlineMs - reconstructedServerNowMs);
+  const canResume =
+    remaining > 0 &&
+    session.state !== 'completed' &&
+    session.state !== 'failed-terminal' &&
+    session.state !== 'abandoned';
+
+  return { remaining, canResume };
 }
 
 export function MockRecoveryController({
-  session,
+  recoverySnapshot,
   onReconnect,
 }: {
-  session: MockSession;
+  recoverySnapshot: RecoverySnapshot;
   onReconnect: (remainingMs: number) => void;
 }) {
-  const recovery = buildRecovery(session);
+  const recovery = computeRecovery(recoverySnapshot);
 
   if (!recovery.canResume) {
     return (
@@ -30,8 +48,8 @@ export function MockRecoveryController({
 
   return (
     <div role="region" aria-label="Session recovery">
-      <p>Reconnecting… {Math.round(recovery.remainingTimeMs / 1000)}s remaining</p>
-      <button onClick={() => onReconnect(recovery.remainingTimeMs)} type="button">
+      <p>Reconnecting… {Math.round(recovery.remaining / 1000)}s remaining</p>
+      <button onClick={() => onReconnect(recovery.remaining)} type="button">
         Resume session
       </button>
     </div>

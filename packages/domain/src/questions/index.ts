@@ -11,5 +11,8 @@ export {
   acknowledgeChunk,
   isUploadComplete,
   detectMissingChunks,
+  canFinaliseUpload,
+  finaliseUpload,
 } from './speaking/upload-session.js';
+export type { UploadSessionState } from './speaking/upload-session.js';
 export * as writing from './writing/index.js';

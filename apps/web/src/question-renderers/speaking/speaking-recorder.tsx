@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type { RecordingProfile } from '@pte-app/contracts';
 import { MicrophoneCheck } from './microphone-check.js';
 import { PreparationCountdown } from './preparation-countdown.js';
 import { RecordingStatus } from './recording-status.js';
@@ -9,18 +10,12 @@ import { UploadProgress } from './upload-progress.js';
 import { RecordingRecovery } from './recording-recovery.js';
 
 interface SpeakingRecorderProps {
-  preparationSeconds: number;
-  maxDurationSeconds: number;
-  autoStartRecording: boolean;
+  recordingProfile: RecordingProfile;
   onComplete: (recordingId: string) => void;
 }
 
-export function SpeakingRecorder({
-  preparationSeconds,
-  maxDurationSeconds,
-  autoStartRecording,
-  onComplete,
-}: SpeakingRecorderProps) {
+export function SpeakingRecorder({ recordingProfile, onComplete }: SpeakingRecorderProps) {
+  const { preparationPolicy, recordingPolicy } = recordingProfile;
   const [phase, setPhase] = useState<'mic-check' | 'preparing' | 'recording' | 'uploading' | 'done' | 'error'>(
     'mic-check',
   );
@@ -32,6 +27,8 @@ export function SpeakingRecorder({
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const maxDurationSeconds = recordingPolicy.maxDurationSeconds;
 
   const stopRecording = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -93,9 +90,7 @@ export function SpeakingRecorder({
   }
 
   if (phase === 'preparing') {
-    return (
-      <PreparationCountdown seconds={preparationSeconds} autoStart={autoStartRecording} onComplete={startRecording} />
-    );
+    return <PreparationCountdown profile={preparationPolicy} onComplete={startRecording} />;
   }
 
   if (phase === 'error') {

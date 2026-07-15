@@ -13,7 +13,7 @@ export class ScoringService {
     correctAnswers: unknown;
     scoringProfile: ScoringProfile;
   }): Promise<ScoringResult> {
-    const result = scoreObjective(
+    return scoreObjective(
       {
         questionVersionId: input.questionVersionId as QuestionVersionId,
         taskType: input.taskType,
@@ -23,7 +23,6 @@ export class ScoringService {
       input.scoringProfile,
       input.attemptId,
     );
-    return result;
   }
 
   async rescore(

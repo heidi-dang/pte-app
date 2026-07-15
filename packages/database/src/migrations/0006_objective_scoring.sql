@@ -25,16 +25,17 @@ CREATE INDEX IF NOT EXISTS idx_scoring_results_supersedes ON scoring_results(sup
 CREATE TABLE IF NOT EXISTS scoring_profiles (
   id TEXT PRIMARY KEY,
   version INTEGER NOT NULL,
-  correct_credit REAL NOT NULL,
-  incorrect_deduction REAL NOT NULL,
-  minimum_result REAL NOT NULL,
-  maximum_result REAL NOT NULL,
-  rounding_method TEXT NOT NULL DEFAULT 'none',
-  rounding_decimal_places INTEGER NOT NULL DEFAULT 0,
+  rules TEXT NOT NULL DEFAULT '[]',
   normalisation_enabled INTEGER NOT NULL DEFAULT 0,
   normalisation_method TEXT NOT NULL DEFAULT 'none',
+  normalisation_reference_mean REAL,
+  normalisation_reference_std_dev REAL,
   no_response_result REAL NOT NULL DEFAULT 0,
   no_response_reason TEXT NOT NULL DEFAULT 'profile-default',
+  minimum_result REAL NOT NULL DEFAULT 0,
+  maximum_result REAL NOT NULL DEFAULT 1,
+  rounding_method TEXT NOT NULL DEFAULT 'none',
+  rounding_decimal_places INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   UNIQUE(id, version)
 );
