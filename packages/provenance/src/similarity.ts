@@ -14,7 +14,7 @@ export interface SimilarityProvider {
 }
 
 export class LocalTestSimilarityProvider implements SimilarityProvider {
-  readonly providerId: SimilarityProviderId = 'local_test';
+  readonly providerId = 'local_test' as SimilarityProviderId;
   readonly profileVersion = '1.0.0';
 
   async checkContent(content: string, contentId: string, versionId: string): Promise<SimilarityCheck> {

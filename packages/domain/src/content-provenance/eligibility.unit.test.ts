@@ -1,11 +1,20 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { evaluatePublicationEligibility } from './eligibility.js';
-import type { ProvenanceRecord, SourceRecord, LicenceRecord, ProvenancePolicy } from '@pte-app/contracts';
+import type {
+  ProvenanceRecord,
+  SourceRecord,
+  LicenceRecord,
+  ProvenancePolicy,
+  ProhibitedRuleMatch,
+} from '@pte-app/contracts';
 
 const validPolicy: ProvenancePolicy = {
   id: 'policy-001' as any,
-  version: '1.0.0',
+  version: '1.0.0' as any,
+  status: 'active',
+  effectiveFrom: '2024-01-01',
+  effectiveUntil: null,
   similarityReviewThreshold: 30,
   similarityBlockThreshold: 60,
   expiryWarningDays: 30,
@@ -89,6 +98,22 @@ function makeLicence(overrides: Partial<LicenceRecord> = {}): LicenceRecord {
   };
 }
 
+function makeMatch(overrides: Partial<ProhibitedRuleMatch> = {}): ProhibitedRuleMatch {
+  return {
+    id: crypto.randomUUID() as any,
+    contentId: crypto.randomUUID() as any,
+    contentVersionId: 'v1' as any,
+    ruleName: 'private_exam_material',
+    matchedAt: new Date().toISOString(),
+    matchedBy: crypto.randomUUID() as any,
+    resolved: false,
+    resolvedAt: null,
+    resolvedBy: null,
+    reason: 'test match',
+    ...overrides,
+  };
+}
+
 describe('publication eligibility', () => {
   it('blocks when provenance is missing', () => {
     const result = evaluatePublicationEligibility({
@@ -98,6 +123,7 @@ describe('publication eligibility', () => {
       similarity: null,
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'PROVENANCE_MISSING'));
@@ -112,6 +138,7 @@ describe('publication eligibility', () => {
       similarity: null,
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'PROVENANCE_UNVERIFIED'));
@@ -125,6 +152,21 @@ describe('publication eligibility', () => {
       similarity: null,
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
+    });
+    assert.equal(result.eligible, false);
+    assert.ok(result.blockers.some((b) => b.code === 'SOURCE_DISPUTED'));
+  });
+
+  it('blocks when source is retired', () => {
+    const result = evaluatePublicationEligibility({
+      provenance: makeProvenance(),
+      source: makeSource({ status: 'retired' }),
+      licence: makeLicence(),
+      similarity: null,
+      policy: validPolicy,
+      contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'SOURCE_DISPUTED'));
@@ -138,6 +180,7 @@ describe('publication eligibility', () => {
       similarity: null,
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'LICENCE_MISSING'));
@@ -151,6 +194,7 @@ describe('publication eligibility', () => {
       similarity: null,
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'LICENCE_EXPIRED'));
@@ -164,6 +208,7 @@ describe('publication eligibility', () => {
       similarity: null,
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'LICENCE_REVOKED'));
@@ -177,6 +222,7 @@ describe('publication eligibility', () => {
       similarity: null,
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'COMMERCIAL_USE_NOT_ALLOWED'));
@@ -190,6 +236,7 @@ describe('publication eligibility', () => {
       similarity: null,
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'MODIFICATION_NOT_ALLOWED'));
@@ -203,6 +250,7 @@ describe('publication eligibility', () => {
       similarity: null,
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'ATTRIBUTION_REQUIRED'));
@@ -216,6 +264,7 @@ describe('publication eligibility', () => {
       similarity: null,
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'EVIDENCE_MISSING'));
@@ -230,7 +279,7 @@ describe('publication eligibility', () => {
         id: crypto.randomUUID() as any,
         contentId: crypto.randomUUID() as any,
         contentVersionId: 'v1' as any,
-        providerId: 'local_test',
+        providerId: 'local_test' as any,
         profileVersion: '1.0.0',
         status: 'pending',
         similarityScore: null,
@@ -241,6 +290,7 @@ describe('publication eligibility', () => {
       },
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'SIMILARITY_CHECK_PENDING'));
@@ -255,7 +305,7 @@ describe('publication eligibility', () => {
         id: crypto.randomUUID() as any,
         contentId: crypto.randomUUID() as any,
         contentVersionId: 'v1' as any,
-        providerId: 'local_test',
+        providerId: 'local_test' as any,
         profileVersion: '1.0.0',
         status: 'completed',
         similarityScore: 80,
@@ -266,9 +316,36 @@ describe('publication eligibility', () => {
       },
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'SIMILARITY_THRESHOLD_EXCEEDED'));
+  });
+
+  it('blocks when similarity check failed', () => {
+    const result = evaluatePublicationEligibility({
+      provenance: makeProvenance(),
+      source: makeSource(),
+      licence: makeLicence(),
+      similarity: {
+        id: crypto.randomUUID() as any,
+        contentId: crypto.randomUUID() as any,
+        contentVersionId: 'v1' as any,
+        providerId: 'local_test' as any,
+        profileVersion: '1.0.0',
+        status: 'failed',
+        similarityScore: null,
+        matchedSources: [],
+        completedAt: null,
+        error: 'provider error',
+        evidenceSnapshot: '',
+      },
+      policy: validPolicy,
+      contentVersionId: 'v1',
+      prohibitedMatches: [],
+    });
+    assert.equal(result.eligible, false);
+    assert.ok(result.blockers.some((b) => b.code === 'SIMILARITY_CHECK_PENDING'));
   });
 
   it('blocks when content version changed', () => {
@@ -279,6 +356,7 @@ describe('publication eligibility', () => {
       similarity: null,
       policy: validPolicy,
       contentVersionId: 'v2',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'CONTENT_VERSION_CHANGED'));
@@ -292,9 +370,79 @@ describe('publication eligibility', () => {
       similarity: null,
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, false);
     assert.ok(result.blockers.some((b) => b.code === 'REVERIFICATION_REQUIRED'));
+  });
+
+  it('blocks when active prohibited match exists', () => {
+    const result = evaluatePublicationEligibility({
+      provenance: makeProvenance(),
+      source: makeSource(),
+      licence: makeLicence(),
+      similarity: null,
+      policy: validPolicy,
+      contentVersionId: 'v1',
+      prohibitedMatches: [makeMatch()],
+    });
+    assert.equal(result.eligible, false);
+    assert.ok(result.blockers.some((b) => b.code === 'PROHIBITED_CONTENT_MATCH'));
+  });
+
+  it('ignores resolved prohibited matches', () => {
+    const result = evaluatePublicationEligibility({
+      provenance: makeProvenance(),
+      source: makeSource(),
+      licence: makeLicence(),
+      similarity: {
+        id: crypto.randomUUID() as any,
+        contentId: crypto.randomUUID() as any,
+        contentVersionId: 'v1' as any,
+        providerId: 'local_test' as any,
+        profileVersion: '1.0.0',
+        status: 'completed',
+        similarityScore: 5,
+        matchedSources: [],
+        completedAt: new Date().toISOString(),
+        error: null,
+        evidenceSnapshot: '',
+      },
+      policy: validPolicy,
+      contentVersionId: 'v1',
+      prohibitedMatches: [
+        makeMatch({ resolved: true, resolvedAt: new Date().toISOString(), resolvedBy: crypto.randomUUID() as any }),
+      ],
+    });
+    assert.equal(result.eligible, true);
+    assert.equal(result.blockers.length, 0);
+  });
+
+  it('returns policyId and policyVersion', () => {
+    const result = evaluatePublicationEligibility({
+      provenance: makeProvenance(),
+      source: makeSource(),
+      licence: makeLicence(),
+      similarity: {
+        id: crypto.randomUUID() as any,
+        contentId: crypto.randomUUID() as any,
+        contentVersionId: 'v1' as any,
+        providerId: 'local_test' as any,
+        profileVersion: '1.0.0',
+        status: 'completed',
+        similarityScore: 10,
+        matchedSources: [],
+        completedAt: new Date().toISOString(),
+        error: null,
+        evidenceSnapshot: '',
+      },
+      policy: validPolicy,
+      contentVersionId: 'v1',
+      prohibitedMatches: [],
+    });
+    assert.equal(result.eligible, true);
+    assert.equal(result.policyId, 'policy-001');
+    assert.equal(result.policyVersion, '1.0.0');
   });
 
   it('passes for fully eligible content', () => {
@@ -306,7 +454,7 @@ describe('publication eligibility', () => {
         id: crypto.randomUUID() as any,
         contentId: crypto.randomUUID() as any,
         contentVersionId: 'v1' as any,
-        providerId: 'local_test',
+        providerId: 'local_test' as any,
         profileVersion: '1.0.0',
         status: 'completed',
         similarityScore: 10,
@@ -317,6 +465,7 @@ describe('publication eligibility', () => {
       },
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.equal(result.eligible, true);
     assert.equal(result.blockers.length, 0);
@@ -331,7 +480,34 @@ describe('publication eligibility', () => {
       similarity: null,
       policy: validPolicy,
       contentVersionId: 'v1',
+      prohibitedMatches: [],
     });
     assert.ok(result.warnings.length > 0);
+  });
+
+  it('generates warning for similarity above review threshold', () => {
+    const result = evaluatePublicationEligibility({
+      provenance: makeProvenance(),
+      source: makeSource(),
+      licence: makeLicence(),
+      similarity: {
+        id: crypto.randomUUID() as any,
+        contentId: crypto.randomUUID() as any,
+        contentVersionId: 'v1' as any,
+        providerId: 'local_test' as any,
+        profileVersion: '1.0.0',
+        status: 'completed',
+        similarityScore: 40,
+        matchedSources: [],
+        completedAt: new Date().toISOString(),
+        error: null,
+        evidenceSnapshot: '',
+      },
+      policy: validPolicy,
+      contentVersionId: 'v1',
+      prohibitedMatches: [],
+    });
+    assert.equal(result.eligible, true);
+    assert.ok(result.warnings.some((w) => w.includes('exceeds review threshold')));
   });
 });

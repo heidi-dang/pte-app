@@ -42,7 +42,7 @@ export type EvidenceType =
   | 'attribution_evidence'
   | 'similarity_report';
 
-export type SimilarityProviderId = 'local_test' | string;
+export type SimilarityProviderId = string & { __brand: 'SimilarityProviderId' };
 
 export type BlockerCode =
   | 'PROVENANCE_MISSING'
@@ -63,6 +63,39 @@ export type BlockerCode =
   | 'REVERIFICATION_REQUIRED'
   | 'POLICY_VERSION_MISSING';
 
+export type AuditEventType =
+  | 'source_created'
+  | 'source_updated'
+  | 'source_retired'
+  | 'source_disputed'
+  | 'licence_created'
+  | 'licence_updated'
+  | 'licence_superseded'
+  | 'licence_revoked'
+  | 'evidence_attached'
+  | 'evidence_invalidated'
+  | 'provenance_created'
+  | 'provenance_updated'
+  | 'provenance_submitted'
+  | 'provenance_review_started'
+  | 'provenance_verified'
+  | 'provenance_rejected'
+  | 'similarity_requested'
+  | 'similarity_completed'
+  | 'similarity_failed'
+  | 'publication_allowed'
+  | 'publication_blocked'
+  | 'reverification_created'
+  | 'reverification_completed'
+  | 'report_generated';
+
+export type SourceTransition = 'create' | 'activate' | 'retire' | 'dispute';
+
+export type LicenceTransition = 'create' | 'activate' | 'supersede' | 'revoke' | 'expire';
+
+export type ProvenanceTransition =
+  'create' | 'update' | 'submit' | 'start_review' | 'verify' | 'reject' | 'require_re_verification';
+
 export type ContentId = string & { __brand: 'ContentId' };
 export type ContentVersionId = string & { __brand: 'ContentVersionId' };
 export type SourceId = string & { __brand: 'SourceId' };
@@ -71,8 +104,14 @@ export type EvidenceId = string & { __brand: 'EvidenceId' };
 export type ProvenanceId = string & { __brand: 'ProvenanceId' };
 export type SimilarityCheckId = string & { __brand: 'SimilarityCheckId' };
 export type PolicyId = string & { __brand: 'PolicyId' };
+export type PolicyVersion = string & { __brand: 'PolicyVersion' };
 export type ReVerificationJobId = string & { __brand: 'ReVerificationJobId' };
+export type PublicationDecisionId = string & { __brand: 'PublicationDecisionId' };
+export type ProhibitedMatchId = string & { __brand: 'ProhibitedMatchId' };
+export type AuditEventId = string & { __brand: 'AuditEventId' };
 export type UserId = string & { __brand: 'UserId' };
+export type MediaId = string & { __brand: 'MediaId' };
+export type RequestId = string & { __brand: 'RequestId' };
 
 export interface SourceRecord {
   readonly id: SourceId;
@@ -120,7 +159,7 @@ export interface EvidenceRecord {
   readonly id: EvidenceId;
   readonly evidenceType: EvidenceType;
   readonly fileName: string;
-  readonly mediaId: string;
+  readonly mediaId: MediaId;
   readonly checksum: string;
   readonly mimeType: string;
   readonly description: string;
@@ -174,7 +213,8 @@ export interface PublicationBlocker {
 export interface PublicationEligibilityResult {
   readonly eligible: boolean;
   readonly evaluatedAt: string;
-  readonly policyVersion: string;
+  readonly policyId: PolicyId;
+  readonly policyVersion: PolicyVersion;
   readonly blockers: readonly PublicationBlocker[];
   readonly warnings: readonly string[];
   readonly provenanceRecordId: ProvenanceId | null;
@@ -182,17 +222,62 @@ export interface PublicationEligibilityResult {
   readonly requiredActions: readonly string[];
 }
 
+export interface PublicationDecision {
+  readonly id: PublicationDecisionId;
+  readonly contentId: ContentId;
+  readonly contentVersionId: ContentVersionId;
+  readonly provenanceRecordId: ProvenanceId;
+  readonly policyId: PolicyId;
+  readonly policyVersion: PolicyVersion;
+  readonly eligible: boolean;
+  readonly blockers: readonly PublicationBlocker[];
+  readonly warnings: readonly string[];
+  readonly actor: UserId;
+  readonly requestId: RequestId;
+  readonly evaluatedAt: string;
+}
+
+export interface ProhibitedRuleMatch {
+  readonly id: ProhibitedMatchId;
+  readonly contentId: ContentId;
+  readonly contentVersionId: ContentVersionId;
+  readonly ruleName: string;
+  readonly matchedAt: string;
+  readonly matchedBy: UserId;
+  readonly resolved: boolean;
+  readonly resolvedAt: string | null;
+  readonly resolvedBy: UserId | null;
+  readonly reason: string;
+}
+
+export interface ProvenanceAuditEvent {
+  readonly id: AuditEventId;
+  readonly eventType: AuditEventType;
+  readonly actor: UserId;
+  readonly requestId: RequestId | null;
+  readonly entityType: string;
+  readonly entityId: string;
+  readonly previousVersion: string | null;
+  readonly newVersion: string | null;
+  readonly reason: string | null;
+  readonly policyId: PolicyId | null;
+  readonly policyVersion: PolicyVersion | null;
+  readonly result: string | null;
+  readonly occurredAt: string;
+}
+
 export interface ProvenanceAuditReport {
   readonly generatedAt: string;
   readonly scope: string;
-  policyVersion: string;
-  totals: Record<string, number>;
-  expiringLicences: readonly string[];
-  blockedContent: readonly string[];
-  missingEvidence: readonly string[];
-  pendingReviews: number;
-  unverifiableItems: readonly string[];
-  historicalChanges: readonly string[];
+  readonly policyId: PolicyId;
+  readonly policyVersion: PolicyVersion;
+  readonly totals: Readonly<Record<string, number>>;
+  readonly expiringLicences: readonly string[];
+  readonly blockedContent: readonly string[];
+  readonly missingEvidence: readonly string[];
+  readonly pendingReviews: number;
+  readonly unverifiableItems: readonly string[];
+  readonly historicalChanges: readonly string[];
 }
 
 export interface ReVerificationJob {
@@ -200,18 +285,56 @@ export interface ReVerificationJob {
   readonly provenanceId: ProvenanceId;
   readonly reason: string;
   readonly createdAt: string;
+  readonly completedAt: string | null;
   readonly status: 'pending' | 'completed' | 'failed';
+  readonly attempt: number;
 }
 
 export interface ProvenancePolicy {
   readonly id: PolicyId;
-  readonly version: string;
+  readonly version: PolicyVersion;
+  readonly status: 'draft' | 'active' | 'retired';
+  readonly effectiveFrom: string;
+  readonly effectiveUntil: string | null;
   readonly similarityReviewThreshold: number;
   readonly similarityBlockThreshold: number;
   readonly expiryWarningDays: number;
   readonly evidenceRetentionDays: number;
-  readonly requiredEvidenceByOwnership: Record<string, readonly string[]>;
+  readonly requiredEvidenceByOwnership: Readonly<Record<string, readonly string[]>>;
   readonly prohibitedRules: readonly string[];
   readonly supportedSourceTypes: readonly SourceType[];
   readonly supportedLicenceTypes: readonly LicenceType[];
 }
+
+export const VALID_PROVENANCE_TRANSITIONS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  draft: Object.freeze(['submitted']),
+  submitted: Object.freeze(['under_review']),
+  under_review: Object.freeze(['verified', 'rejected']),
+  verified: Object.freeze(['re_verification_required']),
+  rejected: Object.freeze(['draft']),
+  re_verification_required: Object.freeze(['under_review']),
+});
+
+export const VALID_SOURCE_TRANSITIONS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  draft: Object.freeze(['active']),
+  active: Object.freeze(['retired', 'disputed']),
+  retired: Object.freeze([]),
+  disputed: Object.freeze([]),
+});
+
+export const VALID_LICENCE_TRANSITIONS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  draft: Object.freeze(['active', 'rejected']),
+  pending_review: Object.freeze(['active', 'rejected']),
+  active: Object.freeze(['expired', 'revoked', 'superseded']),
+  expired: Object.freeze([]),
+  revoked: Object.freeze([]),
+  superseded: Object.freeze([]),
+  rejected: Object.freeze(['draft']),
+});
+
+export const VALID_EVIDENCE_TRANSITIONS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  active: Object.freeze(['invalid', 'superseded']),
+  superseded: Object.freeze([]),
+  invalid: Object.freeze([]),
+  retained_for_history: Object.freeze([]),
+});

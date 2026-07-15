@@ -6,6 +6,7 @@ import type {
   PublicationEligibilityResult,
   PublicationBlocker,
   ProvenancePolicy,
+  ProhibitedRuleMatch,
 } from '@pte-app/contracts';
 
 export function evaluatePublicationEligibility(input: {
@@ -15,6 +16,7 @@ export function evaluatePublicationEligibility(input: {
   similarity: SimilarityCheck | null;
   policy: ProvenancePolicy;
   contentVersionId: string;
+  prohibitedMatches: readonly ProhibitedRuleMatch[];
 }): PublicationEligibilityResult {
   const blockers: PublicationBlocker[] = [];
   const warnings: string[] = [];
@@ -84,6 +86,8 @@ export function evaluatePublicationEligibility(input: {
     blockers.push({ code: 'SIMILARITY_CHECK_PENDING', message: 'Similarity check has not been performed' });
   } else if (input.similarity.status === 'pending' || input.similarity.status === 'running') {
     blockers.push({ code: 'SIMILARITY_CHECK_PENDING', message: 'Similarity check is still in progress' });
+  } else if (input.similarity.status === 'failed') {
+    blockers.push({ code: 'SIMILARITY_CHECK_PENDING', message: 'Similarity check failed, needs retry' });
   } else if (input.similarity.status === 'completed' && input.similarity.similarityScore !== null) {
     if (input.similarity.similarityScore > input.policy.similarityBlockThreshold) {
       blockers.push({
@@ -99,6 +103,16 @@ export function evaluatePublicationEligibility(input: {
     blockers.push({ code: 'REVERIFICATION_REQUIRED', message: 'Content requires re-verification' });
   }
 
+  const activeProhibited = input.prohibitedMatches.filter((m) => !m.resolved);
+  if (activeProhibited.length > 0) {
+    for (const match of activeProhibited) {
+      blockers.push({
+        code: 'PROHIBITED_CONTENT_MATCH',
+        message: `Prohibited content rule matched: ${match.ruleName}`,
+      });
+    }
+  }
+
   if (!input.policy.version) {
     blockers.push({ code: 'POLICY_VERSION_MISSING', message: 'Policy version is missing' });
   }
@@ -110,6 +124,7 @@ export function evaluatePublicationEligibility(input: {
   return {
     eligible: blockers.length === 0,
     evaluatedAt: now,
+    policyId: input.policy.id,
     policyVersion: input.policy.version,
     blockers: Object.freeze(blockers),
     warnings: Object.freeze(warnings),
