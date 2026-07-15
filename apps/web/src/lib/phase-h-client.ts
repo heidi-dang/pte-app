@@ -7,14 +7,21 @@ export function getApiUrl(): string {
 
 async function request<T>(path: string, options: RequestInit & { signal?: AbortSignal } = {}): Promise<T> {
   const url = getApiUrl();
-  const { signal, ...rest } = options;
+  const { signal, body, headers: extraHeaders, ...rest } = options;
+
+  const headers = new Headers(extraHeaders as Record<string, string>);
+  if (body !== undefined && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
   const res = await fetch(`${url}${path}`, {
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...rest.headers },
+    headers,
+    body,
     signal,
     ...rest,
   });
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Request failed');
   return data as T;
 }

@@ -107,4 +107,5 @@ jobs:
         with:
           name: e2e-service-logs
           path: apps/web/.local-runtime/
+          include-hidden-files: true
           retention-days: 7

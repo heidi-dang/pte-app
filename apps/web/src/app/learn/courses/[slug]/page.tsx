@@ -9,8 +9,11 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [enrolling, setEnrolling] = useState(false);
 
-  useEffect(() => {
+  function loadCourse() {
+    setLoading(true);
+    setError('');
     api
       .getCourse(slug)
       .then((d) => {
@@ -19,6 +22,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    loadCourse();
   }, [slug]);
 
   if (loading)
@@ -59,8 +66,18 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
         <p style={{ marginBottom: '1.5rem' }}>{course.description}</p>
 
         {!isEnrolled ? (
-          <Button data-testid="btn-enrol" onClick={() => api.enrol(course.id)}>
-            Enrol Now
+          <Button
+            data-testid="btn-enrol"
+            disabled={enrolling}
+            onClick={() => {
+              setEnrolling(true);
+              api
+                .enrol(course.id)
+                .then(loadCourse)
+                .catch(() => setEnrolling(false));
+            }}
+          >
+            {enrolling ? 'Enrolling...' : 'Enrol Now'}
           </Button>
         ) : (
           <Button

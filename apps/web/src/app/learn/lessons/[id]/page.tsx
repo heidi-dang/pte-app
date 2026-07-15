@@ -17,6 +17,7 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
   const [versionId, setVersionId] = useState<string>('');
   const [lastMutId, setLastMutId] = useState<string>('');
+  const [teacherNotes, setTeacherNotes] = useState<Array<Record<string, unknown>>>([]);
 
   async function load() {
     setLoading(true);
@@ -26,6 +27,7 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
       setLesson(lessonData);
       setBlocks((data.blocks as Array<Record<string, unknown>>) || []);
       setProgress((data.progress as Record<string, unknown>) || null);
+      setTeacherNotes((data.teacherNotes as Array<Record<string, unknown>>) || []);
       setVersionId((lessonData.versionId as string) || '');
       if (data.progress && (data.progress as Record<string, unknown>).blockPosition !== undefined) {
         setCurrentBlock((data.progress as Record<string, unknown>).blockPosition as number);
@@ -251,6 +253,19 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
             </a>
           )}
         </div>
+        {teacherNotes.length > 0 && (
+          <div
+            style={{ marginTop: '1.5rem', padding: '1rem', background: '#fff9c4', borderRadius: '8px' }}
+            data-testid="teacher-notes"
+          >
+            <h3 style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: '#666' }}>Teacher Notes</h3>
+            {teacherNotes.map((note, i) => (
+              <div key={i} data-testid="teacher-note" style={{ marginBottom: '0.5rem' }}>
+                <p>{note.content as string}</p>
+              </div>
+            ))}
+          </div>
+        )}
         <div style={{ marginTop: '1rem' }}>
           <a href="/learn/catalogue" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
             Back to catalogue

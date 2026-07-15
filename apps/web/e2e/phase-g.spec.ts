@@ -4,8 +4,10 @@ import { createUserWithRole, setSessionCookie, getConfig } from './helpers';
 const cfg = getConfig();
 const pw = 'E2EPassword123';
 
-async function apiAuth(token: string) {
-  return { headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' } };
+async function apiAuth(token: string, hasBody = false) {
+  const headers: Record<string, string> = { authorization: `Bearer ${token}` };
+  if (hasBody) headers['content-type'] = 'application/json';
+  return { headers };
 }
 
 test.describe('Phase G content provenance E2E', () => {
