@@ -138,7 +138,7 @@ async function main(): Promise<void> {
     await createEntitlement(db, fixtures.student.id, fixtures.paidCourse.id);
     await createPrereqForFreeCourse(db, fixtures);
 
-    const { data: lesson1 } = await fetch(`${apiUrl}/learn/lessons/${fixtures.freeCourse.lessonIds[0]}`, {
+    const lesson1 = await fetch(`${apiUrl}/learn/lessons/${fixtures.freeCourse.lessonIds[0]}`, {
       headers: {
         Authorization: `Bearer ${(await login(fixtures.student.email, fixtures.student.password, apiUrl)).token}`,
       },
