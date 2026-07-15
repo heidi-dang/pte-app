@@ -68,7 +68,7 @@ describe('database integration', () => {
       await resetTestDatabase(baseConfig);
       const applied = await getAppliedMigrations(connection);
       const versions = applied.map((m) => m.version);
-      assert.deepEqual(versions, ['0001', '0002', '0003', '0005']);
+      assert.deepEqual(versions, ['0001', '0002', '0003', '0005', '0006']);
     });
 
     pgIt('is idempotent across repeated runs', async () => {

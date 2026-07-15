@@ -7,3 +7,4 @@ export * as progress from './progress.js';
 export * as prerequisites from './prerequisites.js';
 export * as quizzes from './quizzes.js';
 export * as teacherNotes from './teacher-notes.js';
+export * as assignments from './assignments.js';
