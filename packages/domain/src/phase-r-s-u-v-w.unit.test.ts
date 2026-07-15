@@ -478,6 +478,66 @@ describe('Phase R — Domain Routing', () => {
     const ev = mkEv({ scoringProfileVersion: -1, confidence: 1.5 });
     assert.doesNotThrow(() => RawMasteryEvidenceSchema.parse(ev));
   });
+
+  it('NaN score throws', () => {
+    assert.throws(
+      () =>
+        calculateSkillMastery(mkProf({ evidencePolicy: mkPol({ minimumEvidence: 1 }) }), [
+          mkEv({ estimatedTrainingScore: NaN }),
+        ]),
+      MasteryValidationError,
+    );
+  });
+  it('Infinity score throws', () => {
+    assert.throws(
+      () =>
+        calculateSkillMastery(mkProf({ evidencePolicy: mkPol({ minimumEvidence: 1 }) }), [
+          mkEv({ estimatedTrainingScore: Infinity }),
+        ]),
+      MasteryValidationError,
+    );
+  });
+  it('Negative Infinity score throws', () => {
+    assert.throws(
+      () =>
+        calculateSkillMastery(mkProf({ evidencePolicy: mkPol({ minimumEvidence: 1 }) }), [
+          mkEv({ estimatedTrainingScore: -Infinity }),
+        ]),
+      MasteryValidationError,
+    );
+  });
+  it('NaN confidence throws', () => {
+    assert.throws(
+      () =>
+        calculateSkillMastery(mkProf({ evidencePolicy: mkPol({ minimumEvidence: 1 }) }), [mkEv({ confidence: NaN })]),
+      MasteryValidationError,
+    );
+  });
+  it('Infinity confidence throws', () => {
+    assert.throws(
+      () =>
+        calculateSkillMastery(mkProf({ evidencePolicy: mkPol({ minimumEvidence: 1 }) }), [
+          mkEv({ confidence: Infinity }),
+        ]),
+      MasteryValidationError,
+    );
+  });
+  it('Negative Infinity confidence throws', () => {
+    assert.throws(
+      () =>
+        calculateSkillMastery(mkProf({ evidencePolicy: mkPol({ minimumEvidence: 1 }) }), [
+          mkEv({ confidence: -Infinity }),
+        ]),
+      MasteryValidationError,
+    );
+  });
+  it('non-finite never contributes', () => {
+    const ev = [mkEv({ estimatedTrainingScore: 0.7 }), mkEv({ confidence: NaN })];
+    assert.throws(
+      () => calculateSkillMastery(mkProf({ evidencePolicy: mkPol({ minimumEvidence: 2 }) }), ev),
+      MasteryValidationError,
+    );
+  });
 });
 
 // ================================================================

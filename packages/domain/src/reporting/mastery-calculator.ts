@@ -178,12 +178,15 @@ function isFiniteNumber(v: number): boolean {
 }
 
 function classifyEvidenceForMastery(e: MasteryEvidence, mode: 'skill' | 'task'): EvidenceClassification {
-  // 1. Non-finite numeric checks (Zod won't catch NaN in coerce mode)
+  // 1. Non-finite numeric checks — throw typed error (corrupt data cannot be preserved)
   if (!isFiniteNumber(e.estimatedTrainingScore)) {
-    return { status: 'unassigned', evidence: e, reason: 'invalid-score', invalidFields: ['estimatedTrainingScore'] };
+    throw new MasteryValidationError(
+      'NO_MASTERY_LEVEL_MATCH',
+      `Non-finite estimatedTrainingScore: ${e.estimatedTrainingScore}`,
+    );
   }
   if (!isFiniteNumber(e.confidence)) {
-    return { status: 'unassigned', evidence: e, reason: 'invalid-confidence', invalidFields: ['confidence'] };
+    throw new MasteryValidationError('NO_MASTERY_LEVEL_MATCH', `Non-finite confidence: ${e.confidence}`);
   }
 
   // 2. Integer checks (Zod's .int() won't validate on raw number input without schema)
