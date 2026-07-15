@@ -9,13 +9,17 @@ type AnyRepo = Record<string, any>;
 const repo = phaseH as unknown as AnyRepo;
 
 function getAuth(request: FastifyRequest, reply: FastifyReply) {
-  if (!request.auth) { reply.status(401).send({ error: 'Unauthorized' }); return null; }
+  if (!request.auth) {
+    reply.status(401).send({ error: 'Unauthorized' });
+    return null;
+  }
   return request.auth;
 }
 
 function requireRoles(auth: { roles: readonly string[] }, allowed: UserRole[], reply: FastifyReply): boolean {
   if (!auth.roles.some((r) => allowed.includes(r as UserRole))) {
-    reply.status(403).send({ error: 'Forbidden' }); return false;
+    reply.status(403).send({ error: 'Forbidden' });
+    return false;
   }
   return true;
 }
@@ -29,8 +33,7 @@ function requirePermission(auth: { roles: readonly string[] }, permission: strin
 function checkEntitlement(auth: { roles: readonly string[] }, accessLevel: string): boolean {
   if (accessLevel === 'free') return true;
   if (accessLevel === 'entitlement' || accessLevel === 'paid') {
-    return auth.roles.some((r) =>
-      ['admin', 'content_editor', 'teacher'].includes(r as string));
+    return auth.roles.some((r) => ['admin', 'content_editor', 'teacher'].includes(r as string));
   }
   return false;
 }
@@ -48,7 +51,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   // STUDENT: Catalogue
   // ═══════════════════════════════════════════════════════
   app.get('/learn/catalogue', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     const query = (request.query || {}) as Record<string, string>;
     const result = await repo.courses.searchCourses(db, {
       searchText: query.search || '',
@@ -69,7 +73,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   });
 
   app.get('/learn/courses/:slug', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     const { slug } = request.params as { slug: string };
     const course = await repo.courses.getCourseBySlug(db, slug);
     if (!course || course.status !== 'published') return reply.status(404).send({ error: 'Course not found' });
@@ -85,7 +90,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   // STUDENT: Enrolment
   // ═══════════════════════════════════════════════════════
   app.post('/learn/courses/:courseId/enrol', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     const { courseId } = request.params as { courseId: string };
     const course = await repo.courses.getCourseById(db, courseId);
     if (!course) return reply.status(404).send({ error: 'Course not found' });
@@ -95,7 +101,9 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     const existing = await repo.enrolments.getEnrolment(db, auth.userId, course.id);
     if (existing) return reply.status(200).send(existing);
     const enrolment = await repo.enrolments.createEnrolment(db, {
-      userId: auth.userId, courseId: course.id, courseVersionId: '',
+      userId: auth.userId,
+      courseId: course.id,
+      courseVersionId: '',
     });
     return reply.status(201).send(enrolment);
   });
@@ -104,7 +112,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   // STUDENT: Lesson Delivery
   // ═══════════════════════════════════════════════════════
   app.get('/learn/lessons/:lessonId', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     const { lessonId } = request.params as { lessonId: string };
     const lesson = await repo.lessons.getLessonById(db, lessonId);
     if (!lesson || lesson.status !== 'published') return reply.status(404).send({ error: 'Lesson not found' });
@@ -119,7 +128,9 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
       ? await repo.teacherNotes.getTeacherNotes(db, 'lesson', lesson.id).catch(() => [])
       : [];
     return reply.status(200).send({
-      lesson, blocks, progress,
+      lesson,
+      blocks,
+      progress,
       quiz: quiz ? { id: quiz.id, title: quiz.title, description: quiz.description } : null,
       teacherNotes: teacherNotes.length > 0 ? teacherNotes : undefined,
     });
@@ -129,18 +140,21 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   // STUDENT: Progress & Resume
   // ═══════════════════════════════════════════════════════
   app.post('/learn/progress', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     const body = request.body as Record<string, unknown>;
-    if (!body.lessonId || !body.mutationId) return reply.status(400).send({ error: 'lessonId and mutationId required' });
+    if (!body.lessonId || !body.mutationId)
+      return reply.status(400).send({ error: 'lessonId and mutationId required' });
     const existing = await repo.progress.getProgress(db, auth.userId, body.lessonId);
     if (existing && existing.mutationId === body.mutationId) return reply.status(200).send(existing);
-    const progress = await repo.progress.upsertProgress(db,
+    const progress = await repo.progress.upsertProgress(
+      db,
       auth.userId,
       body.enrolmentId as string,
       body.courseId as string,
       body.moduleId as string,
       body.lessonId as string,
-      body.lessonVersionId as string || '',
+      (body.lessonVersionId as string) || '',
       {
         blockId: body.blockId as string,
         blockPosition: (body.blockPosition as number) || 0,
@@ -152,7 +166,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   });
 
   app.get('/learn/progress/resume/:courseId', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     const { courseId } = request.params as { courseId: string };
     const enrolment = await repo.enrolments.getEnrolment(db, auth.userId, courseId);
     if (!enrolment) return reply.status(404).send({ error: 'Not enrolled' });
@@ -160,7 +175,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
     const inProgress = (allProgress || []).filter((p: any) => p.status !== 'completed');
     if (inProgress.length > 0) {
       const latest = inProgress.sort((a: any, b: any) =>
-        (b.lastActivityAt || '').localeCompare(a.lastActivityAt || ''))[0];
+        (b.lastActivityAt || '').localeCompare(a.lastActivityAt || ''),
+      )[0];
       return reply.status(200).send({
         resumeType: 'in_progress',
         lessonId: latest.lessonId,
@@ -173,7 +189,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   });
 
   app.get('/learn/progress/:lessonId', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     const { lessonId } = request.params as { lessonId: string };
     const progress = await repo.progress.getProgress(db, auth.userId, lessonId);
     return reply.status(200).send(progress || { status: 'not_started' });
@@ -183,7 +200,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   // STUDENT: Lesson Completion
   // ═══════════════════════════════════════════════════════
   app.post('/learn/lessons/:lessonId/complete', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     const { lessonId } = request.params as { lessonId: string };
     const progress = await repo.progress.completeProgress(db, auth.userId, lessonId);
     if (!progress) return reply.status(404).send({ error: 'No progress found' });
@@ -197,10 +215,12 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   // STUDENT: Quiz
   // ═══════════════════════════════════════════════════════
   app.post('/learn/quiz/:quizId/submit', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     const { quizId } = request.params as { quizId: string };
     const body = request.body as Record<string, unknown>;
-    if (!body.submissionId || !body.answers) return reply.status(400).send({ error: 'submissionId and answers required' });
+    if (!body.submissionId || !body.answers)
+      return reply.status(400).send({ error: 'submissionId and answers required' });
     const subId = body.submissionId as string;
     const existing = await repo.quizzes.getQuizAttempts(db, quizId, auth.userId);
     const dup = (existing || []).find((a: any) => a.submissionId === subId);
@@ -214,21 +234,29 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
       const correct = (item.correctAnswers || []) as number[];
       const user = answers[i] || [];
       if (correct.length === user.length && correct.every((a: number) => user.includes(a))) {
-        score++; fb.push(`Item ${i + 1}: Correct`);
+        score++;
+        fb.push(`Item ${i + 1}: Correct`);
       } else {
         fb.push(`Item ${i + 1}: Incorrect. ${item.explanation || ''}`);
       }
     }
     const quiz = await repo.quizzes.getQuizForLesson(db, quizId, quizId);
     const passThreshold = quiz?.passThreshold ?? 0.6;
-    const passed = items.length > 0 ? (score / items.length) >= passThreshold : false;
+    const passed = items.length > 0 ? score / items.length >= passThreshold : false;
     const attempt = await repo.quizzes.createQuizAttempt(db, {
-      quizId, userId: auth.userId, score, totalItems: items.length, passed,
-      answers, submissionId: subId,
+      quizId,
+      userId: auth.userId,
+      score,
+      totalItems: items.length,
+      passed,
+      answers,
+      submissionId: subId,
     });
     return reply.status(200).send({
-      attempt, passed, feedback: fb,
-      estimatedTrainingScore: `Estimated training score: ${score}/${items.length} (${Math.round(score / Math.max(items.length, 1) * 100)}%)`,
+      attempt,
+      passed,
+      feedback: fb,
+      estimatedTrainingScore: `Estimated training score: ${score}/${items.length} (${Math.round((score / Math.max(items.length, 1)) * 100)}%)`,
     });
   });
 
@@ -236,15 +264,20 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   // STAFF: Course CRUD
   // ═══════════════════════════════════════════════════════
   app.post('/learn/admin/courses', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     if (!requireRoles(auth, contentRoles, reply)) return;
     const body = request.body as Record<string, unknown>;
     const course = await repo.courses.createCourse(db, {
-      slug: body.slug as string, title: body.title as string,
-      summary: (body.summary as string) || '', description: (body.description as string) || '',
-      accessLevel: body.accessLevel || 'free', difficulty: (body.difficulty as string) || 'beginner',
+      slug: body.slug as string,
+      title: body.title as string,
+      summary: (body.summary as string) || '',
+      description: (body.description as string) || '',
+      accessLevel: body.accessLevel || 'free',
+      difficulty: (body.difficulty as string) || 'beginner',
       estimatedDurationMinutes: (body.estimatedDurationMinutes as number) || 0,
-      skillTags: (body.skillTags as string[]) || [], thumbnailMediaId: (body.thumbnailMediaId as string) || null,
+      skillTags: (body.skillTags as string[]) || [],
+      thumbnailMediaId: (body.thumbnailMediaId as string) || null,
       createdBy: auth.userId,
     });
     return reply.status(201).send(course);
@@ -252,7 +285,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
 
   // ─── PUBLISH COURSE (Phase G guard) ─────────────────────
   app.post('/learn/admin/courses/:courseId/publish', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     if (!requirePermission(auth, 'content:publish', reply)) return;
     const { courseId } = request.params as { courseId: string };
     const course = await repo.courses.getCourseById(db, courseId);
@@ -281,7 +315,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
 
   // ─── RETIRE COURSE ─────────────────────────────────────
   app.post('/learn/admin/courses/:courseId/retire', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     if (!requirePermission(auth, 'content:retire', reply)) return;
     const { courseId } = request.params as { courseId: string };
     const course = await repo.courses.getCourseById(db, courseId);
@@ -292,7 +327,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
 
   // ─── UPDATE COURSE ─────────────────────────────────────
   app.patch('/learn/admin/courses/:courseId', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     if (!requireRoles(auth, contentRoles, reply)) return;
     const { courseId } = request.params as { courseId: string };
     const body = request.body as Record<string, unknown>;
@@ -304,14 +340,17 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   // STAFF: Module CRUD
   // ═══════════════════════════════════════════════════════
   app.post('/learn/admin/courses/:courseId/modules', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     if (!requireRoles(auth, contentRoles, reply)) return;
     const { courseId } = request.params as { courseId: string };
     const body = request.body as Record<string, unknown>;
     const mod = await repo.modules.createCourseModule(db, {
-      courseId, title: body.title as string,
+      courseId,
+      title: body.title as string,
       description: (body.description as string) || '',
-      orderPosition: (body.orderPosition as number) || 0, createdBy: auth.userId,
+      orderPosition: (body.orderPosition as number) || 0,
+      createdBy: auth.userId,
     });
     return reply.status(201).send(mod);
   });
@@ -320,18 +359,23 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   // STAFF: Lesson CRUD
   // ═══════════════════════════════════════════════════════
   app.post('/learn/admin/modules/:moduleId/lessons', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     if (!requireRoles(auth, contentRoles, reply)) return;
     const { moduleId } = request.params as { moduleId: string };
     const body = request.body as Record<string, unknown>;
     const mod = await repo.modules.getCourseModuleById(db, moduleId);
     if (!mod) return reply.status(404).send({ error: 'Module not found' });
     const lesson = await repo.lessons.createLesson(db, {
-      moduleId: mod.id, courseId: mod.courseId, title: body.title as string,
-      slug: body.slug as string, summary: (body.summary as string) || '',
+      moduleId: mod.id,
+      courseId: mod.courseId,
+      title: body.title as string,
+      slug: body.slug as string,
+      summary: (body.summary as string) || '',
       orderPosition: (body.orderPosition as number) || 0,
       isOptional: (body.isOptional as boolean) || false,
-      estimatedMinutes: (body.estimatedMinutes as number) || 10, createdBy: auth.userId,
+      estimatedMinutes: (body.estimatedMinutes as number) || 10,
+      createdBy: auth.userId,
       quizId: null,
     });
     return reply.status(201).send(lesson);
@@ -339,7 +383,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
 
   // ─── PUBLISH LESSON (Phase G guard) ────────────────────
   app.post('/learn/admin/lessons/:lessonId/publish', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     if (!requirePermission(auth, 'content:publish', reply)) return;
     const { lessonId } = request.params as { lessonId: string };
     const lesson = await repo.lessons.getLessonById(db, lessonId);
@@ -367,7 +412,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   });
 
   app.post('/learn/admin/lessons/:lessonId/retire', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     if (!requirePermission(auth, 'content:retire', reply)) return;
     const { lessonId } = request.params as { lessonId: string };
     const lesson = await repo.lessons.getLessonById(db, lessonId);
@@ -380,12 +426,14 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   // STAFF: Lesson Blocks
   // ═══════════════════════════════════════════════════════
   app.post('/learn/admin/lessons/:lessonId/blocks', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     if (!requireRoles(auth, contentRoles, reply)) return;
     const { lessonId } = request.params as { lessonId: string };
     const body = request.body as Record<string, unknown>;
     const block = await repo.lessonBlocks.createBlock(db, {
-      lessonId, lessonVersionId: body.lessonVersionId || '',
+      lessonId,
+      lessonVersionId: body.lessonVersionId || '',
       blockType: body.blockType || 'text',
       orderPosition: (body.orderPosition as number) || 0,
       content: body.content || {},
@@ -398,16 +446,17 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   // STAFF: Prerequisites
   // ═══════════════════════════════════════════════════════
   app.post('/learn/admin/prerequisites', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     if (!requireRoles(auth, contentRoles, reply)) return;
     const body = request.body as Record<string, unknown>;
     try {
       const prereq = await repo.prerequisites.createPrerequisite(db, {
         lessonId: body.lessonId as string,
-        prerequisiteType: body.prerequisiteType as string || 'lesson_completion',
-        prerequisiteLessonId: body.prerequisiteLessonId as string || null,
-        prerequisiteModuleId: body.prerequisiteModuleId as string || null,
-        prerequisiteCourseId: body.prerequisiteCourseId as string || null,
+        prerequisiteType: (body.prerequisiteType as string) || 'lesson_completion',
+        prerequisiteLessonId: (body.prerequisiteLessonId as string) || null,
+        prerequisiteModuleId: (body.prerequisiteModuleId as string) || null,
+        prerequisiteCourseId: (body.prerequisiteCourseId as string) || null,
       });
       return reply.status(201).send(prereq);
     } catch (err: any) {
@@ -418,7 +467,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   });
 
   app.delete('/learn/admin/prerequisites/:id', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     if (!requireRoles(auth, contentRoles, reply)) return;
     const { id } = request.params as { id: string };
     await repo.prerequisites.deletePrerequisite(db, id);
@@ -429,7 +479,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   // STAFF: Teacher Notes
   // ═══════════════════════════════════════════════════════
   app.post('/learn/admin/notes', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     if (!requireRoles(auth, ['admin', 'teacher'], reply)) return;
     const body = request.body as Record<string, unknown>;
     const note = await repo.teacherNotes.createNote(db, {
@@ -442,7 +493,8 @@ export async function phaseHPlugin(app: FastifyInstance, options: { db: Database
   });
 
   app.get('/learn/admin/notes/:entityType/:entityId', async (request, reply) => {
-    const auth = getAuth(request, reply); if (!auth) return;
+    const auth = getAuth(request, reply);
+    if (!auth) return;
     if (!requireRoles(auth, staffRoles, reply)) return;
     const { entityType, entityId } = request.params as { entityType: string; entityId: string };
     const notes = await repo.teacherNotes.getTeacherNotes(db, entityType as any, entityId);

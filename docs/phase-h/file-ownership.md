@@ -42,11 +42,13 @@ Dev 2 branch: `feat/dev2-phase-i-j-k-structure` (56 files)
 
 2. **`services/api/src/app.ts`**
    - Phase H adds: `import { phaseHPlugin } from './phase-h/plugin.js'` and `await app.register(phaseHPlugin, { db: dbConnection })`
-   - Dev 2 adds: `import { questionEnginePlugin } from './question-engine/plugin.js'` and `await app.register(questionEnginePlugin, ...)` 
+   - Dev 2 adds: `import { questionEnginePlugin } from './question-engine/plugin.js'` and `await app.register(questionEnginePlugin, ...)`
    - Both are cleanly mergeable (additive plugin registrations at the same point in the file after contentProvenancePlugin).
 
 ### Non-overlapping:
+
 All other Phase H files are in `packages/contracts/src/phase-h/`, `packages/database/src/repositories/phase-h/`, `services/api/src/phase-h/`, and `apps/web/src/app/learn/` — none of these paths appear in the Dev 2 branch.
 
 ### No Dev 1 modification of Dev 2-owned files
+
 Phase H does not modify any of Dev 2's `packages/contracts/src/question.ts`, `packages/contracts/src/session.ts`, or any phase-i/j/k files. No shared contracts broken.

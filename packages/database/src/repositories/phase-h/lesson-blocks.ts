@@ -1,11 +1,5 @@
 import type { DatabaseConnection } from '../../client.js';
-import type {
-  LessonId,
-  LessonVersionId,
-  LessonBlockId,
-  LessonBlockType,
-  LessonBlockRecord,
-} from '@pte-app/contracts';
+import type { LessonId, LessonVersionId, LessonBlockId, LessonBlockType, LessonBlockRecord } from '@pte-app/contracts';
 import { randomUUID } from 'node:crypto';
 
 export interface CreateLessonBlockInput {
@@ -126,10 +120,7 @@ export async function updateLessonBlock(
   return result.rows[0] as unknown as LessonBlockRecord | undefined;
 }
 
-export async function deleteLessonBlock(
-  connection: DatabaseConnection,
-  id: LessonBlockId,
-): Promise<boolean> {
+export async function deleteLessonBlock(connection: DatabaseConnection, id: LessonBlockId): Promise<boolean> {
   const result = await connection.pool.query('DELETE FROM lesson_blocks WHERE id = $1', [id]);
   return (result.rowCount ?? 0) > 0;
 }

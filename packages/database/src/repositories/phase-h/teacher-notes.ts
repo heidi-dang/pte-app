@@ -60,10 +60,7 @@ export async function updateTeacherNote(
   return result.rows[0] as unknown as TeacherNoteRecord | undefined;
 }
 
-export async function deleteTeacherNote(
-  connection: DatabaseConnection,
-  id: TeacherNoteId,
-): Promise<boolean> {
+export async function deleteTeacherNote(connection: DatabaseConnection, id: TeacherNoteId): Promise<boolean> {
   const result = await connection.pool.query('DELETE FROM teacher_notes WHERE id = $1', [id]);
   return (result.rowCount ?? 0) > 0;
 }

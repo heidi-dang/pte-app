@@ -1,9 +1,11 @@
 # Phase H Implementation Contract
 
 ## Scope
+
 Course and Lesson Engine for PTE students. Browse, enrol, study, resume, complete courses with quizzes and prerequisites.
 
 ## Key Design Decisions
+
 - All progress is server-authoritative
 - Enrolment is idempotent (UNIQUE on user_id + course_id)
 - Progress mutations use client-generated mutationIds with DB uniqueness
@@ -14,4 +16,5 @@ Course and Lesson Engine for PTE students. Browse, enrol, study, resume, complet
 - Fastify plugin registered at parent scope (no encapsulation issue)
 
 ## Ownership
+
 Phase H — Dev 1 only. No Phase I/J/K code included.

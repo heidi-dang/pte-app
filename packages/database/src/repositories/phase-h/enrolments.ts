@@ -1,10 +1,5 @@
 import type { DatabaseConnection } from '../../client.js';
-import type {
-  CourseId,
-  CourseVersionId,
-  EnrolmentId,
-  EnrolmentRecord,
-} from '@pte-app/contracts';
+import type { CourseId, CourseVersionId, EnrolmentId, EnrolmentRecord } from '@pte-app/contracts';
 import { randomUUID } from 'node:crypto';
 
 export interface CreateEnrolmentInput {

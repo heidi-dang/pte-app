@@ -24,7 +24,7 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
       const data = await res.json();
       setLesson(data.lesson as Record<string, unknown>);
       setBlocks((data.blocks as Array<Record<string, unknown>>) || []);
-      setProgress(data.progress as Record<string, unknown> || null);
+      setProgress((data.progress as Record<string, unknown>) || null);
       if (data.progress && (data.progress as Record<string, unknown>).blockPosition !== undefined) {
         setCurrentBlock((data.progress as Record<string, unknown>).blockPosition as number);
       }
@@ -38,30 +38,41 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
     }
   }
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => {
+    load();
+  }, [id]);
 
   async function saveProgress(blockIdx: number) {
     const mutationId = `progress-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const pct = blocks.length > 0 ? Math.round(((blockIdx + 1) / blocks.length) * 100) : 0;
     try {
       const res = await fetch(`${API_URL}/learn/progress`, {
-        method: 'POST', credentials: 'include',
+        method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          lessonId: id, blockId: blocks[blockIdx]?.id, blockPosition: blockIdx,
-          progressPercentage: pct, mutationId, lessonVersionId: 'v1',
-          courseId: lesson?.courseId, moduleId: lesson?.moduleId,
+          lessonId: id,
+          blockId: blocks[blockIdx]?.id,
+          blockPosition: blockIdx,
+          progressPercentage: pct,
+          mutationId,
+          lessonVersionId: 'v1',
+          courseId: lesson?.courseId,
+          moduleId: lesson?.moduleId,
           enrolmentId: progress?.enrolmentId,
         }),
       });
       if (res.ok) setProgress(await res.json());
-    } catch { /* best-effort progress save */ }
+    } catch {
+      /* best-effort progress save */
+    }
   }
 
   async function handleComplete() {
     try {
       const res = await fetch(`${API_URL}/learn/lessons/${id}/complete`, {
-        method: 'POST', credentials: 'include',
+        method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
       });
       if (res.ok) {
@@ -69,12 +80,29 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
         const data = await res.json();
         setProgress(data.progress as Record<string, unknown>);
       }
-    } catch { /* best-effort */ }
+    } catch {
+      /* best-effort */
+    }
   }
 
-  if (loading) return <Container><p data-testid="lesson-loading">Loading lesson...</p></Container>;
-  if (error) return <Container><Alert data-testid="lesson-error">{error}</Alert></Container>;
-  if (!lesson) return <Container><Alert>Lesson not found</Alert></Container>;
+  if (loading)
+    return (
+      <Container>
+        <p data-testid="lesson-loading">Loading lesson...</p>
+      </Container>
+    );
+  if (error)
+    return (
+      <Container>
+        <Alert data-testid="lesson-error">{error}</Alert>
+      </Container>
+    );
+  if (!lesson)
+    return (
+      <Container>
+        <Alert>Lesson not found</Alert>
+      </Container>
+    );
 
   const block = blocks[currentBlock];
   const pct = blocks.length > 0 ? Math.round(((currentBlock + 1) / blocks.length) * 100) : 0;
@@ -92,19 +120,23 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
             {(block.blockType as string) === 'text' && (
               <div data-testid="block-text">
                 <h2>{block.title as string}</h2>
-                <div style={{ lineHeight: '1.6' }}>{(block.content as Record<string, unknown>)?.body as string || 'Lesson content'}</div>
+                <div style={{ lineHeight: '1.6' }}>
+                  {((block.content as Record<string, unknown>)?.body as string) || 'Lesson content'}
+                </div>
               </div>
             )}
             {(block.blockType as string) === 'video' && (
               <div data-testid="block-video">
                 <h2>{block.title as string}</h2>
                 <div style={{ padding: '1rem', background: '#f5f5f5', borderRadius: '4px', textAlign: 'center' }}>
-                  Video content: {(block.content as Record<string, unknown>)?.title as string || 'Untitled'}
+                  Video content: {((block.content as Record<string, unknown>)?.title as string) || 'Untitled'}
                 </div>
                 {(block.content as Record<string, unknown>)?.transcript != null && (
                   <details style={{ marginTop: '0.75rem' }}>
                     <summary style={{ cursor: 'pointer', color: 'var(--color-primary)' }}>Transcript</summary>
-                    <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>{(block.content as Record<string, unknown>).transcript as string}</p>
+                    <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                      {(block.content as Record<string, unknown>).transcript as string}
+                    </p>
                   </details>
                 )}
               </div>
@@ -113,13 +145,15 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
               <div data-testid="block-audio">
                 <h2>{block.title as string}</h2>
                 <div style={{ padding: '1rem', background: '#f5f5f5', borderRadius: '4px' }}>
-                  Audio content: {(block.content as Record<string, unknown>)?.title as string || 'Untitled'}
+                  Audio content: {((block.content as Record<string, unknown>)?.title as string) || 'Untitled'}
                   <p style={{ fontSize: '0.8rem', color: 'var(--color-muted)' }}>Audio playback available</p>
                 </div>
                 {(block.content as Record<string, unknown>)?.transcript != null && (
                   <details style={{ marginTop: '0.75rem' }}>
                     <summary style={{ cursor: 'pointer', color: 'var(--color-primary)' }}>Transcript</summary>
-                    <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>{(block.content as Record<string, unknown>).transcript as string}</p>
+                    <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                      {(block.content as Record<string, unknown>).transcript as string}
+                    </p>
                   </details>
                 )}
               </div>
@@ -131,53 +165,75 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
             )}
           </Card>
         ) : (
-          <Card><p>No content available</p></Card>
+          <Card>
+            <p>No content available</p>
+          </Card>
         )}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
           <Button
             data-testid="btn-prev-block"
             disabled={currentBlock === 0}
-            onClick={() => { const prev = Math.max(0, currentBlock - 1); setCurrentBlock(prev); saveProgress(prev); }}>
+            onClick={() => {
+              const prev = Math.max(0, currentBlock - 1);
+              setCurrentBlock(prev);
+              saveProgress(prev);
+            }}
+          >
             Previous
           </Button>
-          <Button
-            data-testid="btn-save-progress"
-            onClick={() => saveProgress(currentBlock)}>
+          <Button data-testid="btn-save-progress" onClick={() => saveProgress(currentBlock)}>
             Save Progress
           </Button>
           {currentBlock >= blocks.length - 1 && !completed ? (
             <Button
               data-testid="btn-complete-lesson"
               onClick={handleComplete}
-              style={{ background: 'var(--color-success, #2e7d32)' }}>
+              style={{ background: 'var(--color-success, #2e7d32)' }}
+            >
               Complete Lesson
             </Button>
           ) : (
             <Button
               data-testid="btn-next-block"
               disabled={currentBlock >= blocks.length - 1}
-              onClick={() => { const next = Math.min(blocks.length - 1, currentBlock + 1); setCurrentBlock(next); saveProgress(next); }}>
+              onClick={() => {
+                const next = Math.min(blocks.length - 1, currentBlock + 1);
+                setCurrentBlock(next);
+                saveProgress(next);
+              }}
+            >
               Next
             </Button>
           )}
         </div>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {progress && (
-            <Badge variant={(progress as Record<string, unknown>).status === 'completed' ? 'success' : 'warning'} data-testid="progress-status">
-              {completed ? 'completed' : (progress as Record<string, unknown>).status as string}
+            <Badge
+              variant={(progress as Record<string, unknown>).status === 'completed' ? 'success' : 'warning'}
+              data-testid="progress-status"
+            >
+              {completed ? 'completed' : ((progress as Record<string, unknown>).status as string)}
             </Badge>
           )}
           {completed && (
-            <Badge variant="success" data-testid="completion-badge">Lesson Completed!</Badge>
+            <Badge variant="success" data-testid="completion-badge">
+              Lesson Completed!
+            </Badge>
           )}
-          {(!!(lesson as Record<string, unknown>).quizId) && (
-            <a href={`/learn/quiz/${(lesson as Record<string, unknown>).quizId as string}`} style={{ color: 'var(--color-primary)' }} data-testid="quiz-link">
+          {!!(lesson as Record<string, unknown>).quizId && (
+            <a
+              href={`/learn/quiz/${(lesson as Record<string, unknown>).quizId as string}`}
+              style={{ color: 'var(--color-primary)' }}
+              data-testid="quiz-link"
+            >
               Take Quiz
             </a>
           )}
         </div>
         <div style={{ marginTop: '1rem' }}>
-          <a href="/learn/catalogue" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Back to catalogue</a>
+          <a href="/learn/catalogue" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+            Back to catalogue
+          </a>
         </div>
       </Container>
     </main>

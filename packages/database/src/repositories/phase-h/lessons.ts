@@ -1,10 +1,5 @@
 import type { DatabaseConnection } from '../../client.js';
-import type {
-  CourseId,
-  CourseModuleId,
-  LessonId,
-  LessonRecord,
-} from '@pte-app/contracts';
+import type { CourseId, CourseModuleId, LessonId, LessonRecord } from '@pte-app/contracts';
 import { randomUUID } from 'node:crypto';
 
 export interface CreateLessonInput {
@@ -28,16 +23,12 @@ export interface UpdateLessonInput {
   readonly estimatedMinutes?: number;
 }
 
-export async function createLesson(
-  connection: DatabaseConnection,
-  input: CreateLessonInput,
-): Promise<LessonRecord> {
+export async function createLesson(connection: DatabaseConnection, input: CreateLessonInput): Promise<LessonRecord> {
   const id = randomUUID() as LessonId;
 
-  const slugCheck = await connection.pool.query<Record<string, unknown>>(
-    `SELECT id FROM lessons WHERE slug = $1`,
-    [input.slug],
-  );
+  const slugCheck = await connection.pool.query<Record<string, unknown>>(`SELECT id FROM lessons WHERE slug = $1`, [
+    input.slug,
+  ]);
   if (slugCheck.rows.length > 0) {
     throw new Error(`Lesson with slug "${input.slug}" already exists`);
   }
@@ -47,9 +38,7 @@ export async function createLesson(
     [input.moduleId, input.orderPosition],
   );
   if (orderCheck.rows.length > 0) {
-    throw new Error(
-      `Lesson at order position ${input.orderPosition} already exists in module ${input.moduleId}`,
-    );
+    throw new Error(`Lesson at order position ${input.orderPosition} already exists in module ${input.moduleId}`);
   }
 
   const result = await connection.pool.query<Record<string, unknown>>(
@@ -79,10 +68,7 @@ export async function createLesson(
   return row as unknown as LessonRecord;
 }
 
-export async function getLessonById(
-  connection: DatabaseConnection,
-  id: LessonId,
-): Promise<LessonRecord | undefined> {
+export async function getLessonById(connection: DatabaseConnection, id: LessonId): Promise<LessonRecord | undefined> {
   const result = await connection.pool.query<Record<string, unknown>>(
     `SELECT id, module_id as "moduleId", course_id as "courseId", title, slug, summary,
       order_position as "orderPosition", is_optional as "isOptional",
@@ -95,10 +81,7 @@ export async function getLessonById(
   return result.rows[0] as unknown as LessonRecord | undefined;
 }
 
-export async function getLessonBySlug(
-  connection: DatabaseConnection,
-  slug: string,
-): Promise<LessonRecord | undefined> {
+export async function getLessonBySlug(connection: DatabaseConnection, slug: string): Promise<LessonRecord | undefined> {
   const result = await connection.pool.query<Record<string, unknown>>(
     `SELECT id, module_id as "moduleId", course_id as "courseId", title, slug, summary,
       order_position as "orderPosition", is_optional as "isOptional",
@@ -180,10 +163,7 @@ export async function updateLesson(
   return result.rows[0] as unknown as LessonRecord | undefined;
 }
 
-export async function publishLesson(
-  connection: DatabaseConnection,
-  id: LessonId,
-): Promise<LessonRecord | undefined> {
+export async function publishLesson(connection: DatabaseConnection, id: LessonId): Promise<LessonRecord | undefined> {
   const result = await connection.pool.query<Record<string, unknown>>(
     `UPDATE lessons SET status = 'published', version = version + 1, updated_at = NOW()
      WHERE id = $1
@@ -197,10 +177,7 @@ export async function publishLesson(
   return result.rows[0] as unknown as LessonRecord | undefined;
 }
 
-export async function retireLesson(
-  connection: DatabaseConnection,
-  id: LessonId,
-): Promise<LessonRecord | undefined> {
+export async function retireLesson(connection: DatabaseConnection, id: LessonId): Promise<LessonRecord | undefined> {
   const result = await connection.pool.query<Record<string, unknown>>(
     `UPDATE lessons SET status = 'retired', version = version + 1, updated_at = NOW()
      WHERE id = $1

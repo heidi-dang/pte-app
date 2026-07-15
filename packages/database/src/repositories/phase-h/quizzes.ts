@@ -38,10 +38,7 @@ export interface CreateQuizAttemptInput {
   readonly submissionId: string;
 }
 
-export async function createQuiz(
-  connection: DatabaseConnection,
-  input: CreateQuizInput,
-): Promise<LessonQuizRecord> {
+export async function createQuiz(connection: DatabaseConnection, input: CreateQuizInput): Promise<LessonQuizRecord> {
   const id = randomUUID() as LessonQuizId;
 
   const result = await connection.pool.query<Record<string, unknown>>(

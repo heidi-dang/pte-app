@@ -1,11 +1,5 @@
 import type { DatabaseConnection } from '../../client.js';
-import type {
-  LessonId,
-  CourseModuleId,
-  CourseId,
-  PrerequisiteId,
-  LessonPrerequisiteRecord,
-} from '@pte-app/contracts';
+import type { LessonId, CourseModuleId, CourseId, PrerequisiteId, LessonPrerequisiteRecord } from '@pte-app/contracts';
 import { randomUUID } from 'node:crypto';
 
 export interface CreatePrerequisiteInput {
@@ -98,10 +92,7 @@ export async function getPrerequisites(
   return result.rows as unknown as LessonPrerequisiteRecord[];
 }
 
-export async function deletePrerequisite(
-  connection: DatabaseConnection,
-  id: PrerequisiteId,
-): Promise<boolean> {
+export async function deletePrerequisite(connection: DatabaseConnection, id: PrerequisiteId): Promise<boolean> {
   const result = await connection.pool.query('DELETE FROM lesson_prerequisites WHERE id = $1', [id]);
   return (result.rowCount ?? 0) > 0;
 }

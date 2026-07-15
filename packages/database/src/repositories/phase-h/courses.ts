@@ -1,10 +1,5 @@
 import type { DatabaseConnection } from '../../client.js';
-import type {
-  CourseId,
-  CourseAccessLevel,
-  CourseRecord,
-  CourseCatalogueResult,
-} from '@pte-app/contracts';
+import type { CourseId, CourseAccessLevel, CourseRecord, CourseCatalogueResult } from '@pte-app/contracts';
 import { randomUUID } from 'node:crypto';
 
 export interface CreateCourseInput {
@@ -40,10 +35,7 @@ export interface SearchCoursesInput {
   readonly cursor?: string;
 }
 
-export async function createCourse(
-  connection: DatabaseConnection,
-  input: CreateCourseInput,
-): Promise<CourseRecord> {
+export async function createCourse(connection: DatabaseConnection, input: CreateCourseInput): Promise<CourseRecord> {
   const id = randomUUID() as CourseId;
   const result = await connection.pool.query<Record<string, unknown>>(
     `INSERT INTO courses (id, slug, title, summary, description, access_level, difficulty,
@@ -73,10 +65,7 @@ export async function createCourse(
   return row as unknown as CourseRecord;
 }
 
-export async function getCourseById(
-  connection: DatabaseConnection,
-  id: CourseId,
-): Promise<CourseRecord | undefined> {
+export async function getCourseById(connection: DatabaseConnection, id: CourseId): Promise<CourseRecord | undefined> {
   const result = await connection.pool.query<Record<string, unknown>>(
     `SELECT id, slug, title, summary, description, access_level as "accessLevel",
       difficulty, estimated_duration_minutes as "estimatedDurationMinutes",
@@ -89,10 +78,7 @@ export async function getCourseById(
   return result.rows[0] as unknown as CourseRecord | undefined;
 }
 
-export async function getCourseBySlug(
-  connection: DatabaseConnection,
-  slug: string,
-): Promise<CourseRecord | undefined> {
+export async function getCourseBySlug(connection: DatabaseConnection, slug: string): Promise<CourseRecord | undefined> {
   const result = await connection.pool.query<Record<string, unknown>>(
     `SELECT id, slug, title, summary, description, access_level as "accessLevel",
       difficulty, estimated_duration_minutes as "estimatedDurationMinutes",
@@ -137,7 +123,7 @@ export async function listPublishedCourses(
   const rows = result.rows as unknown as CourseRecord[];
   const hasMore = rows.length > limit;
   const courses = hasMore ? rows.slice(0, limit) : rows;
-  const nextCursor = hasMore ? courses[courses.length - 1]?.createdAt ?? null : null;
+  const nextCursor = hasMore ? (courses[courses.length - 1]?.createdAt ?? null) : null;
 
   return {
     courses,
@@ -157,7 +143,9 @@ export async function searchCourses(
   let index = 1;
 
   if (input.searchText) {
-    conditions.push(`to_tsvector('english', title || ' ' || summary || ' ' || description) @@ plainto_tsquery('english', $${index++})`);
+    conditions.push(
+      `to_tsvector('english', title || ' ' || summary || ' ' || description) @@ plainto_tsquery('english', $${index++})`,
+    );
     values.push(input.searchText);
   }
 
@@ -197,7 +185,7 @@ export async function searchCourses(
   const rows = result.rows as unknown as CourseRecord[];
   const hasMore = rows.length > limit;
   const courses = hasMore ? rows.slice(0, limit) : rows;
-  const nextCursor = hasMore ? courses[courses.length - 1]?.createdAt ?? null : null;
+  const nextCursor = hasMore ? (courses[courses.length - 1]?.createdAt ?? null) : null;
 
   return {
     courses,
@@ -271,10 +259,7 @@ export async function updateCourse(
   return result.rows[0] as unknown as CourseRecord | undefined;
 }
 
-export async function publishCourse(
-  connection: DatabaseConnection,
-  id: CourseId,
-): Promise<CourseRecord | undefined> {
+export async function publishCourse(connection: DatabaseConnection, id: CourseId): Promise<CourseRecord | undefined> {
   const result = await connection.pool.query<Record<string, unknown>>(
     `UPDATE courses SET status = 'published', published_at = NOW(), version = version + 1, updated_at = NOW()
      WHERE id = $1
@@ -288,10 +273,7 @@ export async function publishCourse(
   return result.rows[0] as unknown as CourseRecord | undefined;
 }
 
-export async function retireCourse(
-  connection: DatabaseConnection,
-  id: CourseId,
-): Promise<CourseRecord | undefined> {
+export async function retireCourse(connection: DatabaseConnection, id: CourseId): Promise<CourseRecord | undefined> {
   const result = await connection.pool.query<Record<string, unknown>>(
     `UPDATE courses SET status = 'retired', version = version + 1, updated_at = NOW()
      WHERE id = $1

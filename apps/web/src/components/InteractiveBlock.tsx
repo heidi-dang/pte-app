@@ -11,7 +11,7 @@ interface InteractiveBlockProps {
 export function InteractiveBlock({ content, blockType }: InteractiveBlockProps) {
   if (blockType !== 'interactive') return null;
 
-  const interactionType = content.interactionType as string || 'reveal';
+  const interactionType = (content.interactionType as string) || 'reveal';
 
   switch (interactionType) {
     case 'reveal':
@@ -29,18 +29,14 @@ export function InteractiveBlock({ content, blockType }: InteractiveBlockProps) 
 
 function RevealBlock({ content }: { content: Record<string, unknown> }) {
   const [revealed, setRevealed] = useState(false);
-  const prompt = content.prompt as string || 'Click to reveal';
-  const hidden = content.hidden as string || 'Content';
+  const prompt = (content.prompt as string) || 'Click to reveal';
+  const hidden = (content.hidden as string) || 'Content';
 
   return (
     <div data-testid="interactive-reveal" role="region" aria-label="Reveal interaction">
       <p style={{ marginBottom: '0.75rem' }}>{prompt}</p>
       {!revealed ? (
-        <Button
-          data-testid="reveal-button"
-          onClick={() => setRevealed(true)}
-          aria-label="Reveal content"
-        >
+        <Button data-testid="reveal-button" onClick={() => setRevealed(true)} aria-label="Reveal content">
           Reveal
         </Button>
       ) : (
@@ -57,14 +53,19 @@ function RevealBlock({ content }: { content: Record<string, unknown> }) {
 
 function FlashcardBlock({ content }: { content: Record<string, unknown> }) {
   const [flipped, setFlipped] = useState(false);
-  const front = content.front as string || 'Front';
-  const back = content.back as string || 'Back';
+  const front = (content.front as string) || 'Front';
+  const back = (content.back as string) || 'Back';
 
   return (
     <div data-testid="interactive-flashcard" role="region" aria-label="Flashcard interaction">
       <div
         onClick={() => setFlipped(!flipped)}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFlipped(!flipped); } }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setFlipped(!flipped);
+          }
+        }}
         tabIndex={0}
         role="button"
         aria-label={flipped ? `Answer: ${back}. Click to flip back.` : `Question: ${front}. Click to reveal answer.`}
@@ -107,23 +108,26 @@ function MatchingBlock({ content }: { content: Record<string, unknown> }) {
     setFeedback('');
   }, []);
 
-  const handleRightClick = useCallback((idx: number) => {
-    if (selectedLeft === null) return;
-    if (pairs[selectedLeft]?.right === pairs[idx]?.right) {
-      setMatched((prev) => new Set([...prev, selectedLeft, idx]));
-      setFeedback('Correct match!');
-    } else {
-      setFeedback('Try again');
-    }
-    setSelectedLeft(null);
-  }, [selectedLeft, pairs]);
+  const handleRightClick = useCallback(
+    (idx: number) => {
+      if (selectedLeft === null) return;
+      if (pairs[selectedLeft]?.right === pairs[idx]?.right) {
+        setMatched((prev) => new Set([...prev, selectedLeft, idx]));
+        setFeedback('Correct match!');
+      } else {
+        setFeedback('Try again');
+      }
+      setSelectedLeft(null);
+    },
+    [selectedLeft, pairs],
+  );
 
   const leftItems = pairs.map((p, i) => ({ text: p.left, idx: i }));
   const rightItems = [...pairs].sort(() => Math.random() - 0.5).map((p, i) => ({ text: p.right, idx: i }));
 
   return (
     <div data-testid="interactive-matching" role="region" aria-label="Matching interaction">
-      <p style={{ marginBottom: '0.75rem' }}>{content.instructions as string || 'Match the pairs:'}</p>
+      <p style={{ marginBottom: '0.75rem' }}>{(content.instructions as string) || 'Match the pairs:'}</p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
         <div>
           {leftItems.map(({ text, idx }) => (
@@ -134,10 +138,14 @@ function MatchingBlock({ content }: { content: Record<string, unknown> }) {
               disabled={matched.has(idx)}
               aria-label={`Match item: ${text}`}
               style={{
-                display: 'block', width: '100%', padding: '0.5rem', marginBottom: '0.25rem',
+                display: 'block',
+                width: '100%',
+                padding: '0.5rem',
+                marginBottom: '0.25rem',
                 background: selectedLeft === idx ? '#bbdefb' : matched.has(idx) ? '#c8e6c9' : '#f5f5f5',
                 border: `2px solid ${selectedLeft === idx ? '#1976d2' : matched.has(idx) ? '#388e3c' : '#ddd'}`,
-                borderRadius: '6px', cursor: matched.has(idx) ? 'default' : 'pointer',
+                borderRadius: '6px',
+                cursor: matched.has(idx) ? 'default' : 'pointer',
                 textAlign: 'left',
               }}
             >
@@ -154,10 +162,14 @@ function MatchingBlock({ content }: { content: Record<string, unknown> }) {
               disabled={matched.has(idx)}
               aria-label={`Match option: ${text}`}
               style={{
-                display: 'block', width: '100%', padding: '0.5rem', marginBottom: '0.25rem',
+                display: 'block',
+                width: '100%',
+                padding: '0.5rem',
+                marginBottom: '0.25rem',
                 background: matched.has(idx) ? '#c8e6c9' : '#f5f5f5',
                 border: `2px solid ${matched.has(idx) ? '#388e3c' : '#ddd'}`,
-                borderRadius: '6px', cursor: matched.has(idx) ? 'default' : 'pointer',
+                borderRadius: '6px',
+                cursor: matched.has(idx) ? 'default' : 'pointer',
                 textAlign: 'left',
               }}
             >
@@ -167,7 +179,10 @@ function MatchingBlock({ content }: { content: Record<string, unknown> }) {
         </div>
       </div>
       {feedback && (
-        <p data-testid="match-feedback" style={{ marginTop: '0.5rem', color: feedback.includes('Correct') ? '#2e7d32' : '#c62828' }}>
+        <p
+          data-testid="match-feedback"
+          style={{ marginTop: '0.5rem', color: feedback.includes('Correct') ? '#2e7d32' : '#c62828' }}
+        >
           {feedback}
         </p>
       )}
@@ -182,7 +197,7 @@ function MatchingBlock({ content }: { content: Record<string, unknown> }) {
 
 function OrderingBlock({ content }: { content: Record<string, unknown> }) {
   const items = (content.items as string[]) || [];
-  const instructions = content.instructions as string || 'Arrange in the correct order:';
+  const instructions = (content.instructions as string) || 'Arrange in the correct order:';
   const correctOrder = (content.correctOrder as number[]) || items.map((_, i) => i);
 
   const [order, setOrder] = useState<number[]>(() => {
@@ -231,8 +246,11 @@ function OrderingBlock({ content }: { content: Record<string, unknown> }) {
             key={itemIdx}
             data-testid={`order-item-${itemIdx}`}
             style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.5rem', marginBottom: '0.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem',
+              marginBottom: '0.25rem',
               background: submitted ? (isCorrect ? '#c8e6c9' : '#ffcdd2') : '#f5f5f5',
               border: `1px solid ${submitted ? (isCorrect ? '#388e3c' : '#c62828') : '#ddd'}`,
               borderRadius: '6px',
@@ -247,7 +265,13 @@ function OrderingBlock({ content }: { content: Record<string, unknown> }) {
                   onClick={() => moveUp(posIdx)}
                   disabled={posIdx === 0}
                   aria-label={`Move "${items[itemIdx]}" up`}
-                  style={{ padding: '0.25rem 0.5rem', background: '#e0e0e0', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                  style={{
+                    padding: '0.25rem 0.5rem',
+                    background: '#e0e0e0',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
                 >
                   ↑
                 </button>
@@ -256,7 +280,13 @@ function OrderingBlock({ content }: { content: Record<string, unknown> }) {
                   onClick={() => moveDown(posIdx)}
                   disabled={posIdx === order.length - 1}
                   aria-label={`Move "${items[itemIdx]}" down`}
-                  style={{ padding: '0.25rem 0.5rem', background: '#e0e0e0', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                  style={{
+                    padding: '0.25rem 0.5rem',
+                    background: '#e0e0e0',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
                 >
                   ↓
                 </button>

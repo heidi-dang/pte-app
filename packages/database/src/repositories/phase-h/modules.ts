@@ -1,9 +1,5 @@
 import type { DatabaseConnection } from '../../client.js';
-import type {
-  CourseId,
-  CourseModuleId,
-  CourseModuleRecord,
-} from '@pte-app/contracts';
+import type { CourseId, CourseModuleId, CourseModuleRecord } from '@pte-app/contracts';
 import { randomUUID } from 'node:crypto';
 
 export interface CreateCourseModuleInput {
@@ -31,9 +27,7 @@ export async function createCourseModule(
     [input.courseId, input.orderPosition],
   );
   if (existing.rows.length > 0) {
-    throw new Error(
-      `Module at order position ${input.orderPosition} already exists for course ${input.courseId}`,
-    );
+    throw new Error(`Module at order position ${input.orderPosition} already exists for course ${input.courseId}`);
   }
 
   const result = await connection.pool.query<Record<string, unknown>>(
