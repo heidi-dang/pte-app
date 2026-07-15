@@ -51,7 +51,9 @@ jobs:
         run: npm ci
 
       - name: Set up environment
-        run: cp .env.example .env.local
+        run: |
+          cp .env.example .env.local
+          cp .env.production.test .env.production
 
       - name: Run complete Phase A test gate
         run: npm test

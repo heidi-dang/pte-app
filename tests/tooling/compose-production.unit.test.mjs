@@ -9,7 +9,7 @@ const COMPOSE_FILE = `${ROOT}/compose.production.yml`;
 const ENV_FILE = `${ROOT}/.env.production.test`;
 
 function getNormalizedCompose() {
-  const output = execSync(`docker compose -f ${COMPOSE_FILE} --env-file ${ENV_FILE} config --format json 2>/dev/null`, {
+  const output = execSync(`docker compose -f ${COMPOSE_FILE} --env-file ${ENV_FILE} config --format json`, {
     encoding: 'utf8',
     env: { ...process.env, PATH: process.env.PATH },
   });

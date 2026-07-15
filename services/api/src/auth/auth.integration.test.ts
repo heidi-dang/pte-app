@@ -444,7 +444,7 @@ describe('auth integration', () => {
         payload: { email: scopeEmail, password: testPassword },
       });
       const cookies = login.cookies;
-      const sessionCookie = cookies.find((c: { name: string }) => c.name === 'pte_session');
+      const sessionCookie = cookies.find((c: { name: string }) => c.name === config.auth.cookieName);
       assert.ok(sessionCookie);
 
       const meRes = await app.inject({
@@ -498,7 +498,7 @@ describe('auth integration', () => {
       const res = await app.inject({
         method: 'GET',
         url: '/auth/me',
-        headers: { cookie: 'pte_session=expired-token-value' },
+        headers: { cookie: `${config.auth.cookieName}=expired-token-value` },
       });
       assert.equal(res.statusCode, 401);
     });
