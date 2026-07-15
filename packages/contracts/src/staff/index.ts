@@ -1,0 +1,14 @@
+export type { StaffCapability, PermissionCheck } from './permission.js';
+export type { TeacherStudentAssignment } from './teacher-student.js';
+export type { TeacherAssignment, AssignmentTarget } from './assignment.js';
+export type { ResponseReview } from './response-review.js';
+export type { TeacherFeedback } from './feedback.js';
+export type { ReviewLock } from './review-lock.js';
+export type { StaffUserAdminAction } from './user-administration.js';
+export type { EntitlementAdjustmentRequest } from './entitlement-administration.js';
+export type { ScoringSupportAction } from './scoring-support.js';
+export type { ModerationCase } from './moderation.js';
+export type { ImpersonationSession } from './impersonation.js';
+export type { SensitiveActionConfirmation } from './sensitive-action.js';
+export type { AuditQuery, AuditViewEntry } from './audit-view.js';
+export type { OperationsDashboard } from './operations-dashboard.js';
