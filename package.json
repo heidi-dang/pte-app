@@ -27,14 +27,15 @@
     "validate:docs": "node scripts/validate-docs.mjs",
     "validate:workspace": "node scripts/validate-workspace.mjs",
     "test:tooling": "node --test tests/tooling/*.test.mjs",
-    "test:unit": "turbo run test:unit --concurrency=1",
+    "test:unit": "turbo run test:unit --concurrency=4",
     "test:integration": "turbo run test:integration --concurrency=1",
     "test:e2e": "turbo run test:e2e --filter=@pte-app/web --concurrency=1",
     "test": "npm run test:docs && npm run validate:docs && npm run validate:workspace && npm run test:tooling && npm run test:unit && npm run test:integration",
     "generate:pte-blueprints": "node scripts/generate-pte-blueprints.mjs",
     "validate": "node scripts/validate-docs.mjs",
     "build": "turbo run build",
-    "ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run test:e2e && npm run validate:workspace"
+    "ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build && npm run test:e2e && npm run validate:workspace",
+    "test:api": "turbo run test:api --concurrency=2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

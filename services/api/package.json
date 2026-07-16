@@ -10,7 +10,8 @@
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
     "test:unit": "tsx --test 'src/**/*.unit.test.ts'",
-    "test:integration": "tsx --test 'src/**/*.integration.test.ts'"
+    "test:integration": "tsx --test 'src/**/*.integration.test.ts'",
+    "test:api": "tsx --test 'src/phase-h/phase-h.api.test.ts'"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.0",

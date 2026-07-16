@@ -7,14 +7,42 @@ on:
     branches: [main]
   workflow_dispatch:
 
-jobs:
-  validate:
-    runs-on: ubuntu-latest
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+env:
+  CI: 'true'
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --prefer-offline
+      - run: npm run generate:pte-blueprints
+      - run: node scripts/generate-pte-blueprints.mjs --validate
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:docs
+      - run: npm run validate:docs
+      - run: npm run test:tooling
+
+  unit-integration-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build
     env:
       PG_REQUIRED: 'true'
       CI: 'true'
-
     services:
       postgres:
         image: postgres:17-alpine
@@ -28,7 +56,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5432:5432
+          - 5432
       redis:
         image: redis:7-alpine
         options: >-
@@ -37,46 +65,127 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 6379:6379
-
+          - 6379
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
-
-      - run: npm ci
-      - run: cp .env.example .env.local
-
-      - name: Prepare E2E runtime environment
-        run: node scripts/prepare-e2e-runtime.mjs
-
-      - run: npm run format:check
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test:docs
-      - run: npm run validate:docs
-      - run: npm run test:tooling
+      - run: npm ci --prefer-offline
+      - name: Set dynamic service ports
+        run: |
+          POSTGRES_PORT=${{ job.services.postgres.ports['5432'] }}
+          REDIS_PORT=${{ job.services.redis.ports['6379'] }}
+          echo "POSTGRES_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "POSTGRES_PORT=$POSTGRES_PORT" >> $GITHUB_ENV
+          echo "POSTGRES_DATABASE=pte_app" >> $GITHUB_ENV
+          echo "POSTGRES_USER=pte_app" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=local_dev_password_only" >> $GITHUB_ENV
+          echo "REDIS_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "REDIS_PORT=$REDIS_PORT" >> $GITHUB_ENV
+      - name: Write .env.local
+        run: |
+          echo "NODE_ENV=development" > .env.local
+          echo "POSTGRES_HOST=127.0.0.1" >> .env.local
+          echo "POSTGRES_PORT=${{ job.services.postgres.ports['5432'] }}" >> .env.local
+          echo "POSTGRES_DATABASE=pte_app" >> .env.local
+          echo "POSTGRES_USER=pte_app" >> .env.local
+          echo "POSTGRES_PASSWORD=local_dev_password_only" >> .env.local
+          echo "REDIS_HOST=127.0.0.1" >> .env.local
+          echo "REDIS_PORT=${{ job.services.redis.ports['6379'] }}" >> .env.local
+          echo "SESSION_COOKIE_NAME=pte_session" >> .env.local
+          echo "LOG_LEVEL=info" >> .env.local
+          echo "APP_VERSION=0.0.0" >> .env.local
+          echo "NEXT_PUBLIC_API_URL=http://localhost:4000" >> .env.local
       - run: npm run test:unit
       - run: npm run test:integration
+      - run: npm run test:api
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --prefer-offline
+      - run: cp .env.example .env.local
       - run: npm run build
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-
-      - run: npm run test:e2e
-
-      - run: npm run validate:workspace
-      - run: git diff --check
-      - name: Fail on tracked file changes
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: build
+    env:
+      PG_REQUIRED: 'true'
+      CI: 'true'
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: pte_app
+          POSTGRES_USER: pte_app
+          POSTGRES_PASSWORD: local_dev_password_only
+        options: >-
+          --health-cmd "pg_isready -U pte_app -d pte_app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --prefer-offline
+      - name: Set dynamic service ports
         run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "ERROR: Tests or generation modified tracked files"
-            git diff --stat
-            exit 1
-          fi
-
+          POSTGRES_PORT=${{ job.services.postgres.ports['5432'] }}
+          REDIS_PORT=${{ job.services.redis.ports['6379'] }}
+          echo "POSTGRES_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "POSTGRES_PORT=$POSTGRES_PORT" >> $GITHUB_ENV
+          echo "POSTGRES_DATABASE=pte_app" >> $GITHUB_ENV
+          echo "POSTGRES_USER=pte_app" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=local_dev_password_only" >> $GITHUB_ENV
+          echo "REDIS_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "REDIS_PORT=$REDIS_PORT" >> $GITHUB_ENV
+      - name: Write .env.local
+        run: |
+          echo "NODE_ENV=development" > .env.local
+          echo "POSTGRES_HOST=127.0.0.1" >> .env.local
+          echo "POSTGRES_PORT=${{ job.services.postgres.ports['5432'] }}" >> .env.local
+          echo "POSTGRES_DATABASE=pte_app" >> .env.local
+          echo "POSTGRES_USER=pte_app" >> .env.local
+          echo "POSTGRES_PASSWORD=local_dev_password_only" >> .env.local
+          echo "REDIS_HOST=127.0.0.1" >> .env.local
+          echo "REDIS_PORT=${{ job.services.redis.ports['6379'] }}" >> .env.local
+          echo "SESSION_COOKIE_NAME=pte_session" >> .env.local
+          echo "LOG_LEVEL=info" >> .env.local
+          echo "APP_VERSION=0.0.0" >> .env.local
+      - run: node scripts/prepare-e2e-runtime.mjs
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+      - run: npm run test:e2e
       - name: Upload E2E report
         if: always()
         uses: actions/upload-artifact@v4
@@ -84,7 +193,6 @@ jobs:
           name: playwright-report
           path: apps/web/playwright-report/
           retention-days: 7
-
       - name: Upload E2E test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -92,7 +200,6 @@ jobs:
           name: test-results
           path: apps/web/test-results/
           retention-days: 7
-
       - name: Upload service logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -101,3 +208,25 @@ jobs:
           path: apps/web/.local-runtime/
           include-hidden-files: true
           retention-days: 7
+
+  final-workspace-check:
+    runs-on: ubuntu-latest
+    needs: [static-checks, unit-integration-api, build, e2e]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: node scripts/validate-workspace.mjs
+      - run: git diff --check
+      - name: Fail on tracked file changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "ERROR: Tests or generation modified tracked files"
+            git diff --stat
+            exit 1
+          fi

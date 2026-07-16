@@ -2,8 +2,16 @@ import { readFileSync, existsSync, unlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadDatabaseConfig } from '@pte-app/database';
 import { resetTestDatabase } from '@pte-app/database/testing/setup';
+import { STATE_PATH, type E2EState } from './global-setup';
 
-const PIDS_PATH = resolve(process.cwd(), '.local-runtime', 'pids.json');
+function loadState(): E2EState | null {
+  if (!existsSync(STATE_PATH)) return null;
+  try {
+    return JSON.parse(readFileSync(STATE_PATH, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
 
 function isAlive(pid: number): boolean {
   try {
@@ -49,20 +57,30 @@ async function stopProcess(pid: number, label: string): Promise<void> {
       }
     }
   }
+  if (isAlive(pid)) {
+    console.error(`  ✗ ${label} (PID ${pid}) could not be stopped`);
+  } else {
+    console.log(`  ✓ ${label} (PID ${pid}) stopped`);
+  }
 }
 
 async function main(): Promise<void> {
   console.log('Tearing down E2E services...');
-  if (existsSync(PIDS_PATH)) {
-    try {
-      const pids = JSON.parse(readFileSync(PIDS_PATH, 'utf-8'));
-      const apiPid = pids.api?.pid;
-      const webPid = pids.web?.pid;
-      if (apiPid) await stopProcess(apiPid, 'API');
-      if (webPid) await stopProcess(webPid, 'Web');
-    } catch {
-      // ignore
+  const state = loadState();
+  if (state) {
+    // Check for restarted API PID in pids.json
+    const pidsPath = resolve(process.cwd(), '.local-runtime', 'pids.json');
+    let apiPid = state.apiPid;
+    if (existsSync(pidsPath)) {
+      try {
+        const pids = JSON.parse(readFileSync(pidsPath, 'utf-8'));
+        if (pids.api?.pid) apiPid = pids.api.pid;
+      } catch {
+        // ignore
+      }
     }
+    await stopProcess(apiPid, 'API');
+    await stopProcess(state.webPid, 'Web');
   }
   try {
     const baseConfig = loadDatabaseConfig();
@@ -71,11 +89,16 @@ async function main(): Promise<void> {
   } catch (err) {
     console.error('  ✗ Failed to reset test database:', err);
   }
-  try {
-    if (existsSync(PIDS_PATH)) unlinkSync(PIDS_PATH);
-  } catch {
-    /* ignore */
+
+  // Clean up state files
+  for (const path of [STATE_PATH, resolve(process.cwd(), '.local-runtime', 'pids.json')]) {
+    try {
+      if (existsSync(path)) unlinkSync(path);
+    } catch {
+      // ignore
+    }
   }
+
   console.log('E2E teardown complete.');
 }
 

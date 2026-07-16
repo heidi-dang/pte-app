@@ -18,3 +18,4 @@ export * as prohibitedMatchRepo from './repositories/prohibited-matches.js';
 export * as reVerificationRepo from './repositories/reverification-jobs.js';
 export * as policyRepo from './repositories/policies.js';
 export * as contentAuditRepo from './repositories/content-audit.js';
+export * as phaseH from './repositories/phase-h/index.js';

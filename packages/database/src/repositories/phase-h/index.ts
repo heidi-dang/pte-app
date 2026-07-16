@@ -1,0 +1,10 @@
+export * as courses from './courses.js';
+export * as modules from './modules.js';
+export * as lessons from './lessons.js';
+export * as lessonBlocks from './lesson-blocks.js';
+export * as enrolments from './enrolments.js';
+export * as progress from './progress.js';
+export * as prerequisites from './prerequisites.js';
+export * as quizzes from './quizzes.js';
+export * as teacherNotes from './teacher-notes.js';
+export * as assignments from './assignments.js';
