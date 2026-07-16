@@ -8,14 +8,10 @@ async function apiRequest(context: any, path: string, options: Record<string, an
   const fullUrl = path.startsWith('http') ? path : `${state.apiUrl}${path}`;
   const { data, headers, ...rest } = options;
   const fetchOptions: Record<string, any> = { ...rest };
+  fetchOptions.headers = { ...headers };
   if (data !== undefined) {
     fetchOptions.data = data;
-    fetchOptions.headers = { ...headers };
-    if (data !== '') {
-      fetchOptions.headers['content-type'] = 'application/json';
-    }
-  } else {
-    fetchOptions.headers = { ...headers };
+    fetchOptions.headers['content-type'] = 'application/json';
   }
   return context.request.fetch(fullUrl, fetchOptions);
 }
@@ -43,7 +39,7 @@ async function loginViaApi(context: any, email: string, password: string): Promi
 }
 
 async function logoutViaApi(context: any): Promise<void> {
-  await apiRequest(context, '/auth/logout', { method: 'POST', data: '' });
+  await apiRequest(context, '/auth/logout', { method: 'POST' });
   await context.clearCookies();
 }
 
