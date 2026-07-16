@@ -82,7 +82,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-INFRA_FILES="compose.production.yml infrastructure/caddy/Caddyfile secrets/origin.pem secrets/origin-key.pem"
+INFRA_FILES="Dockerfile compose.production.yml infrastructure/caddy/Caddyfile secrets/origin.pem secrets/origin-key.pem"
 INFRA_BACKUP_DIR=""
 for f in $INFRA_FILES; do
   if [ -f "$f" ]; then
