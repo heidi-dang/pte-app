@@ -16,3 +16,6 @@ test-results/
 *.tfstate.backup
 # secrets
 secrets/
+
+# production backups
+backups/
