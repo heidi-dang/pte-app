@@ -432,10 +432,14 @@ test.describe('Phase G content provenance E2E', () => {
     expect(simRes.ok()).toBeTruthy();
     const sim = await simRes.json();
 
+    // Get latest version after submit/review/verify
+    const provLatest = await request.get(`${cfg.apiUrl}/content-provenance/records/${prov.id}`, editorAuth);
+    const provData = await provLatest.json();
+
     // Link similarity check to provenance
     await request.patch(`${cfg.apiUrl}/content-provenance/records/${prov.id}`, {
       ...editorAuth,
-      data: { similarityCheckId: sim.id, expectedVersion: prov.version },
+      data: { similarityCheckId: sim.id, expectedVersion: provData.version },
     });
 
     const pubRes = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
@@ -597,9 +601,12 @@ test.describe('Phase G content provenance E2E', () => {
       data: { contentId: 'content-hist-001', contentVersionId: 'v1' },
     });
     const sim2 = await simRes2.json();
+    // Get latest version after submit/review/verify
+    const provLatest2 = await request.get(`${cfg.apiUrl}/content-provenance/records/${prov.id}`, auth);
+    const provData2 = await provLatest2.json();
     await request.patch(`${cfg.apiUrl}/content-provenance/records/${prov.id}`, {
       ...auth,
-      data: { similarityCheckId: sim2.id, expectedVersion: prov.version },
+      data: { similarityCheckId: sim2.id, expectedVersion: provData2.version },
     });
 
     const pub1 = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
