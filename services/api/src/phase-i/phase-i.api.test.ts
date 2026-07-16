@@ -53,6 +53,13 @@ describe('Phase I API Integration', () => {
     qId0 = fixtures.questionIds[0]!;
   });
 
+  beforeEach(async () => {
+    await harness.db.pool.query(
+      `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
+      [fixtures.student.id, fixtures.lessonId],
+    );
+  });
+
   after(async () => {
     clearRegistry();
     await harness?.stop();
@@ -174,13 +181,6 @@ describe('Phase I API Integration', () => {
   });
 
   describe('Empty / Incomplete Response', () => {
-    after(async () => {
-      await harness.db.pool.query(
-        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
-        [fixtures.student.id, fixtures.lessonId],
-      );
-    });
-
     it('accepts empty response (renderer treats as valid)', async () => {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -225,13 +225,6 @@ describe('Phase I API Integration', () => {
   });
 
   describe('State Machine Enforcement', () => {
-    after(async () => {
-      await harness.db.pool.query(
-        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
-        [fixtures.student.id, fixtures.lessonId],
-      );
-    });
-
     it('rejects autosave on submitted attempt', async () => {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -333,13 +326,6 @@ describe('Phase I API Integration', () => {
   });
 
   describe('Timer / Expiry Enforcement', () => {
-    after(async () => {
-      await harness.db.pool.query(
-        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
-        [fixtures.student.id, fixtures.lessonId],
-      );
-    });
-
     it('rejects autosave on expired attempt', async () => {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -399,13 +385,6 @@ describe('Phase I API Integration', () => {
   });
 
   describe('Playback Rights Enforcement', () => {
-    after(async () => {
-      await harness.db.pool.query(
-        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
-        [fixtures.student.id, fixtures.lessonId],
-      );
-    });
-
     it('rejects extra plays once maxPlays is consumed', async () => {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -487,13 +466,6 @@ describe('Phase I API Integration', () => {
   });
 
   describe('Normalized Response Storage', () => {
-    after(async () => {
-      await harness.db.pool.query(
-        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
-        [fixtures.student.id, fixtures.lessonId],
-      );
-    });
-
     it('stores normalized response instead of raw on submit', async () => {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -528,13 +500,6 @@ describe('Phase I API Integration', () => {
   });
 
   describe('Idempotency', () => {
-    after(async () => {
-      await harness.db.pool.query(
-        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
-        [fixtures.student.id, fixtures.lessonId],
-      );
-    });
-
     it('duplicate idempotency key returns same result', async () => {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -603,13 +568,6 @@ describe('Phase I API Integration', () => {
   });
 
   describe('Session Recovery', () => {
-    after(async () => {
-      await harness.db.pool.query(
-        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
-        [fixtures.student.id, fixtures.lessonId],
-      );
-    });
-
     it('reuses existing active session on start', async () => {
       const { status: firstStatus, data: firstData } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -638,13 +596,6 @@ describe('Phase I API Integration', () => {
   });
 
   describe('questionTaskTypes Validation', () => {
-    after(async () => {
-      await harness.db.pool.query(
-        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
-        [fixtures.student.id, fixtures.lessonId],
-      );
-    });
-
     it('rejects unknown task type at session start', async () => {
       const { status, data } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -716,13 +667,6 @@ describe('Phase I API Integration', () => {
   });
 
   describe('maxPlays Validation', () => {
-    after(async () => {
-      await harness.db.pool.query(
-        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
-        [fixtures.student.id, fixtures.lessonId],
-      );
-    });
-
     async function startPlaybackTest(): Promise<string> {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
