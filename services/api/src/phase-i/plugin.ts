@@ -40,20 +40,22 @@ async function validateAndNormalizeResponse(
 ): Promise<{ normalized: Record<string, unknown>; errors?: string[] }> {
   if (attempt.versionSnapshotId) {
     const snapshot = await repo.attempts.getVersionSnapshot(db, attempt.versionSnapshotId);
-    if (snapshot) {
-      const renderer = resolveRenderer(snapshot.taskType);
-      if (renderer) {
-        const jsonResponse = rawResponse as unknown as JsonObject;
-        const validation = renderer.validateResponse(jsonResponse);
-        if (!validation.valid) {
-          return { normalized: rawResponse, errors: validation.errors as string[] };
-        }
-        const normalized = renderer.normalizeResponse(jsonResponse) as unknown as Record<string, unknown>;
-        return { normalized };
-      }
+    if (!snapshot) {
+      return { normalized: rawResponse, errors: [`Version snapshot ${attempt.versionSnapshotId} not found`] };
     }
+    const renderer = resolveRenderer(snapshot.taskType);
+    if (!renderer) {
+      return { normalized: rawResponse, errors: [`No renderer registered for task type '${snapshot.taskType}'`] };
+    }
+    const jsonResponse = rawResponse as unknown as JsonObject;
+    const validation = renderer.validateResponse(jsonResponse);
+    if (!validation.valid) {
+      return { normalized: rawResponse, errors: validation.errors as string[] };
+    }
+    const normalized = renderer.normalizeResponse(jsonResponse) as unknown as Record<string, unknown>;
+    return { normalized };
   }
-  // Fallback: accept if no renderer found
+  // No version snapshot — legacy/demo attempt without a renderer
   return { normalized: rawResponse };
 }
 
@@ -84,7 +86,7 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
     const lessonId = body.lessonId as string;
     const mode = body.mode as string;
     const questionIds = body.questionIds as unknown[];
-    const questionTaskTypes = body.questionTaskTypes as Record<string, string> | undefined;
+    const questionTaskTypes = body.questionTaskTypes;
 
     if (!lessonId || !mode) {
       return reply.status(400).send({ error: 'lessonId and mode are required' });
@@ -97,6 +99,26 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
     }
     if (!questionIds.every((id): id is string => typeof id === 'string')) {
       return reply.status(400).send({ error: 'Each questionId must be a string' });
+    }
+
+    // Validate questionTaskTypes if provided
+    if (questionTaskTypes !== undefined) {
+      if (!isObject(questionTaskTypes)) {
+        return reply.status(400).send({ error: 'questionTaskTypes must be a plain JSON object' });
+      }
+      const qtt = questionTaskTypes as Record<string, unknown>;
+      for (const [qId, rawType] of Object.entries(qtt)) {
+        if (typeof rawType !== 'string') {
+          return reply.status(400).send({
+            error: `Task type for question '${qId}' must be a string, got ${typeof rawType}`,
+          });
+        }
+        if (!resolveRenderer(rawType)) {
+          return reply.status(400).send({
+            error: `Unknown task type '${rawType}' for question '${qId}': no renderer registered`,
+          });
+        }
+      }
     }
 
     const modeEnum = mode as QuestionAttemptMode;
@@ -406,10 +428,21 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
 
     const attemptId = body.attemptId as string;
     const mediaId = body.mediaId as string;
-    const maxPlays = (body.maxPlays as number) ?? 1;
+    const rawMaxPlays = body.maxPlays;
 
     if (!attemptId || !mediaId) {
       return reply.status(400).send({ error: 'attemptId and mediaId are required' });
+    }
+
+    // maxPlays must be a positive integer when provided
+    const maxPlays = rawMaxPlays !== undefined ? (rawMaxPlays as number) : 1;
+    if (body.maxPlays !== undefined) {
+      if (typeof rawMaxPlays !== 'number' || !Number.isInteger(rawMaxPlays) || rawMaxPlays < 1) {
+        return reply.status(400).send({
+          error: 'maxPlays must be a positive integer',
+          received: rawMaxPlays,
+        });
+      }
     }
 
     const attempt = await repo.attempts.getAttempt(db, attemptId);

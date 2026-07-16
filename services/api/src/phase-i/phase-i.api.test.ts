@@ -3,7 +3,12 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { startTestHarness, type TestHarness } from '../phase-h/test-harness.js';
 import { buildTestFixtures, type PhaseITestFixtures } from './test-fixtures.js';
-import { clearRegistry } from './renderer-registry.js';
+import { clearRegistry, registerRenderer } from './renderer-registry.js';
+import {
+  createDemoSingleAnswerRenderer,
+  createDemoTextResponseRenderer,
+  createDemoAudioPolicyRenderer,
+} from './demo-renderer.js';
 
 const runId = `api-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -586,6 +591,193 @@ describe('Phase I API Integration', () => {
       assert.equal(secondStatus, 200);
       assert.equal(secondData.recovered, true);
       assert.equal(secondData.session.id, firstData.session.id);
+    });
+  });
+
+  describe('questionTaskTypes Validation', () => {
+    it('rejects unknown task type at session start', async () => {
+      const { status, data } = await api('/api/v1/attempt/session/start', {
+        method: 'POST',
+        token: studentToken,
+        body: JSON.stringify({
+          lessonId: fixtures.lessonId,
+          mode: 'learning',
+          questionIds: [qId0],
+          questionTaskTypes: { [qId0]: 'pte:unknown:renderer' },
+        }),
+      });
+      assert.equal(status, 400, JSON.stringify(data));
+      assert.ok(data.error.includes('Unknown task type'), data.error);
+    });
+
+    it('rejects non-object questionTaskTypes', async () => {
+      const { status, data } = await api('/api/v1/attempt/session/start', {
+        method: 'POST',
+        token: studentToken,
+        body: JSON.stringify({
+          lessonId: fixtures.lessonId,
+          mode: 'learning',
+          questionIds: [qId0],
+          questionTaskTypes: 'not-an-object',
+        }),
+      });
+      assert.equal(status, 400, JSON.stringify(data));
+      assert.ok(data.error.includes('questionTaskTypes must be a plain'), data.error);
+    });
+
+    it('rejects array as questionTaskTypes', async () => {
+      const { status, data } = await api('/api/v1/attempt/session/start', {
+        method: 'POST',
+        token: studentToken,
+        body: JSON.stringify({
+          lessonId: fixtures.lessonId,
+          mode: 'learning',
+          questionIds: [qId0],
+          questionTaskTypes: ['a', 'b'],
+        }),
+      });
+      assert.equal(status, 400, JSON.stringify(data));
+      assert.ok(data.error.includes('questionTaskTypes must be a plain'), data.error);
+    });
+
+    it('rejects non-string task type value', async () => {
+      const { status, data } = await api('/api/v1/attempt/session/start', {
+        method: 'POST',
+        token: studentToken,
+        body: JSON.stringify({
+          lessonId: fixtures.lessonId,
+          mode: 'learning',
+          questionIds: [qId0],
+          questionTaskTypes: { [qId0]: 42 },
+        }),
+      });
+      assert.equal(status, 400, JSON.stringify(data));
+      assert.ok(data.error.includes('must be a string'), data.error);
+    });
+  });
+
+  describe('maxPlays Validation', () => {
+    async function startPlaybackTest(): Promise<string> {
+      const { data: start } = await api('/api/v1/attempt/session/start', {
+        method: 'POST',
+        token: studentToken,
+        body: JSON.stringify({
+          lessonId: fixtures.lessonId,
+          mode: 'learning',
+          questionIds: [fixtures.questionIds[0]],
+        }),
+      });
+      return start.attempts[0].id;
+    }
+
+    it('rejects maxPlays = 0', async () => {
+      const attemptId = await startPlaybackTest();
+      const { status, data } = await api('/api/v1/attempt/playback/record', {
+        method: 'POST',
+        token: studentToken,
+        body: JSON.stringify({ attemptId, mediaId: 'm0', maxPlays: 0 }),
+      });
+      assert.equal(status, 400, JSON.stringify(data));
+      assert.ok(data.error.includes('positive integer'), data.error);
+    });
+
+    it('rejects maxPlays = -1', async () => {
+      const attemptId = await startPlaybackTest();
+      const { status, data } = await api('/api/v1/attempt/playback/record', {
+        method: 'POST',
+        token: studentToken,
+        body: JSON.stringify({ attemptId, mediaId: 'mneg', maxPlays: -1 }),
+      });
+      assert.equal(status, 400, JSON.stringify(data));
+      assert.ok(data.error.includes('positive integer'), data.error);
+    });
+
+    it('rejects maxPlays as string', async () => {
+      const attemptId = await startPlaybackTest();
+      const { status, data } = await api('/api/v1/attempt/playback/record', {
+        method: 'POST',
+        token: studentToken,
+        body: JSON.stringify({ attemptId, mediaId: 'mstr', maxPlays: '2' }),
+      });
+      assert.equal(status, 400, JSON.stringify(data));
+      assert.ok(data.error.includes('positive integer'), data.error);
+    });
+
+    it('rejects maxPlays as null', async () => {
+      const attemptId = await startPlaybackTest();
+      const { status, data } = await api('/api/v1/attempt/playback/record', {
+        method: 'POST',
+        token: studentToken,
+        body: JSON.stringify({ attemptId, mediaId: 'mnull', maxPlays: null }),
+      });
+      assert.equal(status, 400, JSON.stringify(data));
+      assert.ok(data.error.includes('positive integer'), data.error);
+    });
+
+    it('rejects maxPlays as array', async () => {
+      const attemptId = await startPlaybackTest();
+      const { status, data } = await api('/api/v1/attempt/playback/record', {
+        method: 'POST',
+        token: studentToken,
+        body: JSON.stringify({ attemptId, mediaId: 'marr', maxPlays: [2] }),
+      });
+      assert.equal(status, 400, JSON.stringify(data));
+      assert.ok(data.error.includes('positive integer'), data.error);
+    });
+
+    it('rejects maxPlays as object', async () => {
+      const attemptId = await startPlaybackTest();
+      const { status, data } = await api('/api/v1/attempt/playback/record', {
+        method: 'POST',
+        token: studentToken,
+        body: JSON.stringify({ attemptId, mediaId: 'mobj', maxPlays: { val: 2 } }),
+      });
+      assert.equal(status, 400, JSON.stringify(data));
+      assert.ok(data.error.includes('positive integer'), data.error);
+    });
+
+    it('accepts omitted maxPlays (defaults to 1)', async () => {
+      const attemptId = await startPlaybackTest();
+      const { status, data } = await api('/api/v1/attempt/playback/record', {
+        method: 'POST',
+        token: studentToken,
+        body: JSON.stringify({ attemptId, mediaId: 'mdefault' }),
+      });
+      assert.equal(status, 200, JSON.stringify(data));
+      assert.equal(data.playback.maxPlays, 1);
+    });
+  });
+
+  describe('Renderer Fallback Enforcement', () => {
+    it('rejects response when version snapshot has no registered renderer', async () => {
+      const { data: start } = await api('/api/v1/attempt/session/start', {
+        method: 'POST',
+        token: studentToken,
+        body: JSON.stringify({
+          lessonId: fixtures.lessonId,
+          mode: 'learning',
+          questionIds: [qId0],
+          questionTaskTypes: { [qId0]: 'pte:demo:single-answer' },
+        }),
+      });
+      const attemptId = start.attempts[0].id;
+
+      // Clear registry to simulate missing renderer, then re-register after test
+      clearRegistry();
+      try {
+        const { status, data } = await api('/api/v1/attempt/autosave', {
+          method: 'POST',
+          token: studentToken,
+          body: JSON.stringify({ attemptId, response: { selectedIndex: 2 } }),
+        });
+        assert.equal(status, 400, JSON.stringify(data));
+        assert.ok(data.error.includes('No renderer registered'), data.error);
+      } finally {
+        // Re-register so subsequent tests still work
+        registerRenderer(createDemoSingleAnswerRenderer());
+        registerRenderer(createDemoTextResponseRenderer());
+        registerRenderer(createDemoAudioPolicyRenderer());
+      }
     });
   });
 });
