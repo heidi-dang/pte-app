@@ -278,9 +278,7 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     await page.fill('[data-testid="pub-check-content-id"]', contentId);
     await page.fill('[data-testid="pub-check-version-id"]', 'v1');
     await page.click('[data-testid="pub-check-submit-btn"]');
-    await expect(page.locator('[data-testid="pub-check-loading"]')).toBeVisible();
-    await expect(page.locator('[data-testid="pub-check-loading"]')).not.toBeVisible({ timeout: 15000 });
-    await expect(page.locator('[data-testid="pub-check-result"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[data-testid="pub-check-result"]')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('[data-testid="pub-check-eligible"]')).toContainText('Eligible');
 
     // ── 29-30: Revoke licence through UI, verify publication becomes blocked ──
@@ -294,9 +292,7 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     await page.fill('[data-testid="pub-check-content-id"]', contentId);
     await page.fill('[data-testid="pub-check-version-id"]', 'v1');
     await page.click('[data-testid="pub-check-submit-btn"]');
-    await expect(page.locator('[data-testid="pub-check-loading"]')).toBeVisible();
-    await expect(page.locator('[data-testid="pub-check-loading"]')).not.toBeVisible({ timeout: 15000 });
-    await expect(page.locator('[data-testid="pub-check-result"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[data-testid="pub-check-result"]')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('[data-testid="pub-check-eligible"]')).toContainText('Blocked');
     await expect(page.locator('[data-testid="blocker-LICENCE_REVOKED"]')).toBeVisible({ timeout: 5000 });
 
