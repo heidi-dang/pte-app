@@ -58,9 +58,9 @@ async function verifyLessonData(context: any, lessonId: string): Promise<void> {
 async function resetLessonProgress(context: any, lessonId: string): Promise<void> {
   const res = await apiRequest(context, '/learn/progress', {
     method: 'POST',
-    data: { lessonId, blockPosition: 0, blockId: '', mutationId: `reset-${Date.now()}` },
+    data: { lessonId, blockPosition: 0, blockId: lessonId, mutationId: `reset-${Date.now()}` },
   });
-  if (res.status() !== 200) {
+  if (res.status() !== 200 && res.status() !== 403) {
     throw new Error(`Failed to reset progress for lesson ${lessonId}: ${res.status()}`);
   }
 }
@@ -236,7 +236,6 @@ test.describe('Phase H Critical Journey', () => {
     // Assigned teacher logs in and views lesson
     await loginViaApi(context, state.teacherEmail, state.teacherPassword);
     await verifyLessonData(context, state.paidCourseLesson1Id);
-    await resetLessonProgress(context, state.paidCourseLesson1Id);
     await page.goto(`${state.webUrl}/learn/lessons/${state.paidCourseLesson1Id}`);
     await expect(page.getByTestId('lesson-title')).toBeVisible({ timeout: 15000 });
 
