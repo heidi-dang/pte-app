@@ -178,9 +178,7 @@ describe('Speaking Handler Validation', () => {
     });
 
     it('accepts valid recording with complete context', () => {
-      const result = handler.validateSubmission(
-        baseInput({ recordingContext: makeRecordingContext() }),
-      );
+      const result = handler.validateSubmission(baseInput({ recordingContext: makeRecordingContext() }));
       assert.equal(result.valid, true);
     });
 
