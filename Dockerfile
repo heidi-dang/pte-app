@@ -45,6 +45,8 @@ COPY --from=build /app/packages/schemas/dist /app/packages/schemas/dist
 COPY --from=build /app/packages/types/dist /app/packages/types/dist
 COPY packages/contracts/package.json /app/packages/contracts/package.json
 COPY packages/database/package.json /app/packages/database/package.json
+# Fix db package.json to point to compiled output
+RUN node -e "const p=require('./packages/database/package.json'); p.main='./dist/index.js'; p.types='./dist/index.d.ts'; p.exports={'.':{types:'./dist/index.d.ts',default:'./dist/index.js'}}; require('fs').writeFileSync('./packages/database/package.json', JSON.stringify(p,null,2))"
 COPY packages/domain/package.json /app/packages/domain/package.json
 COPY packages/provenance/package.json /app/packages/provenance/package.json
 COPY packages/schemas/package.json /app/packages/schemas/package.json
