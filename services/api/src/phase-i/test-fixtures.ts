@@ -1,8 +1,8 @@
 import bcrypt from 'bcrypt';
 import { randomUUID } from 'node:crypto';
 import type { DatabaseConnection } from '@pte-app/database';
-import { users } from '@pte-app/database';
-import type { UserId } from '@pte-app/contracts';
+import { users, phaseH } from '@pte-app/database';
+import type { UserId, CourseId, CourseModuleId, LessonId } from '@pte-app/contracts';
 
 export interface PhaseITestUser {
   id: UserId;
@@ -15,7 +15,9 @@ export interface PhaseITestFixtures {
   runId: string;
   admin: PhaseITestUser;
   student: PhaseITestUser;
-  lessonId: string;
+  courseId: CourseId;
+  moduleId: CourseModuleId;
+  lessonId: LessonId;
   questionIds: string[];
   mode: string;
 }
@@ -49,13 +51,42 @@ export async function buildTestFixtures(db: DatabaseConnection): Promise<PhaseIT
   const admin = await createUser(db, `phase-i-admin-${runId}@test.pte.app`, 'admin-pw', ['admin']);
   const student = await createUser(db, `phase-i-student-${runId}@test.pte.app`, 'student-pw', ['student']);
 
-  // Create a minimal lesson for the session
-  const lessonId = randomUUID();
-  await db.pool.query(
-    `INSERT INTO lessons (id, module_id, course_id, title, slug, summary, order_position, is_optional, estimated_minutes, status, created_by, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, 0, false, 10, 'published', $7, NOW(), NOW())`,
-    [lessonId, randomUUID(), randomUUID(), 'Phase I Test Lesson', `phase-i-test-${runId}`, 'Test lesson for Phase I', admin.id],
-  );
+  // Create a proper course and module (Phase H contract) so FK constraints are satisfied
+  const course = await phaseH.courses.createCourse(db, {
+    slug: `phase-i-test-${runId}`,
+    title: `Phase I Test Course ${runId}`,
+    summary: 'Test course for Phase I integration tests',
+    description: '',
+    accessLevel: 'free',
+    difficulty: 'beginner',
+    estimatedDurationMinutes: 30,
+    skillTags: [],
+    thumbnailMediaId: null,
+    createdBy: admin.id,
+  });
+
+  const module = await phaseH.modules.createCourseModule(db, {
+    courseId: course.id,
+    title: 'Phase I Test Module',
+    description: 'Test module for Phase I',
+    orderPosition: 0,
+    createdBy: admin.id,
+  });
+
+  // Create a minimal published lesson
+  const lesson = await phaseH.lessons.createLesson(db, {
+    moduleId: module.id,
+    courseId: course.id,
+    title: 'Phase I Test Lesson',
+    slug: `phase-i-lesson-${runId}`,
+    summary: 'Test lesson for Phase I',
+    orderPosition: 0,
+    isOptional: false,
+    estimatedMinutes: 10,
+    createdBy: admin.id,
+  });
+
+  await phaseH.lessons.publishLesson(db, lesson.id);
 
   const questionIds = [randomUUID(), randomUUID()];
 
@@ -63,7 +94,9 @@ export async function buildTestFixtures(db: DatabaseConnection): Promise<PhaseIT
     runId,
     admin,
     student,
-    lessonId,
+    courseId: course.id,
+    moduleId: module.id,
+    lessonId: lesson.id,
     questionIds,
     mode: 'learning',
   };

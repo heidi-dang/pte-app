@@ -94,6 +94,21 @@ export async function updateSessionCurrentAttempt(
 
 // ─── Version Snapshots ────────────────────────────────────────
 
+export async function getVersionSnapshot(
+  connection: DatabaseConnection,
+  snapshotId: string,
+): Promise<QuestionVersionSnapshotRecord | undefined> {
+  const result = await connection.pool.query<Record<string, unknown>>(
+    `SELECT id, question_id as "questionId", version, task_type as "taskType", prompt,
+       media_refs as "mediaRefs", scoring_principles as "scoringPrinciples",
+       time_limit_seconds as "timeLimitSeconds", preparation_seconds as "preparationSeconds",
+       snapshot, created_at as "createdAt"
+     FROM question_version_snapshots WHERE id = $1`,
+    [snapshotId],
+  );
+  return result.rows[0] as unknown as QuestionVersionSnapshotRecord | undefined;
+}
+
 export async function createVersionSnapshot(
   connection: DatabaseConnection,
   questionId: string,

@@ -2,9 +2,16 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { DatabaseConnection } from '@pte-app/database';
 import { phaseI } from '@pte-app/database';
 import type { QuestionAttemptMode, QuestionAttemptRecord } from '@pte-app/contracts';
+import type { JsonObject } from '@pte-app/types';
 import { isValidTransition } from '@pte-app/contracts';
 import { hasPermission } from '../auth/rbac.js';
 import type { UserRole } from '../auth/rbac.js';
+import { registerRenderer, resolveRenderer } from './renderer-registry.js';
+import {
+  createDemoSingleAnswerRenderer,
+  createDemoTextResponseRenderer,
+  createDemoAudioPolicyRenderer,
+} from './demo-renderer.js';
 
 type AnyRepo = Record<string, any>;
 const repo = phaseI as unknown as AnyRepo;
@@ -17,8 +24,50 @@ function getAuth(request: FastifyRequest, reply: FastifyReply) {
   return request.auth;
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isExpired(attempt: QuestionAttemptRecord): boolean {
+  if (attempt.expiresAt && new Date(attempt.expiresAt) <= new Date()) return true;
+  return false;
+}
+
+async function validateAndNormalizeResponse(
+  db: DatabaseConnection,
+  attempt: QuestionAttemptRecord,
+  rawResponse: Record<string, unknown>,
+): Promise<{ normalized: Record<string, unknown>; errors?: string[] }> {
+  if (attempt.versionSnapshotId) {
+    const snapshot = await repo.attempts.getVersionSnapshot(db, attempt.versionSnapshotId);
+    if (snapshot) {
+      const renderer = resolveRenderer(snapshot.taskType);
+      if (renderer) {
+        const jsonResponse = rawResponse as unknown as JsonObject;
+        const validation = renderer.validateResponse(jsonResponse);
+        if (!validation.valid) {
+          return { normalized: rawResponse, errors: validation.errors as string[] };
+        }
+        const normalized = renderer.normalizeResponse(jsonResponse) as unknown as Record<string, unknown>;
+        return { normalized };
+      }
+    }
+  }
+  // Fallback: accept if no renderer found
+  return { normalized: rawResponse };
+}
+
+// ─── Registered renderers ──────────────────────────────
+function registerDemoRenderers(): void {
+  registerRenderer(createDemoSingleAnswerRenderer());
+  registerRenderer(createDemoTextResponseRenderer());
+  registerRenderer(createDemoAudioPolicyRenderer());
+}
+
 export async function phaseIPlugin(app: FastifyInstance, options: { db: DatabaseConnection }): Promise<void> {
   const { db } = options;
+
+  registerDemoRenderers();
 
   // ═══════════════════════════════════════════════════════
   // Start / Create attempt session
@@ -26,10 +75,16 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
   app.post('/api/v1/attempt/session/start', async (request, reply) => {
     const auth = getAuth(request, reply);
     if (!auth) return;
-    const body = request.body as Record<string, unknown>;
+
+    const body = request.body;
+    if (!isObject(body)) {
+      return reply.status(400).send({ error: 'Request body must be a JSON object' });
+    }
+
     const lessonId = body.lessonId as string;
-    const mode = body.mode as QuestionAttemptMode;
-    const questionIds = body.questionIds as string[];
+    const mode = body.mode as string;
+    const questionIds = body.questionIds as unknown[];
+    const questionTaskTypes = body.questionTaskTypes as Record<string, string> | undefined;
 
     if (!lessonId || !mode) {
       return reply.status(400).send({ error: 'lessonId and mode are required' });
@@ -37,9 +92,14 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
     if (!['learning', 'review', 'timed', 'mock'].includes(mode)) {
       return reply.status(400).send({ error: 'Invalid mode' });
     }
-    if (!questionIds || !Array.isArray(questionIds) || questionIds.length === 0) {
+    if (!Array.isArray(questionIds) || questionIds.length === 0) {
       return reply.status(400).send({ error: 'questionIds must be a non-empty array' });
     }
+    if (!questionIds.every((id): id is string => typeof id === 'string')) {
+      return reply.status(400).send({ error: 'Each questionId must be a string' });
+    }
+
+    const modeEnum = mode as QuestionAttemptMode;
 
     // Check for existing active session
     const existingSession = await repo.attempts.getActiveSessionForUser(db, auth.userId, lessonId);
@@ -53,15 +113,24 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
       });
     }
 
-    const session = await repo.attempts.createSession(db, auth.userId, lessonId, mode);
+    const session = await repo.attempts.createSession(db, auth.userId, lessonId, modeEnum);
 
     const attempts: QuestionAttemptRecord[] = [];
     for (const qId of questionIds) {
-      const snapshotId = null; // Phase J/K will populate this
+      // Create version snapshot if task type is provided
+      let snapshotId: string | null = null;
+      const taskType = questionTaskTypes?.[qId];
+      if (taskType) {
+        const snapshot = await repo.attempts.createVersionSnapshot(
+          db, qId, taskType, {}, {},
+        );
+        snapshotId = snapshot.id;
+      }
+
       const timeLimitSeconds = null;
       const expiresAt = null;
       const attempt = await repo.attempts.createAttempt(
-        db, auth.userId, qId, lessonId, session.id, mode, snapshotId, timeLimitSeconds, expiresAt,
+        db, auth.userId, qId, lessonId, session.id, modeEnum, snapshotId, timeLimitSeconds, expiresAt,
       );
       // Transition from created to in_progress
       await repo.attempts.updateAttemptStatus(db, attempt.id, 'in_progress');
@@ -101,7 +170,7 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
     // Check for interrupted attempts and auto-mark expired
     for (const attempt of attempts) {
       if (attempt.status === 'in_progress' || attempt.status === 'autosaved') {
-        if (attempt.expiresAt && new Date(attempt.expiresAt) <= new Date()) {
+        if (isExpired(attempt)) {
           if (isValidTransition(attempt.status, 'expired')) {
             await repo.attempts.updateAttemptStatus(db, attempt.id, 'expired');
             attempt.status = 'expired';
@@ -130,24 +199,53 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
   app.post('/api/v1/attempt/autosave', async (request, reply) => {
     const auth = getAuth(request, reply);
     if (!auth) return;
-    const body = request.body as Record<string, unknown>;
-    const attemptId = body.attemptId as string;
-    const response = body.response as Record<string, unknown>;
 
-    if (!attemptId || !response) {
-      return reply.status(400).send({ error: 'attemptId and response are required' });
+    const body = request.body;
+    if (!isObject(body)) {
+      return reply.status(400).send({ error: 'Request body must be a JSON object' });
+    }
+
+    const attemptId = body.attemptId as string;
+    const response = body.response;
+
+    if (!attemptId) {
+      return reply.status(400).send({ error: 'attemptId is required' });
+    }
+    if (!isObject(response)) {
+      return reply.status(400).send({ error: 'response must be a JSON object' });
     }
 
     const attempt = await repo.attempts.getAttempt(db, attemptId);
     if (!attempt) return reply.status(404).send({ error: 'Attempt not found' });
     if (attempt.userId !== auth.userId) return reply.status(403).send({ error: 'Forbidden' });
 
+    // Lock terminal states: no mutation on submitted/reviewable/expired
+    if (['submitted', 'reviewable', 'expired'].includes(attempt.status)) {
+      return reply.status(400).send({
+        error: `Cannot autosave attempt in terminal status '${attempt.status}'`,
+      });
+    }
+
     // Allow autosave for active statuses only
     if (!['in_progress', 'autosaved', 'recovered'].includes(attempt.status)) {
       return reply.status(400).send({ error: `Cannot autosave attempt in status '${attempt.status}'` });
     }
 
-    await repo.attempts.autosaveAttempt(db, attemptId, response);
+    // Enforce timed/mock expiry - refuse autosave if expired
+    if (isExpired(attempt)) {
+      if (isValidTransition(attempt.status, 'expired')) {
+        await repo.attempts.updateAttemptStatus(db, attempt.id, 'expired');
+      }
+      return reply.status(400).send({ error: 'Attempt has expired and cannot be modified' });
+    }
+
+    // Validate and normalize response via renderer contract
+    const { normalized, errors } = await validateAndNormalizeResponse(db, attempt, response);
+    if (errors && errors.length > 0) {
+      return reply.status(400).send({ error: 'Invalid response', details: errors });
+    }
+
+    await repo.attempts.autosaveAttempt(db, attemptId, normalized);
 
     return reply.status(200).send({
       attemptId,
@@ -163,13 +261,24 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
   app.post('/api/v1/attempt/submit', async (request, reply) => {
     const auth = getAuth(request, reply);
     if (!auth) return;
-    const body = request.body as Record<string, unknown>;
+
+    const body = request.body;
+    if (!isObject(body)) {
+      return reply.status(400).send({ error: 'Request body must be a JSON object' });
+    }
+
     const attemptId = body.attemptId as string;
-    const response = body.response as Record<string, unknown>;
+    const response = body.response;
     const idempotencyKey = body.idempotencyKey as string;
 
-    if (!attemptId || !response || !idempotencyKey) {
-      return reply.status(400).send({ error: 'attemptId, response, and idempotencyKey are required' });
+    if (!attemptId) {
+      return reply.status(400).send({ error: 'attemptId is required' });
+    }
+    if (!isObject(response)) {
+      return reply.status(400).send({ error: 'response must be a JSON object' });
+    }
+    if (!idempotencyKey) {
+      return reply.status(400).send({ error: 'idempotencyKey is required' });
     }
 
     const attempt = await repo.attempts.getAttempt(db, attemptId);
@@ -196,6 +305,13 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
       });
     }
 
+    // Lock terminal states: refuse submit on submitted/reviewable/expired
+    if (['submitted', 'reviewable', 'expired'].includes(attempt.status)) {
+      return reply.status(400).send({
+        error: `Cannot submit attempt in terminal status '${attempt.status}'`,
+      });
+    }
+
     // Validate status transition
     if (!isValidTransition(attempt.status, 'submitted')) {
       return reply.status(400).send({
@@ -206,7 +322,21 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
       });
     }
 
-    const submitted = await repo.attempts.submitAttempt(db, attemptId, response, idempotencyKey);
+    // Enforce timed/mock expiry during submit
+    if (isExpired(attempt)) {
+      if (isValidTransition(attempt.status, 'expired')) {
+        await repo.attempts.updateAttemptStatus(db, attempt.id, 'expired');
+      }
+      return reply.status(400).send({ error: 'Attempt has expired and cannot be submitted' });
+    }
+
+    // Validate and normalize response via renderer contract
+    const { normalized, errors } = await validateAndNormalizeResponse(db, attempt, response);
+    if (errors && errors.length > 0) {
+      return reply.status(400).send({ error: 'Invalid response', details: errors });
+    }
+
+    const submitted = await repo.attempts.submitAttempt(db, attemptId, normalized, idempotencyKey);
     if (!submitted) {
       return reply.status(409).send({ error: 'Attempt was already submitted or is in a terminal state' });
     }
@@ -268,7 +398,12 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
   app.post('/api/v1/attempt/playback/record', async (request, reply) => {
     const auth = getAuth(request, reply);
     if (!auth) return;
-    const body = request.body as Record<string, unknown>;
+
+    const body = request.body;
+    if (!isObject(body)) {
+      return reply.status(400).send({ error: 'Request body must be a JSON object' });
+    }
+
     const attemptId = body.attemptId as string;
     const mediaId = body.mediaId as string;
     const maxPlays = (body.maxPlays as number) ?? 1;
@@ -280,6 +415,25 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
     const attempt = await repo.attempts.getAttempt(db, attemptId);
     if (!attempt) return reply.status(404).send({ error: 'Attempt not found' });
     if (attempt.userId !== auth.userId) return reply.status(403).send({ error: 'Forbidden' });
+
+    // Check existing playback consumption to enforce maxPlays limit
+    const existing = await repo.attempts.getPlaybackConsumption(db, attemptId, mediaId);
+    if (existing && existing.consumedAt !== null) {
+      // Already consumed — return current state without incrementing
+      return reply.status(200).send({
+        playback: existing,
+        remainingPlays: 0,
+        consumed: true,
+      });
+    }
+    if (existing && existing.playCount >= existing.maxPlays) {
+      // Already at or over max plays — return current state without incrementing
+      return reply.status(200).send({
+        playback: existing,
+        remainingPlays: 0,
+        consumed: existing.consumedAt !== null,
+      });
+    }
 
     const playback = await repo.attempts.recordPlayback(db, attemptId, auth.userId, mediaId, maxPlays);
 

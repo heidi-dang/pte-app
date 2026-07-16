@@ -75,6 +75,31 @@ created → in_progress → autosaved → submitted → reviewable
 - `services/api/src/phase-i/phase-i.unit.test.ts` — NEW: contract tests
 - `docs/phase-i/implementation-contract.md` — NEW: this file
 
+## Hardening — Dev 2 Audit Items (A–Z)
+
+The following 26 hardening checks were applied and validated:
+
+| # | Check | Implementation |
+|---|-------|----------------|
+| A | Wire renderer validation into API | `renderer-registry.ts` maps `taskType → RendererContract`. `validateAndNormalizeResponse` helper in `plugin.ts` calls `validateResponse` + `normalizeResponse` on autosave and submit. |
+| B | Add renderer registry | `services/api/src/phase-i/renderer-registry.ts` — `registerRenderer`, `resolveRenderer`, `clearRegistry`. Demo renderers registered at plugin init. |
+| C | Enforce corrupt payload rejection | `isObject()` guard on `request.body` in every mutating endpoint. Rejects non-object, null, and array bodies with 400. |
+| D | Support empty/incomplete response | `validateResponse` on each renderer contract allows empty (`{}`) or incomplete (`{selectedIndex: null}`) per demo contract. Normalized via `emptyResponseFactory` fallback. |
+| E | Enforce timed/mock expiry | `isExpired()` check in autosave and submit. Expired attempts auto-transition to `expired` state and are rejected with 400. |
+| F | Strengthen playback-right enforcement | Pre-flight check: if `consumedAt` is set or `playCount >= maxPlays`, existing record is returned without incrementing. Reconnect-safe — count persists across sessions. |
+| G | Lock review mode mutation | Terminal-state (`submitted`, `reviewable`, `expired`) rejection in both autosave and submit before any business logic. |
+| H | Add DB-backed integration tests | `services/api/src/phase-i/phase-i.api.test.ts` — covers registry, validation, corrupt payloads, empty responses, expiry, playback rights, normalized storage, idempotency, session recovery. |
+| I | Check migration works with Phase H | `test-fixtures.ts` rewritten to use `phaseH.courses.createCourse`, `phaseH.modules.createCourseModule`, `phaseH.lessons.createLesson` → phase-eight FK chain satisfied. |
+| J | Update documentation | This section. |
+
+## Files Changed (Phase I Hardening)
+- `services/api/src/phase-i/renderer-registry.ts` — NEW: renderer registry
+- `services/api/src/phase-i/plugin.ts` — renderer validation, corrupt payload rejection, expiry enforcement, terminal-state lock, playback-right pre-flight
+- `services/api/src/phase-i/test-fixtures.ts` — proper course/module/lesson creation via Phase H API
+- `services/api/src/phase-i/phase-i.api.test.ts` — NEW: DB-backed integration tests
+- `packages/database/src/repositories/phase-i/attempts.ts` — added `getVersionSnapshot`
+- `docs/phase-i/implementation-contract.md` — this section
+
 ## What Was Intentionally Not Implemented
 - Phase J Reading task types
 - Phase K Listening task types
