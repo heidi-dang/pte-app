@@ -239,6 +239,7 @@ docker run --rm \
   -e SCORING_UPSTREAM="$SCORING_UPSTREAM" \
   -e WEB_ORIGIN="$WEB_ORIGIN" \
   -v "$SCRIPT_DIR/infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+  -v "$SCRIPT_DIR/secrets:/etc/caddy/certs:ro" \
   caddy:2 \
   caddy validate --config /etc/caddy/Caddyfile 2>&1
 
@@ -252,6 +253,7 @@ docker run --rm \
   -e SCORING_UPSTREAM="$SCORING_UPSTREAM" \
   -e WEB_ORIGIN="$WEB_ORIGIN" \
   -v "$SCRIPT_DIR/infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+  -v "$SCRIPT_DIR/secrets:/etc/caddy/certs:ro" \
   caddy:2 \
   caddy adapt --config /etc/caddy/Caddyfile 2>&1 > /dev/null
 echo "  OK"
