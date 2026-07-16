@@ -18,8 +18,7 @@ async function logout(page: Page): Promise<string> {
   const oldToken = sessionCookie?.value ?? '';
   expect(oldToken).toBeTruthy();
 
-  await page.request.fetch(`${cfg.apiUrl}/auth/logout`, {
-    method: 'POST',
+  await page.request.post(`${cfg.apiUrl}/auth/logout`, {
     headers: { authorization: `Bearer ${oldToken}` },
     data: {},
   });
