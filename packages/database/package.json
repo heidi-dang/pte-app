@@ -4,18 +4,18 @@
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./testing/env": {
-      "types": "./dist/testing/env.d.ts",
+      "types": "./src/testing/env.ts",
       "default": "./dist/testing/env.js"
     },
     "./testing/setup": {
-      "types": "./dist/testing/setup.d.ts",
+      "types": "./src/testing/setup.ts",
       "default": "./dist/testing/setup.js"
     }
   },
