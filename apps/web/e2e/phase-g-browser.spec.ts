@@ -144,21 +144,21 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     await page.waitForURL('**/content/provenance/records/**');
 
     // ── 11: Create and link similarity check via API ──
-    const editorHeaders = await getAuthHeaders(page);
+    const simHeaders = await getAuthHeaders(page);
     const simRes = await page.request.post(`${cfg.apiUrl}/content-provenance/similarity-checks`, {
-      headers: editorHeaders,
+      headers: simHeaders,
       data: { contentId, contentVersionId: 'v1' },
     });
     expect(simRes.ok()).toBeTruthy();
     const simData = await simRes.json();
     // Get provenance version for the patch
-    const provRes = await page.request.get(`${cfg.apiUrl}/content-provenance/records/${provenanceId}`, {
-      headers: editorHeaders,
+    const provFetch = await page.request.get(`${cfg.apiUrl}/content-provenance/records/${provenanceId}`, {
+      headers: simHeaders,
     });
-    const provData = await provRes.json();
+    const provData = await provFetch.json();
     // Link similarity check to provenance
     await page.request.patch(`${cfg.apiUrl}/content-provenance/records/${provenanceId}`, {
-      headers: { ...editorHeaders, 'Content-Type': 'application/json' },
+      headers: { ...simHeaders, 'Content-Type': 'application/json' },
       data: { similarityCheckId: simData.id, expectedVersion: provData.version },
     });
     // Also click the UI button to verify it works
