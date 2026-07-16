@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Container, Card, Input, Button, Alert, Badge } from '@pte-app/design-system';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export default function PublicationCheckPage() {
   const [contentId, setContentId] = useState('');
@@ -38,7 +38,8 @@ export default function PublicationCheckPage() {
     <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
       <Container>
         <h1 style={{ marginBottom: '1.5rem' }}>Publication Check</h1>
-        {error && <Alert>{error}</Alert>}
+        {error && <Alert data-testid="pub-check-error">{error}</Alert>}
+        {checking && <p data-testid="pub-check-loading">Checking publication eligibility...</p>}
         <Card>
           <form onSubmit={handleCheck} data-testid="publication-check-form">
             <div style={{ marginBottom: '1rem' }}>

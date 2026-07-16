@@ -608,8 +608,7 @@ test.describe('Phase G content provenance E2E', () => {
       data: { contentId: 'content-hist-001', contentVersionId: 'v1' },
     });
     const decision1 = await pub1.json();
-    // Historical decision: verify a decision was created and has an ID
-    expect(decision1.decisionId).toBeTruthy();
+    expect(decision1.eligible).toBeTruthy();
 
     const revokeRes = await request.post(`${cfg.apiUrl}/content-provenance/licences/${lic.id}/revoke`, auth);
     expect(revokeRes.ok()).toBeTruthy();
