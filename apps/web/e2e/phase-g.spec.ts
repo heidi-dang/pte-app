@@ -608,6 +608,9 @@ test.describe('Phase G content provenance E2E', () => {
       data: { contentId: 'content-hist-001', contentVersionId: 'v1' },
     });
     const decision1 = await pub1.json();
+    if (!decision1.eligible) {
+      console.error('Publication check 1 not eligible:', JSON.stringify(decision1));
+    }
     expect(decision1.eligible).toBeTruthy();
 
     const revokeRes = await request.post(`${cfg.apiUrl}/content-provenance/licences/${lic.id}/revoke`, auth);
