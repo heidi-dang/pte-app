@@ -11,6 +11,8 @@ export function RepeatSentenceRenderer({
   onChange,
   disabled,
   recordingProfile,
+  attemptId,
+  recordingProfileId,
 }: QuestionRendererProps<RepeatSentenceQuestion, RepeatSentenceResponse>) {
   if (!question || !recordingProfile) return null;
 
@@ -21,6 +23,8 @@ export function RepeatSentenceRenderer({
         <SpeakingRecorder
           recordingProfile={recordingProfile}
           onComplete={(recordingId) => onChange({ recordingId }, 'complete')}
+          attemptId={attemptId}
+          recordingProfileId={recordingProfileId ?? recordingProfile.id}
         />
       )}
       {response?.recordingId && <p role="status">Recording complete</p>}

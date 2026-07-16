@@ -807,7 +807,9 @@ html.theme-dark {
   cursor: pointer;
   font-size: 0.875rem;
   line-height: 1;
-  transition: background 150ms ease, color 150ms ease;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
 }
 .ds-theme-toggle__btn:hover {
   color: var(--color-text);

@@ -35,7 +35,11 @@ export default function StudentDashboard() {
         </div>
 
         <div className="app-stat-grid">
-          <StatCard title="Current streak" value="12 days" trend={{ value: 4, label: 'vs last week', positive: true }} />
+          <StatCard
+            title="Current streak"
+            value="12 days"
+            trend={{ value: 4, label: 'vs last week', positive: true }}
+          />
           <StatCard title="This week" value="4h 20m" trend={{ value: 12, label: 'vs last week', positive: true }} />
           <StatCard title="Tasks completed" value="86" trend={{ value: 8, label: 'vs last week', positive: true }} />
           <StatCard title="Mock exams" value="4" trend={{ value: 1, label: 'this month', positive: true }} />
@@ -53,7 +57,14 @@ export default function StudentDashboard() {
                   { label: 'Listening', value: SKILL_BREAKDOWN.listening },
                 ].map((skill) => (
                   <div key={skill.label}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.875rem' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: '0.25rem',
+                        fontSize: '0.875rem',
+                      }}
+                    >
                       <span>{skill.label}</span>
                       <strong>{skill.value}</strong>
                     </div>
@@ -65,14 +76,22 @@ export default function StudentDashboard() {
             <Card>
               <h3 className="app-info-card__title">Upcoming exam</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-                <p><strong>Date:</strong> {UPCOMING_EXAM.date} at {UPCOMING_EXAM.time}</p>
-                <p><strong>Location:</strong> {UPCOMING_EXAM.location}</p>
-                <p><strong>Target score:</strong> {UPCOMING_EXAM.targetScore}</p>
+                <p>
+                  <strong>Date:</strong> {UPCOMING_EXAM.date} at {UPCOMING_EXAM.time}
+                </p>
+                <p>
+                  <strong>Location:</strong> {UPCOMING_EXAM.location}
+                </p>
+                <p>
+                  <strong>Target score:</strong> {UPCOMING_EXAM.targetScore}
+                </p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <Badge variant="warning">{UPCOMING_EXAM.countdownDays} days left</Badge>
                 <a href="/student/calendar">
-                  <Button variant="secondary" size="sm">View calendar</Button>
+                  <Button variant="secondary" size="sm">
+                    View calendar
+                  </Button>
                 </a>
               </div>
             </Card>
@@ -83,7 +102,15 @@ export default function StudentDashboard() {
           <h2 className="app-section__title">Today&apos;s study</h2>
           <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
             <Card>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '1rem',
+                }}
+              >
                 <div>
                   <h3 className="app-info-card__title">Recommended next: Repeat Sentence Strategy</h3>
                   <p className="landing__feature-desc">A 26-minute lesson in Speaking Mastery.</p>
@@ -101,11 +128,21 @@ export default function StudentDashboard() {
           <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
             {MOCK_ACTIVITIES.map((activity) => (
               <Card key={activity.id}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem',
+                  }}
+                >
                   <div>
                     <Badge>{activity.type}</Badge>
                     <h3 className="landing__feature-title">{activity.title}</h3>
-                    <p className="landing__feature-desc">{formatDate(activity.date)} · {formatDuration(activity.durationMinutes)}</p>
+                    <p className="landing__feature-desc">
+                      {formatDate(activity.date)} · {formatDuration(activity.durationMinutes)}
+                    </p>
                   </div>
                   {activity.score !== undefined && <Badge variant="success">{activity.score}</Badge>}
                 </div>

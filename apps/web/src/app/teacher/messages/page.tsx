@@ -9,7 +9,9 @@ export default function TeacherMessagesPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Messages</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Messages
+        </h1>
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           <Card>
             <h3 className="app-info-card__title">Alex Johnson</h3>

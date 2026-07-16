@@ -33,7 +33,9 @@ export default function LessonManagerPage() {
                     <td className="ds-table__td">{MOCK_COURSES.find((c) => c.id === lesson.courseId)?.title}</td>
                     <td className="ds-table__td">{lesson.durationMinutes} min</td>
                     <td className="ds-table__td">
-                      <Badge variant={lesson.completed ? 'success' : 'warning'}>{lesson.completed ? 'Published' : 'Draft'}</Badge>
+                      <Badge variant={lesson.completed ? 'success' : 'warning'}>
+                        {lesson.completed ? 'Published' : 'Draft'}
+                      </Badge>
                     </td>
                     <td className="ds-table__td">
                       <Button size="sm">Edit</Button>

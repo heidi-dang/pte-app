@@ -21,7 +21,9 @@ export default function SuccessStoriesPage() {
               <h3 className="landing__feature-title" style={{ marginTop: '0.75rem' }}>
                 {story.name}
               </h3>
-              <p className="landing__feature-desc">{story.role} · {story.country}</p>
+              <p className="landing__feature-desc">
+                {story.role} · {story.country}
+              </p>
               <p className="landing__testimonial-text">&ldquo;{story.text}&rdquo;</p>
             </Card>
           ))}

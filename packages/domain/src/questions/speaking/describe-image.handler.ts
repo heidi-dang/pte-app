@@ -1,7 +1,8 @@
 import type { QuestionTypeHandler, SubmissionValidationInput, SubmissionValidationResult } from '@pte-app/contracts';
 import type { DescribeImageQuestion, DescribeImageResponse } from '@pte-app/contracts';
 import { DescribeImageQuestionSchema, DescribeImageResponseSchema } from '@pte-app/schemas';
-import { SPEAKING_MANIFEST_BASE } from './common.js';
+import { SPEAKING_MANIFEST_BASE, validateRecordingSubmission } from './common.js';
+import type { ValidatedRecordingContext } from './common.js';
 
 export function createDescribeImageHandler(): QuestionTypeHandler<DescribeImageQuestion, DescribeImageResponse> {
   return {
@@ -28,6 +29,10 @@ export function createDescribeImageHandler(): QuestionTypeHandler<DescribeImageQ
       input: SubmissionValidationInput<DescribeImageResponse, DescribeImageQuestion>,
     ): SubmissionValidationResult {
       const { response, allowsEmptySubmission } = input;
+      const ctx = input.recordingContext as ValidatedRecordingContext | undefined;
+      if (ctx) {
+        return validateRecordingSubmission(ctx, '', allowsEmptySubmission);
+      }
       if (!allowsEmptySubmission && !response.recordingId) {
         return { valid: false, reason: 'Recording is required' };
       }

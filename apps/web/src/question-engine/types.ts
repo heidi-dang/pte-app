@@ -9,6 +9,8 @@ export interface QuestionRendererProps<TQuestion = never, TResponse = never> {
   sessionMode?: string;
   isReadOnly?: boolean;
   recordingProfile?: RecordingProfile;
+  attemptId?: string;
+  recordingProfileId?: string;
 }
 
 export interface QuestionReviewProps<TQuestion = never, TResponse = never> {

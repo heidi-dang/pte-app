@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { Header, Drawer, Avatar, ThemeToggle, LanguageSelector, Button, Badge } from '@pte-app/design-system';
-import { IconSearch, IconBell, IconMenu, IconHome, IconBook, IconUser, IconSettings, IconChart } from '@pte-app/design-system';
+import {
+  IconSearch,
+  IconBell,
+  IconMenu,
+  IconHome,
+  IconBook,
+  IconUser,
+  IconSettings,
+  IconChart,
+} from '@pte-app/design-system';
 import { logoutAccount } from '../lib/auth';
 import type { User } from '../lib/auth';
 
@@ -65,9 +74,15 @@ export function AppShell({ user, children }: AppShellProps) {
     </>
   ) : (
     <>
-      <a className="app-shell__top-link" href="/features">Features</a>
-      <a className="app-shell__top-link" href="/pricing">Pricing</a>
-      <a className="app-shell__top-link" href="/about">About</a>
+      <a className="app-shell__top-link" href="/features">
+        Features
+      </a>
+      <a className="app-shell__top-link" href="/pricing">
+        Pricing
+      </a>
+      <a className="app-shell__top-link" href="/about">
+        About
+      </a>
     </>
   );
 
@@ -105,7 +120,10 @@ export function AppShell({ user, children }: AppShellProps) {
         <div className="app-shell__nav-section">
           <span className="app-shell__nav-label">Menu</span>
           <ul className="app-shell__nav-list">
-            {(effectiveUser ? filterByRole(MAIN_NAV) : MAIN_NAV.filter((i) => ['Home', 'Courses'].includes(i.label))).map((item) => (
+            {(effectiveUser
+              ? filterByRole(MAIN_NAV)
+              : MAIN_NAV.filter((i) => ['Home', 'Courses'].includes(i.label))
+            ).map((item) => (
               <li key={item.href}>
                 <a href={item.href} className="app-shell__nav-link">
                   <span className="app-shell__nav-icon">{item.icon}</span>
@@ -168,47 +186,59 @@ export function AppShell({ user, children }: AppShellProps) {
             size="lg"
           />
           <div>
-            <p className="app-shell__drawer-user-name">{effectiveUser.displayName || effectiveUser.email.split('@')[0]}</p>
+            <p className="app-shell__drawer-user-name">
+              {effectiveUser.displayName || effectiveUser.email.split('@')[0]}
+            </p>
             <p className="app-shell__drawer-user-email">{effectiveUser.email}</p>
           </div>
         </div>
       )}
 
       <ul className="app-shell__drawer-list">
-        {(effectiveUser ? filterByRole(MAIN_NAV) : MAIN_NAV.filter((i) => ['Home', 'Courses'].includes(i.label))).map((item) => (
-          <li key={item.href}>
-            <a href={item.href} onClick={() => setDrawerOpen(false)} className="app-shell__drawer-link">
-              <span className="app-shell__drawer-icon">{item.icon}</span>
-              <span>{item.label}</span>
-            </a>
-          </li>
-        ))}
-        {effectiveUser && ACCOUNT_NAV.map((item) => (
-          <li key={item.href}>
-            <a href={item.href} onClick={() => setDrawerOpen(false)} className="app-shell__drawer-link">
-              <span className="app-shell__drawer-icon">{item.icon}</span>
-              <span>{item.label}</span>
-            </a>
-          </li>
-        ))}
-        {effectiveUser && filterByRole(ROLE_NAV).map((item) => (
-          <li key={item.href}>
-            <a href={item.href} onClick={() => setDrawerOpen(false)} className="app-shell__drawer-link">
-              <span className="app-shell__drawer-icon">{item.icon}</span>
-              <span>{item.label}</span>
-            </a>
-          </li>
-        ))}
+        {(effectiveUser ? filterByRole(MAIN_NAV) : MAIN_NAV.filter((i) => ['Home', 'Courses'].includes(i.label))).map(
+          (item) => (
+            <li key={item.href}>
+              <a href={item.href} onClick={() => setDrawerOpen(false)} className="app-shell__drawer-link">
+                <span className="app-shell__drawer-icon">{item.icon}</span>
+                <span>{item.label}</span>
+              </a>
+            </li>
+          ),
+        )}
+        {effectiveUser &&
+          ACCOUNT_NAV.map((item) => (
+            <li key={item.href}>
+              <a href={item.href} onClick={() => setDrawerOpen(false)} className="app-shell__drawer-link">
+                <span className="app-shell__drawer-icon">{item.icon}</span>
+                <span>{item.label}</span>
+              </a>
+            </li>
+          ))}
+        {effectiveUser &&
+          filterByRole(ROLE_NAV).map((item) => (
+            <li key={item.href}>
+              <a href={item.href} onClick={() => setDrawerOpen(false)} className="app-shell__drawer-link">
+                <span className="app-shell__drawer-icon">{item.icon}</span>
+                <span>{item.label}</span>
+              </a>
+            </li>
+          ))}
         {!effectiveUser && (
           <>
             <li>
-              <a href="/features" onClick={() => setDrawerOpen(false)} className="app-shell__drawer-link">Features</a>
+              <a href="/features" onClick={() => setDrawerOpen(false)} className="app-shell__drawer-link">
+                Features
+              </a>
             </li>
             <li>
-              <a href="/pricing" onClick={() => setDrawerOpen(false)} className="app-shell__drawer-link">Pricing</a>
+              <a href="/pricing" onClick={() => setDrawerOpen(false)} className="app-shell__drawer-link">
+                Pricing
+              </a>
             </li>
             <li>
-              <a href="/about" onClick={() => setDrawerOpen(false)} className="app-shell__drawer-link">About</a>
+              <a href="/about" onClick={() => setDrawerOpen(false)} className="app-shell__drawer-link">
+                About
+              </a>
             </li>
           </>
         )}
@@ -251,7 +281,9 @@ export function AppShell({ user, children }: AppShellProps) {
           />
           {searchOpen && (
             <div className="app-shell__search-dropdown">
-              <p className="app-shell__search-hint">Try searching for &quot;Read Aloud&quot;, &quot;Essay&quot;, or &quot;Mock exam&quot;</p>
+              <p className="app-shell__search-hint">
+                Try searching for &quot;Read Aloud&quot;, &quot;Essay&quot;, or &quot;Mock exam&quot;
+              </p>
             </div>
           )}
         </div>
@@ -265,7 +297,9 @@ export function AppShell({ user, children }: AppShellProps) {
             onClick={() => setNotificationsOpen((v) => !v)}
           >
             <IconBell />
-            <Badge className="app-shell__notification-badge" variant="danger">3</Badge>
+            <Badge className="app-shell__notification-badge" variant="danger">
+              3
+            </Badge>
           </button>
           {notificationsOpen && (
             <div className="app-shell__notifications-dropdown">

@@ -31,7 +31,10 @@ export default function TeachersPage() {
                     fontWeight: 700,
                   }}
                 >
-                  {teacher.name.split(' ').map((n) => n[0]).join('')}
+                  {teacher.name
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')}
                 </div>
                 <div>
                   <h3 className="landing__feature-title">{teacher.name}</h3>

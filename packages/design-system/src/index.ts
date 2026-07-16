@@ -24,7 +24,14 @@ export { Select, type SelectProps } from './components/Select';
 export { TextArea, type TextAreaProps } from './components/TextArea';
 export { ThemeToggle, type ThemeToggleProps } from './components/ThemeToggle';
 export { LanguageSelector, type LanguageSelectorProps } from './components/LanguageSelector';
-export { ChartBar, ChartLine, ChartDonut, type ChartBarProps, type ChartLineProps, type ChartDonutProps } from './components/Charts';
+export {
+  ChartBar,
+  ChartLine,
+  ChartDonut,
+  type ChartBarProps,
+  type ChartLineProps,
+  type ChartDonutProps,
+} from './components/Charts';
 export {
   IconChart,
   IconPie,

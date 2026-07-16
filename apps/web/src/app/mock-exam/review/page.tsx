@@ -7,23 +7,54 @@ export const metadata = {
 
 export default function MockExamReviewPage() {
   const answers = [
-    { q: 1, task: 'Read Aloud', correct: true, yourAnswer: 'Recorded response', explanation: 'Pacing and pronunciation were accurate.' },
-    { q: 2, task: 'Repeat Sentence', correct: false, yourAnswer: 'Partial recall', explanation: 'Missed the final phrase. Focus on memory chunking.' },
-    { q: 3, task: 'Describe Image', correct: true, yourAnswer: 'Recorded response', explanation: 'Covered all key trends and comparisons.' },
+    {
+      q: 1,
+      task: 'Read Aloud',
+      correct: true,
+      yourAnswer: 'Recorded response',
+      explanation: 'Pacing and pronunciation were accurate.',
+    },
+    {
+      q: 2,
+      task: 'Repeat Sentence',
+      correct: false,
+      yourAnswer: 'Partial recall',
+      explanation: 'Missed the final phrase. Focus on memory chunking.',
+    },
+    {
+      q: 3,
+      task: 'Describe Image',
+      correct: true,
+      yourAnswer: 'Recorded response',
+      explanation: 'Covered all key trends and comparisons.',
+    },
   ];
 
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Review answers</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Review answers
+        </h1>
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           {answers.map((ans) => (
             <Card key={ans.q}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <span style={{ fontWeight: 600 }}>Question {ans.q} · {ans.task}</span>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '0.75rem',
+                }}
+              >
+                <span style={{ fontWeight: 600 }}>
+                  Question {ans.q} · {ans.task}
+                </span>
                 <Badge variant={ans.correct ? 'success' : 'danger'}>{ans.correct ? 'Correct' : 'Incorrect'}</Badge>
               </div>
-              <p style={{ marginBottom: '0.5rem' }}><strong>Your answer:</strong> {ans.yourAnswer}</p>
+              <p style={{ marginBottom: '0.5rem' }}>
+                <strong>Your answer:</strong> {ans.yourAnswer}
+              </p>
               <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem' }}>{ans.explanation}</p>
             </Card>
           ))}

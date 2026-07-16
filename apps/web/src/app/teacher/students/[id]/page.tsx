@@ -8,19 +8,20 @@ export const metadata = {
 
 export default async function StudentProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const student = MOCK_STUDENTS.find((s) => s.id === id) || MOCK_STUDENTS[0] || {
-    id: 'unknown',
-    name: 'Unknown student',
-    email: '-',
-    targetScore: 0,
-    estimatedScore: 0,
-    streakDays: 0,
-    joinDate: '',
-    plan: 'free',
-    country: '',
-    timezone: '',
-    goals: [],
-  };
+  const student = MOCK_STUDENTS.find((s) => s.id === id) ||
+    MOCK_STUDENTS[0] || {
+      id: 'unknown',
+      name: 'Unknown student',
+      email: '-',
+      targetScore: 0,
+      estimatedScore: 0,
+      streakDays: 0,
+      joinDate: '',
+      plan: 'free',
+      country: '',
+      timezone: '',
+      goals: [],
+    };
 
   return (
     <main>
@@ -66,7 +67,14 @@ export default async function StudentProfilePage({ params }: { params: Promise<{
                     { label: 'Listening', value: 71 },
                   ].map((skill) => (
                     <div key={skill.label} style={{ marginBottom: '0.75rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          fontSize: '0.875rem',
+                          marginBottom: '0.25rem',
+                        }}
+                      >
                         <span>{skill.label}</span>
                         <strong>{skill.value}</strong>
                       </div>

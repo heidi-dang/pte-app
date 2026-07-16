@@ -7,7 +7,10 @@ export const metadata = {
 };
 
 export default function UsersPage() {
-  const users = [...MOCK_STUDENTS.map((s) => ({ ...s, role: 'student' })), ...MOCK_TEACHERS.map((t) => ({ ...t, role: 'teacher' }))];
+  const users = [
+    ...MOCK_STUDENTS.map((s) => ({ ...s, role: 'student' })),
+    ...MOCK_TEACHERS.map((t) => ({ ...t, role: 'teacher' })),
+  ];
 
   return (
     <main>
@@ -34,8 +37,12 @@ export default function UsersPage() {
                     <td className="ds-table__td">{user.name}</td>
                     <td className="ds-table__td">{user.email}</td>
                     <td className="ds-table__td">{user.role}</td>
-                    <td className="ds-table__td"><Badge variant="success">Active</Badge></td>
-                    <td className="ds-table__td"><Button size="sm">Edit</Button></td>
+                    <td className="ds-table__td">
+                      <Badge variant="success">Active</Badge>
+                    </td>
+                    <td className="ds-table__td">
+                      <Button size="sm">Edit</Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

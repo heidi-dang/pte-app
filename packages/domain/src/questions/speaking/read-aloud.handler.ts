@@ -1,7 +1,8 @@
 import type { QuestionTypeHandler, SubmissionValidationInput, SubmissionValidationResult } from '@pte-app/contracts';
 import type { ReadAloudQuestion, ReadAloudResponse } from '@pte-app/contracts';
 import { ReadAloudQuestionSchema, ReadAloudResponseSchema } from '@pte-app/schemas';
-import { SPEAKING_MANIFEST_BASE } from './common.js';
+import { SPEAKING_MANIFEST_BASE, validateRecordingSubmission } from './common.js';
+import type { ValidatedRecordingContext } from './common.js';
 
 export function createReadAloudHandler(): QuestionTypeHandler<ReadAloudQuestion, ReadAloudResponse> {
   return {
@@ -28,6 +29,10 @@ export function createReadAloudHandler(): QuestionTypeHandler<ReadAloudQuestion,
       input: SubmissionValidationInput<ReadAloudResponse, ReadAloudQuestion>,
     ): SubmissionValidationResult {
       const { response, allowsEmptySubmission } = input;
+      const ctx = input.recordingContext as ValidatedRecordingContext | undefined;
+      if (ctx) {
+        return validateRecordingSubmission(ctx, '', allowsEmptySubmission);
+      }
       if (!allowsEmptySubmission && !response.recordingId) {
         return { valid: false, reason: 'Recording is required' };
       }

@@ -11,6 +11,8 @@ export function AnswerShortQuestionRenderer({
   onChange,
   disabled,
   recordingProfile,
+  attemptId,
+  recordingProfileId,
 }: QuestionRendererProps<AnswerShortQuestion, AnswerShortQuestionResponse>) {
   if (!question || !recordingProfile) return null;
 
@@ -21,6 +23,8 @@ export function AnswerShortQuestionRenderer({
         <SpeakingRecorder
           recordingProfile={recordingProfile}
           onComplete={(recordingId) => onChange({ recordingId }, 'complete')}
+          attemptId={attemptId}
+          recordingProfileId={recordingProfileId ?? recordingProfile.id}
         />
       )}
       {response?.recordingId && <p role="status">Recording complete</p>}

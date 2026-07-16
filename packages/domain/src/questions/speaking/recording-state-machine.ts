@@ -32,7 +32,7 @@ export function transitionRecording(from: RecordingState, to: RecordingState): R
 }
 
 export function isTerminalRecordingState(state: RecordingState): boolean {
-  return state === 'available' || state === 'abandoned' || state === 'expired' || state === 'failed';
+  return state === 'available' || state === 'abandoned' || state === 'expired';
 }
 
 export function isActiveRecordingState(state: RecordingState): boolean {

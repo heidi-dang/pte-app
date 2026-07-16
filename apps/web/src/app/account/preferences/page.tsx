@@ -9,7 +9,9 @@ export default function PreferencesPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Preferences</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Preferences
+        </h1>
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           <Card>
             <h3 className="app-info-card__title">Appearance</h3>
@@ -32,7 +34,9 @@ export default function PreferencesPage() {
           <Card>
             <h3 className="app-info-card__title">Study reminders</h3>
             <p className="landing__feature-desc">Receive daily reminders at your preferred time.</p>
-            <Button variant="secondary" size="sm" style={{ marginTop: '1rem' }}>Configure reminders</Button>
+            <Button variant="secondary" size="sm" style={{ marginTop: '1rem' }}>
+              Configure reminders
+            </Button>
           </Card>
         </div>
       </Container>

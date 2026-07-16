@@ -73,7 +73,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <Badge variant={course.accessLevel === 'free' ? 'success' : 'warning'}>{course.accessLevel}</Badge>
           <Badge>{course.difficulty}</Badge>
-          <span style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>{course.estimatedDurationMinutes} min</span>
+          <span style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>
+            {course.estimatedDurationMinutes} min
+          </span>
         </div>
         <p style={{ marginBottom: '1.5rem', color: 'var(--color-text)', lineHeight: '1.6' }}>{course.description}</p>
 
@@ -115,7 +117,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
           </Button>
         )}
 
-        <h2 className="app-section__title" style={{ marginTop: '2rem' }}>Modules</h2>
+        <h2 className="app-section__title" style={{ marginTop: '2rem' }}>
+          Modules
+        </h2>
         {(modules || []).map((mod: any, mi: number) => (
           <Card key={mod.id} style={{ marginBottom: '1rem' }}>
             <h3 style={{ marginBottom: '1rem' }}>

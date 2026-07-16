@@ -9,7 +9,9 @@ export default function AdminDashboard() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Admin Dashboard</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Admin Dashboard
+        </h1>
         <div className="status-grid">
           <Card>
             <h3 className="app-info-card__title">Registered users</h3>
