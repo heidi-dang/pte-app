@@ -14,7 +14,7 @@ env:
 
 jobs:
   quick-checks:
-    runs-on: [self-hosted, linux, x64, alienware-r8]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       TURBO_CACHE_DIR: /home/heidi/.turbo-cache
