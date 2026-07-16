@@ -115,18 +115,14 @@ export async function authPlugin(app: FastifyInstance, options: AuthPluginOption
     });
   });
 
-  app.post(
-    '/auth/logout',
-    { schema: { body: false as const } },
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      if (!request.auth) {
-        return reply.status(401).send({ error: 'Unauthorized' });
-      }
-      await revokeSession(db, request.auth.sessionId);
-      void reply.clearCookie?.(config.cookieName, { path: '/' });
-      return reply.status(200).send({ ok: true });
-    },
-  );
+  app.post('/auth/logout', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (!request.auth) {
+      return reply.status(401).send({ error: 'Unauthorized' });
+    }
+    await revokeSession(db, request.auth.sessionId);
+    void reply.clearCookie?.(config.cookieName, { path: '/' });
+    return reply.status(200).send({ ok: true });
+  });
 
   app.get('/auth/me', async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.auth) {

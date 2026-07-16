@@ -39,7 +39,7 @@ async function loginViaApi(context: any, email: string, password: string): Promi
 }
 
 async function logoutViaApi(context: any): Promise<void> {
-  await apiRequest(context, '/auth/logout', { method: 'POST' });
+  await apiRequest(context, '/auth/logout', { method: 'POST', data: {} });
   await context.clearCookies();
 }
 

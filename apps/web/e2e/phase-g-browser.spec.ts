@@ -21,6 +21,7 @@ async function logout(page: Page): Promise<string> {
   await page.request.fetch(`${cfg.apiUrl}/auth/logout`, {
     method: 'POST',
     headers: { authorization: `Bearer ${oldToken}` },
+    data: {},
   });
 
   const cookiesAfter = await page.context().cookies();
