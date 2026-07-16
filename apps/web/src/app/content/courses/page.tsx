@@ -1,12 +1,15 @@
 import { Container, Card, Badge, Button } from '@pte-app/design-system';
-import { MOCK_COURSES } from '@/lib/mock-data';
+import { getCatalogue, type CatalogueCourse } from '@/lib/api-client';
 
 export const metadata = {
   title: 'Course Manager — PTE Academy',
   description: 'Manage PTE courses.',
 };
 
-export default function CourseManagerPage() {
+export default async function CourseManagerPage() {
+  const { ok, data } = await getCatalogue({ pageSize: 50 });
+  const courses: CatalogueCourse[] = ok ? data.courses ?? [] : [];
+
   return (
     <main>
       <Container>
@@ -15,7 +18,7 @@ export default function CourseManagerPage() {
           <Button>Add course</Button>
         </div>
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
-          {MOCK_COURSES.map((course) => (
+          {courses.map((course) => (
             <Card key={course.id}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <div>
@@ -23,7 +26,7 @@ export default function CourseManagerPage() {
                   <p className="landing__feature-desc">{course.summary}</p>
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
                     <Badge variant={course.accessLevel === 'free' ? 'success' : 'warning'}>{course.accessLevel}</Badge>
-                    <Badge>{course.level}</Badge>
+                    <Badge>{course.difficulty}</Badge>
                     <Badge variant="success">Published</Badge>
                   </div>
                 </div>

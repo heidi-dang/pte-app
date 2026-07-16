@@ -34,7 +34,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return { status: res.status, data: data as T, ok: res.ok };
 }
 
-export const api = {
+const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
   patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
@@ -150,4 +150,87 @@ export async function getAttemptReview(attemptId: string) {
   return api.get<{ attemptId: string; status: string; response: unknown; mode: string }>(
     `/api/v1/attempt/${attemptId}/review`,
   );
+}
+
+// ─── Phase H: Learning catalogue / course / lesson ──────────
+
+export interface CatalogueCourse {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  difficulty: string;
+  estimatedDurationMinutes: number;
+  accessLevel: string;
+  skillTags: string[];
+  status: string;
+}
+
+export interface CatalogueResponse {
+  courses: CatalogueCourse[];
+  page?: { cursor: string };
+  total?: number;
+}
+
+export async function getCatalogue(params?: { search?: string; access?: string; pageSize?: number; cursor?: string }) {
+  const q = new URLSearchParams();
+  if (params?.search) q.set('search', params.search);
+  if (params?.access) q.set('access', params.access);
+  if (params?.pageSize) q.set('pageSize', String(params.pageSize));
+  if (params?.cursor) q.set('cursor', params.cursor);
+  const query = q.toString();
+  return api.get<CatalogueResponse>(`/learn/catalogue${query ? `?${query}` : ''}`);
+}
+
+export interface CourseLessonDetail {
+  moduleId: string;
+  lesson: Record<string, unknown>;
+  progress: Record<string, unknown> | null;
+  locked: boolean;
+  lockReason: string | null;
+}
+
+export interface CourseDetailResponse {
+  course: Record<string, unknown>;
+  modules: Record<string, unknown>[];
+  lessons: CourseLessonDetail[];
+  enrolment: Record<string, unknown> | null;
+  access: Record<string, unknown>;
+}
+
+export async function getCourseDetail(slug: string) {
+  return api.get<CourseDetailResponse>(`/learn/courses/${slug}`);
+}
+
+export interface LessonDeliveryResponse {
+  lesson: Record<string, unknown> & { versionId: string };
+  blocks: Record<string, unknown>[];
+  progress: Record<string, unknown> | null;
+  access: Record<string, unknown>;
+  quiz: { id: string; title: string; description: string } | null;
+  teacherNotes?: Record<string, unknown>[];
+}
+
+export async function getLessonDelivery(lessonId: string) {
+  return api.get<LessonDeliveryResponse>(`/learn/lessons/${lessonId}`);
+}
+
+export async function enrolCourse(courseId: string) {
+  return api.post<Record<string, unknown>>(`/learn/courses/${courseId}/enrol`);
+}
+
+export async function updateLearningProgress(body: Record<string, unknown>) {
+  return api.post<Record<string, unknown>>('/learn/progress', body);
+}
+
+export async function getLessonProgress(lessonId: string) {
+  return api.get<Record<string, unknown> | { status: string }>(`/learn/progress/${lessonId}`);
+}
+
+export async function completeLesson(lessonId: string) {
+  return api.post<Record<string, unknown>>(`/learn/lessons/${lessonId}/complete`);
+}
+
+export async function submitQuiz(quizId: string, submissionId: string, answers: number[][]) {
+  return api.post<Record<string, unknown>>(`/learn/quiz/${quizId}/submit`, { submissionId, answers });
 }

@@ -1,3 +1,13 @@
+/**
+ * @deprecated Use `@/lib/api-client` (server-side) or `@/lib/client-api` (client-side) instead.
+ * This module is kept for backward compatibility but will be removed in a future refactor.
+ * Migration guide:
+ *   - Server components: import { getCatalogue, getCourseDetail, getLessonDelivery } from '@/lib/api-client'
+ *   - Client components: import { getCatalogue, getCourseDetail, getLessonDelivery } from '@/lib/client-api'
+ *   - Enrolment / progress: use api-client.ts or client-api.ts equivalents
+ *   - Quiz submit: use api-client.ts or client-api.ts equivalents
+ */
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export function getApiUrl(): string {

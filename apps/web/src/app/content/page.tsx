@@ -1,4 +1,5 @@
 import { Container, Card, Badge, Button } from '@pte-app/design-system';
+import { getCatalogue } from '@/lib/api-client';
 import { ALL_PRACTICE_TASKS } from '@/lib/mock-data';
 
 export const metadata = {
@@ -6,7 +7,10 @@ export const metadata = {
   description: 'Content management dashboard.',
 };
 
-export default function ContentDashboard() {
+export default async function ContentDashboard() {
+  const { ok, data } = await getCatalogue({ pageSize: 1 });
+  const publishedCourseCount = ok ? (data.total ?? 0) : 5;
+
   return (
     <main>
       <Container>
@@ -15,7 +19,10 @@ export default function ContentDashboard() {
           <Card>
             <h3 className="app-info-card__title">Questions</h3>
             <p style={{ fontSize: '2rem', fontWeight: 700 }}>{ALL_PRACTICE_TASKS.length}</p>
-            <p className="landing__feature-desc">Active tasks across all skills</p>
+            <p className="landing__feature-desc">Active mock tasks across all skills</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--color-muted)', fontStyle: 'italic', marginTop: '0.25rem' }}>
+              TODO: Connect to Phase H question bank API when available
+            </p>
           </Card>
           <Card>
             <h3 className="app-info-card__title">Pending review</h3>
@@ -24,7 +31,7 @@ export default function ContentDashboard() {
           </Card>
           <Card>
             <h3 className="app-info-card__title">Published courses</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 700 }}>5</p>
+            <p style={{ fontSize: '2rem', fontWeight: 700 }}>{publishedCourseCount}</p>
           </Card>
         </div>
 

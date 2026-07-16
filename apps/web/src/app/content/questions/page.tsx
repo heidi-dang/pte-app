@@ -11,7 +11,12 @@ export default function QuestionBankPage() {
     <main>
       <Container>
         <div className="app-page-header">
-          <h1 className="app-page-header__title">Question bank</h1>
+          <div>
+            <h1 className="app-page-header__title">Question bank</h1>
+            <p style={{ fontSize: '0.8rem', color: 'var(--color-muted)' }}>
+              TODO: Connect to Phase H question/block API when available
+            </p>
+          </div>
           <a href="/content/questions/new">
             <Button>Add question</Button>
           </a>

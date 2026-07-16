@@ -8,6 +8,7 @@ import { RecordingStatus } from './recording-status.js';
 import { RecordingWaveform } from './recording-waveform.js';
 import { UploadProgress } from './upload-progress.js';
 import { RecordingRecovery } from './recording-recovery.js';
+import { RecordingMetadata } from './recording-metadata.js';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, '');
 
@@ -18,6 +19,15 @@ async function apiPost(path: string, body: unknown, signal?: AbortSignal): Promi
     credentials: 'include',
     body: JSON.stringify(body),
     signal,
+  });
+  return res.json();
+}
+
+async function apiGet(path: string): Promise<any> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'GET',
+    headers: { 'content-type': 'application/json' },
+    credentials: 'include',
   });
   return res.json();
 }
@@ -39,6 +49,7 @@ export function SpeakingRecorder({ recordingProfile, onComplete, attemptId }: Sp
   const [totalChunks, setTotalChunks] = useState(0);
   const [, setRecordingIdState] = useState<string | null>(null);
   const [, setUploadSessionIdState] = useState<string | null>(null);
+  const [recordingMeta, setRecordingMeta] = useState<{ state: string; durationMs: number | null } | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -92,6 +103,15 @@ export function SpeakingRecorder({ recordingProfile, onComplete, attemptId }: Sp
       return;
     }
 
+    const meta = await apiGet(`/api/v1/speaking/recording/${rId}/status`);
+    if (meta && !meta.error) {
+      setRecordingMeta({
+        state: meta.recording?.state ?? 'finalized',
+        durationMs: meta.recording?.duration_ms ?? null,
+      });
+    }
+
+    setPhase('done');
     onComplete(rId);
   }, [duration, onComplete, recordingProfile.uploadPolicy.chunkSizeBytes]);
 
@@ -204,6 +224,15 @@ export function SpeakingRecorder({ recordingProfile, onComplete, attemptId }: Sp
 
   if (phase === 'preparing') {
     return <PreparationCountdown profile={preparationPolicy} onComplete={startRecording} />;
+  }
+
+  if (phase === 'done') {
+    return (
+      <RecordingMetadata
+        state={recordingMeta?.state ?? 'finalized'}
+        durationMs={recordingMeta?.durationMs ?? duration * 1000}
+      />
+    );
   }
 
   if (phase === 'error') {
