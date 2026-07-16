@@ -278,7 +278,16 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     await page.fill('[data-testid="pub-check-content-id"]', contentId);
     await page.fill('[data-testid="pub-check-version-id"]', 'v1');
     await page.click('[data-testid="pub-check-submit-btn"]');
-    await expect(page.locator('[data-testid="pub-check-result"]')).toBeVisible({ timeout: 15000 });
+    // Wait for either result or error
+    const resultOrError = page.locator('[data-testid="pub-check-result"], [data-testid="pub-check-error"]');
+    await expect(resultOrError.first()).toBeVisible({ timeout: 15000 });
+    // Log page content for debugging
+    const pageText = await page.locator('body').textContent();
+    const hasError = pageText?.includes('pub-check-error') || false;
+    if (hasError) {
+      const errorText = await page.locator('[data-testid="pub-check-error"]').textContent();
+      console.error('Publication check error:', errorText);
+    }
     await expect(page.locator('[data-testid="pub-check-eligible"]')).toContainText('Eligible');
 
     // ── 29-30: Revoke licence through UI, verify publication becomes blocked ──
