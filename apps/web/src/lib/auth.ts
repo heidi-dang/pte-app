@@ -75,28 +75,30 @@ export async function registerAccount(formData: FormData): Promise<AuthResult> {
     return { success: true, user: data.user as User, token: data.token as string };
   }
 
-  // Frontend-only mock fallback
-  const existing = findMockUserByCredentials(email, password);
-  if (existing) {
-    return { success: false, error: 'An account with this email already exists in demo mode.' };
+  // Frontend-only mock fallback for development
+  if (process.env.NODE_ENV !== 'production') {
+    const existing = findMockUserByCredentials(email, password);
+    if (existing) {
+      return { success: false, error: 'An account with this email already exists in demo mode.' };
+    }
+    const user: User = {
+      id: `mock-${Date.now()}`,
+      email: email.toLowerCase(),
+      displayName: (displayName || email.split('@')[0]) ?? null,
+      roles: ['student'],
+    };
+    const token = createMockToken();
+    const cookieStore = await cookies();
+    cookieStore.set(process.env.SESSION_COOKIE_NAME || getSessionCookieName(), token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    return { success: true, user, token };
   }
-  const user: User = {
-    id: `mock-${Date.now()}`,
-    email: email.toLowerCase(),
-    displayName: (displayName || email.split('@')[0]) ?? null,
-    roles: ['student'],
-  };
-  const token = createMockToken();
-  const cookieStore = await cookies();
-  cookieStore.set(process.env.SESSION_COOKIE_NAME || getSessionCookieName(), token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7,
-  });
-  // Note: localStorage cannot be accessed from server action; client-side pages handle this.
-  return { success: true, user, token };
+  return { success: false, error: 'Unable to connect to the server. Please try again later.' };
 }
 
 export async function loginAccount(formData: FormData): Promise<AuthResult> {
@@ -124,21 +126,24 @@ export async function loginAccount(formData: FormData): Promise<AuthResult> {
     return { success: true, user: data.user as User, token: data.token as string };
   }
 
-  // Frontend-only mock fallback
-  const user = findMockUserByCredentials(email, password);
-  if (!user) {
-    return { success: false, error: 'Demo credentials are invalid. Try student@pte.app / Password123' };
+  // Frontend-only mock fallback for development
+  if (process.env.NODE_ENV !== 'production') {
+    const user = findMockUserByCredentials(email, password);
+    if (!user) {
+      return { success: false, error: 'Demo credentials are invalid. Try student@pte.app / Password123' };
+    }
+    const token = createMockToken();
+    const cookieStore = await cookies();
+    cookieStore.set(process.env.SESSION_COOKIE_NAME || getSessionCookieName(), token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    return { success: true, user, token };
   }
-  const token = createMockToken();
-  const cookieStore = await cookies();
-  cookieStore.set(process.env.SESSION_COOKIE_NAME || getSessionCookieName(), token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7,
-  });
-  return { success: true, user, token };
+  return { success: false, error: 'Unable to connect to the server. Please try again later.' };
 }
 
 export async function getCurrentUser(): Promise<User | null> {
@@ -147,8 +152,11 @@ export async function getCurrentUser(): Promise<User | null> {
     const data = await res.json().catch(() => ({}));
     return (data.user as User) || null;
   }
-  // If API is unavailable, return a default mock user so the UI remains navigable.
-  return DEFAULT_MOCK_USER;
+  // If API is unavailable in dev, return a default mock user so the UI remains navigable.
+  if (process.env.NODE_ENV !== 'production') {
+    return DEFAULT_MOCK_USER;
+  }
+  return null;
 }
 
 export async function logoutAccount(): Promise<void> {

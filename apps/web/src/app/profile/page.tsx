@@ -1,11 +1,23 @@
 import { Container, Card, Button, Input, Avatar } from '@pte-app/design-system';
+import { getCurrentUser } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
 export const metadata = {
   title: 'Profile — PTE Academy',
   description: 'Your PTE Academy profile.',
 };
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+  const user = await getCurrentUser();
+  if (!user) redirect('/login');
+
+  const initials = (user.displayName || user.email)
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
   return (
     <main>
       <Container>
@@ -13,16 +25,15 @@ export default function ProfilePage() {
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           <Card>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem' }}>
-              <Avatar initials="AJ" size="lg" />
+              <Avatar initials={initials} size="lg" />
               <div>
-                <h3 className="landing__feature-title">Alex Johnson</h3>
-                <p className="landing__feature-desc">student@pte.app</p>
+                <h3 className="landing__feature-title">{user.displayName || 'User'}</h3>
+                <p className="landing__feature-desc">{user.email}</p>
               </div>
             </div>
             <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <Input label="Display name" defaultValue="Alex Johnson" />
-              <Input label="Email" type="email" defaultValue="student@pte.app" />
-              <Input label="Country" defaultValue="Australia" />
+              <Input label="Display name" defaultValue={user.displayName || ''} />
+              <Input label="Email" type="email" defaultValue={user.email} />
               <Button type="submit">Save changes</Button>
             </form>
           </Card>

@@ -1,16 +1,18 @@
 import { Container, Card, Badge, Button } from '@pte-app/design-system';
+import { getCurrentUser } from '@/lib/auth';
+import { listSessions, revokeSession } from '@/lib/api-client';
+import { redirect } from 'next/navigation';
 
 export const metadata = {
   title: 'Devices — PTE Academy',
   description: 'Manage your connected devices.',
 };
 
-export default function DevicesPage() {
-  const devices = [
-    { id: 'd1', name: 'Chrome on Windows', lastActive: '2026-07-16 09:00', current: true },
-    { id: 'd2', name: 'Safari on iPhone', lastActive: '2026-07-15 18:30', current: false },
-    { id: 'd3', name: 'Firefox on macOS', lastActive: '2026-07-10 14:20', current: false },
-  ];
+export default async function DevicesPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect('/login');
+
+  const sessions = await listSessions();
 
   return (
     <main>
@@ -21,22 +23,31 @@ export default function DevicesPage() {
             <table className="ds-table">
               <thead className="ds-table__head">
                 <tr>
-                  <th className="ds-table__th">Device</th>
-                  <th className="ds-table__th">Last active</th>
+                  <th className="ds-table__th">Session</th>
+                  <th className="ds-table__th">Created</th>
+                  <th className="ds-table__th">Expires</th>
                   <th className="ds-table__th">Status</th>
                   <th className="ds-table__th">Actions</th>
                 </tr>
               </thead>
               <tbody className="ds-table__body">
-                {devices.map((device) => (
-                  <tr key={device.id} className="ds-table__row">
-                    <td className="ds-table__td">{device.name}</td>
-                    <td className="ds-table__td">{device.lastActive}</td>
+                {sessions.map((session) => (
+                  <tr key={session.id} className="ds-table__row">
+                    <td className="ds-table__td">{session.id.slice(0, 8)}...</td>
+                    <td className="ds-table__td">{new Date(session.createdAt).toLocaleDateString()}</td>
+                    <td className="ds-table__td">{new Date(session.expiresAt).toLocaleDateString()}</td>
                     <td className="ds-table__td">
-                      {device.current ? <Badge variant="success">Current</Badge> : <Badge>Inactive</Badge>}
+                      {!session.revokedAt ? <Badge variant="success">Active</Badge> : <Badge>Revoked</Badge>}
                     </td>
                     <td className="ds-table__td">
-                      {!device.current && <Button size="sm" variant="danger">Revoke</Button>}
+                      {!session.revokedAt && (
+                        <form action={async () => {
+                          'use server';
+                          await revokeSession(session.id);
+                        }}>
+                          <Button type="submit" size="sm" variant="danger">Revoke</Button>
+                        </form>
+                      )}
                     </td>
                   </tr>
                 ))}

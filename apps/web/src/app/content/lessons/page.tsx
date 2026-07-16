@@ -1,18 +1,26 @@
 import { Container, Card, Badge, Button } from '@pte-app/design-system';
-import { MOCK_LESSONS, MOCK_COURSES } from '@/lib/mock-data';
+import { getCatalogue, type CatalogueCourse } from '@/lib/api-client';
+import { MOCK_LESSONS } from '@/lib/mock-data';
 
 export const metadata = {
   title: 'Lesson Manager — PTE Academy',
   description: 'Manage PTE lessons.',
 };
 
-export default function LessonManagerPage() {
+export default async function LessonManagerPage() {
+  const { ok, data } = await getCatalogue({ pageSize: 50 });
+  const courses: CatalogueCourse[] = ok ? data.courses ?? [] : [];
+  const courseMap = new Map(courses.map((c) => [c.id, c]));
+
   return (
     <main>
       <Container>
         <div className="app-page-header">
           <h1 className="app-page-header__title">Lesson manager</h1>
           <Button>Add lesson</Button>
+          <p style={{ fontSize: '0.8rem', color: 'var(--color-muted)', marginLeft: '1rem' }}>
+            TODO: Connect to backend lessons listing API when available
+          </p>
         </div>
         <Card>
           <div className="ds-table-wrapper">
@@ -30,7 +38,7 @@ export default function LessonManagerPage() {
                 {MOCK_LESSONS.map((lesson) => (
                   <tr key={lesson.id} className="ds-table__row">
                     <td className="ds-table__td">{lesson.title}</td>
-                    <td className="ds-table__td">{MOCK_COURSES.find((c) => c.id === lesson.courseId)?.title}</td>
+                    <td className="ds-table__td">{courseMap.get(lesson.courseId)?.title ?? lesson.courseId}</td>
                     <td className="ds-table__td">{lesson.durationMinutes} min</td>
                     <td className="ds-table__td">
                       <Badge variant={lesson.completed ? 'success' : 'warning'}>{lesson.completed ? 'Published' : 'Draft'}</Badge>
