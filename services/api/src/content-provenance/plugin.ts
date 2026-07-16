@@ -634,6 +634,18 @@ export async function contentProvenancePlugin(
     return reply.status(200).send(record);
   });
 
+  app.post('/content-provenance/records/:id/resubmit', async (request, reply) => {
+    const auth = getAuth(request, reply);
+    if (!auth) return;
+    if (!requireRoles(auth, ['content_editor', 'admin'], reply)) return;
+    const { id } = request.params as { id: string };
+    const current = await provenanceRepo.getProvenanceById(db, id as ProvenanceId);
+    if (!current || current.verificationStatus !== 'rejected')
+      return reply.status(400).send({ error: 'Only rejected records can be resubmitted' });
+    const record = await provenanceRepo.updateProvenanceStatus(db, id as ProvenanceId, 'draft', auth.userId as UserId);
+    return reply.status(200).send(record);
+  });
+
   // ─── SIMILARITY CHECKS ─────────────────────────────────────
   app.post('/content-provenance/similarity-checks', async (request, reply) => {
     const auth = getAuth(request, reply);

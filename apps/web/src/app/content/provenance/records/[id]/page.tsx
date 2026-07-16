@@ -171,7 +171,7 @@ export default function RecordDetailPage({ params }: { params: Promise<{ id: str
           )}
           {record.verificationStatus === 'rejected' && (
             <>
-              <Button data-testid="btn-resubmit" onClick={() => doAction('update', { verificationStatus: 'draft' })}>
+              <Button data-testid="btn-resubmit" onClick={() => doAction('resubmit')}>
                 Edit & Resubmit
               </Button>
             </>
