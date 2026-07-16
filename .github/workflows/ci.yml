@@ -55,7 +55,6 @@ jobs:
       - run: npm run generate:pte-blueprints
       - run: node scripts/generate-pte-blueprints.mjs --validate
 
->>>>>>> origin/main
       - run: npm run format:check
       - run: npm run lint
       - run: npm run typecheck
@@ -64,10 +63,8 @@ jobs:
       - run: npm run test:tooling
       - run: npm run test:unit
       - run: npm run test:integration
-<<<<<<< HEAD
       - run: npm run test:api
-
-=======      - run: npm run build
+      - run: npm run build
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium

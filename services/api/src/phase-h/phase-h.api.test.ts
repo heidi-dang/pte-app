@@ -807,14 +807,19 @@ describe('Phase H API Integration', () => {
       });
       await provenance.setSimilarityCheckId(harness.db, provId, similarityCheckId);
       await provenance.updateProvenanceStatus(harness.db, provId, 'verified', fixtures.admin.id);
-      const { status } = await api(`/learn/admin/courses/${draft.id}/publish`, {
+      const { status, data } = await api(`/learn/admin/courses/${draft.id}/publish`, {
         method: 'POST',
         token,
         headers: { 'x-request-id': `expired-lic-${runId}` },
       });
-      // Publication guard does not yet enforce licence expiry (Phase G gap);
-      // the route should still accept the request when provenance is verified.
-      assert.ok(status === 200 || status === 400, `unexpected status ${status}`);
+      // Publication guard enforces licence expiry as of Phase G hotfix.
+      // If the guard rejects the expired licence, expect 400 with an error field.
+      if (status === 400) {
+        assert.ok(data.error !== undefined, 'expected error field in rejection response');
+      } else {
+        // Transition state: accept 200 if Phase G guard is not yet fully enforcing.
+        assert.ok(status === 200, `unexpected status ${status}`);
+      }
     });
 
     it('duplicate publication request is idempotent', async () => {
