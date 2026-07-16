@@ -85,3 +85,21 @@ export {
 export * from './content-provenance/index.js';
 export * from './phase-h/index.js';
 export * from './phase-i/index.js';
+
+
+
+export * from './question-engine/errors.js';
+export * from './question-engine/mode-profile.js';
+export * from './question-engine/playback-state.js';
+export * from './question-engine/progress-event.js';
+export * from './question-engine/renderer-manifest.js';
+export * from './question-engine/session-mode.js';
+export * from './question-engine/session-state.js';
+export * from './question-engine/submission-result.js';
+export * from './question-engine/timer-display-profile.js';
+export * from './question-engine/timer-state.js';
+export * from './question-engine/access-policy.js';
+export * from './question-engine/question-version.js';
+export * from './questions/index.js';
+export type { ResponseState } from './question-engine/response-state.js';
+export type { ScoringProfileId, QuestionVersionId, PlaybackRightId, TimingProfileId, PlaybackProfileId } from './question-engine/identifiers.js';

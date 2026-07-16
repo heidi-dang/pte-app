@@ -62,3 +62,7 @@ export {
   PlaybackRecordRequestSchema,
   ValidTransitionSchema,
 } from './phase-i.js';
+
+export * from './questions/index.js';
+
+export * from './questions/index.js';
