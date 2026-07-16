@@ -43,3 +43,21 @@ export {
 } from './configuration.js';
 
 export * from './content-provenance.js';
+export {
+  QuestionAttemptStatusSchema,
+  QuestionAttemptModeSchema,
+  QuestionAttemptRecordSchema,
+  QuestionSessionRecordSchema,
+  PlaybackConsumptionRecordSchema,
+  QuestionResponseEnvelopeSchema,
+  TimerPolicySchema,
+  PlaybackPolicySchema,
+  ReviewVisibilityPolicySchema,
+  AccessibilityContractSchema,
+  ProgressEventContractSchema,
+  RendererContractSchema,
+  StartSessionRequestSchema,
+  AutosaveRequestSchema,
+  SubmitRequestSchema,
+  ValidTransitionSchema,
+} from './phase-i.js';
