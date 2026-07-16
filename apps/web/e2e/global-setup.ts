@@ -21,7 +21,9 @@ function waitForUrl(url: string, timeoutMs: number): Promise<boolean> {
       try {
         const res = await fetch(url, { signal: AbortSignal.timeout(1000) });
         if (res.ok) return resolve(true);
-      } catch {}
+      } catch {
+        // ignore transient failures
+      }
       setTimeout(check, 250);
     };
     check();
