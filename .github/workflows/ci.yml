@@ -71,16 +71,30 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: cp .env.example .env.local
       - name: Set dynamic service ports
         run: |
+          POSTGRES_PORT=${{ job.services.postgres.ports['5432'] }}
+          REDIS_PORT=${{ job.services.redis.ports['6379'] }}
           echo "POSTGRES_HOST=127.0.0.1" >> $GITHUB_ENV
-          echo "POSTGRES_PORT=${{ job.services.postgres.ports['5432'] }}" >> $GITHUB_ENV
+          echo "POSTGRES_PORT=$POSTGRES_PORT" >> $GITHUB_ENV
           echo "POSTGRES_DATABASE=pte_app" >> $GITHUB_ENV
           echo "POSTGRES_USER=pte_app" >> $GITHUB_ENV
           echo "POSTGRES_PASSWORD=local_dev_password_only" >> $GITHUB_ENV
           echo "REDIS_HOST=127.0.0.1" >> $GITHUB_ENV
-          echo "REDIS_PORT=${{ job.services.redis.ports['6379'] }}" >> $GITHUB_ENV
+          echo "REDIS_PORT=$REDIS_PORT" >> $GITHUB_ENV
+      - name: Write .env.local
+        run: |
+          echo "NODE_ENV=development" > .env.local
+          echo "POSTGRES_HOST=127.0.0.1" >> .env.local
+          echo "POSTGRES_PORT=${{ job.services.postgres.ports['5432'] }}" >> .env.local
+          echo "POSTGRES_DATABASE=pte_app" >> .env.local
+          echo "POSTGRES_USER=pte_app" >> .env.local
+          echo "POSTGRES_PASSWORD=local_dev_password_only" >> .env.local
+          echo "REDIS_HOST=127.0.0.1" >> .env.local
+          echo "REDIS_PORT=${{ job.services.redis.ports['6379'] }}" >> .env.local
+          echo "SESSION_COOKIE_NAME=pte_session" >> .env.local
+          echo "LOG_LEVEL=info" >> .env.local
+          echo "APP_VERSION=0.0.0" >> .env.local
       - run: node scripts/prepare-e2e-runtime.mjs
       - run: npm run build
       - run: npm run test:unit
@@ -136,16 +150,30 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: cp .env.example .env.local
       - name: Set dynamic service ports
         run: |
+          POSTGRES_PORT=${{ job.services.postgres.ports['5432'] }}
+          REDIS_PORT=${{ job.services.redis.ports['6379'] }}
           echo "POSTGRES_HOST=127.0.0.1" >> $GITHUB_ENV
-          echo "POSTGRES_PORT=${{ job.services.postgres.ports['5432'] }}" >> $GITHUB_ENV
+          echo "POSTGRES_PORT=$POSTGRES_PORT" >> $GITHUB_ENV
           echo "POSTGRES_DATABASE=pte_app" >> $GITHUB_ENV
           echo "POSTGRES_USER=pte_app" >> $GITHUB_ENV
           echo "POSTGRES_PASSWORD=local_dev_password_only" >> $GITHUB_ENV
           echo "REDIS_HOST=127.0.0.1" >> $GITHUB_ENV
-          echo "REDIS_PORT=${{ job.services.redis.ports['6379'] }}" >> $GITHUB_ENV
+          echo "REDIS_PORT=$REDIS_PORT" >> $GITHUB_ENV
+      - name: Write .env.local
+        run: |
+          echo "NODE_ENV=development" > .env.local
+          echo "POSTGRES_HOST=127.0.0.1" >> .env.local
+          echo "POSTGRES_PORT=${{ job.services.postgres.ports['5432'] }}" >> .env.local
+          echo "POSTGRES_DATABASE=pte_app" >> .env.local
+          echo "POSTGRES_USER=pte_app" >> .env.local
+          echo "POSTGRES_PASSWORD=local_dev_password_only" >> .env.local
+          echo "REDIS_HOST=127.0.0.1" >> .env.local
+          echo "REDIS_PORT=${{ job.services.redis.ports['6379'] }}" >> .env.local
+          echo "SESSION_COOKIE_NAME=pte_session" >> .env.local
+          echo "LOG_LEVEL=info" >> .env.local
+          echo "APP_VERSION=0.0.0" >> .env.local
       - run: node scripts/prepare-e2e-runtime.mjs
       - run: npm run build
       - name: Install Playwright Chromium
