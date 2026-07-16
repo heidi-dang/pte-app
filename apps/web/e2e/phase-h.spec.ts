@@ -55,6 +55,16 @@ async function verifyLessonData(context: any, lessonId: string): Promise<void> {
   }
 }
 
+async function resetLessonProgress(context: any, lessonId: string): Promise<void> {
+  const res = await apiRequest(context, '/learn/progress', {
+    method: 'POST',
+    data: { lessonId, blockPosition: 0, blockId: '', mutationId: `reset-${Date.now()}` },
+  });
+  if (res.status() !== 200) {
+    throw new Error(`Failed to reset progress for lesson ${lessonId}: ${res.status()}`);
+  }
+}
+
 async function waitForBlock(page: any, testId: string, timeout = 10000) {
   await expect(page.getByTestId('btn-next-block')).toBeEnabled({ timeout });
   await page.getByTestId('btn-next-block').click();
@@ -125,6 +135,7 @@ test.describe('Phase H Critical Journey', () => {
   test('save progress and resume after refresh', async ({ page, context }) => {
     await loginViaApi(context, state.studentEmail, state.studentPassword);
     await verifyLessonData(context, state.paidCourseLesson1Id);
+    await resetLessonProgress(context, state.paidCourseLesson1Id);
     await page.goto(`${state.webUrl}/learn/lessons/${state.paidCourseLesson1Id}`);
     await expect(page.getByTestId('lesson-title')).toBeVisible();
     await expect(page.getByTestId('btn-next-block')).toBeEnabled({ timeout: 10000 });
@@ -170,6 +181,7 @@ test.describe('Phase H Critical Journey', () => {
 
   test('quiz completion and lesson complete', async ({ page, context }) => {
     await loginViaApi(context, state.studentEmail, state.studentPassword);
+    await resetLessonProgress(context, state.paidCourseLesson1Id);
     await page.goto(`${state.webUrl}/learn/lessons/${state.paidCourseLesson1Id}`);
     await expect(page.getByTestId('lesson-title')).toBeVisible();
     await expect(page.getByTestId('quiz-link')).toBeVisible({ timeout: 10000 });
@@ -191,6 +203,7 @@ test.describe('Phase H Critical Journey', () => {
   test('interactive blocks: keyboard and accessibility', async ({ page, context, isMobile }) => {
     await loginViaApi(context, state.studentEmail, state.studentPassword);
     await verifyLessonData(context, state.paidCourseLesson1Id);
+    await resetLessonProgress(context, state.paidCourseLesson1Id);
     await page.goto(`${state.webUrl}/learn/lessons/${state.paidCourseLesson1Id}`);
     await expect(page.getByTestId('lesson-title')).toBeVisible();
     await expect(page.getByTestId('btn-next-block')).toBeEnabled({ timeout: 10000 });
@@ -223,6 +236,7 @@ test.describe('Phase H Critical Journey', () => {
     // Assigned teacher logs in and views lesson
     await loginViaApi(context, state.teacherEmail, state.teacherPassword);
     await verifyLessonData(context, state.paidCourseLesson1Id);
+    await resetLessonProgress(context, state.paidCourseLesson1Id);
     await page.goto(`${state.webUrl}/learn/lessons/${state.paidCourseLesson1Id}`);
     await expect(page.getByTestId('lesson-title')).toBeVisible({ timeout: 15000 });
 
