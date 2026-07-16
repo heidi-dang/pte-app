@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
-import { Container, Card, Button, Badge, Progress, StatCard } from '@pte-app/design-system';
+import { Container, Card, Button, StatCard } from '@pte-app/design-system';
 import { getCurrentUser, logoutAccount } from '@/lib/auth';
-import { MOCK_ACTIVITIES, SKILL_BREAKDOWN } from '@/lib/mock-data';
 
 export const metadata = {
   title: 'Dashboard — PTE Academy',
@@ -23,29 +22,20 @@ export default async function DashboardPage() {
         </p>
 
         <div className="app-stat-grid" style={{ marginBottom: '2rem' }}>
-          <StatCard title="Estimated score" value="72" trend={{ value: 8, label: 'this month', positive: true }} />
-          <StatCard title="Study streak" value="12 days" />
-          <StatCard title="Tasks today" value="4" />
-          <StatCard title="Next exam" value="27 days" />
+          <StatCard title="Estimated score" value="--" trend={{ value: 0, label: 'complete a mock exam', positive: false }} />
+          <StatCard title="Study streak" value="--" trend={{ value: 0, label: 'start practising', positive: false }} />
+          <StatCard title="Tasks today" value="--" />
+          <StatCard title="Next exam" value="--" />
         </div>
 
         <div className="status-grid" style={{ marginBottom: '2rem' }}>
           <Card>
-            <h3 className="app-info-card__title">Skills</h3>
-            {[
-              { label: 'Speaking', value: SKILL_BREAKDOWN.speaking },
-              { label: 'Writing', value: SKILL_BREAKDOWN.writing },
-              { label: 'Reading', value: SKILL_BREAKDOWN.reading },
-              { label: 'Listening', value: SKILL_BREAKDOWN.listening },
-            ].map((skill) => (
-              <div key={skill.label} style={{ marginBottom: '0.75rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
-                  <span>{skill.label}</span>
-                  <strong>{skill.value}</strong>
-                </div>
-                <Progress value={skill.value} />
-              </div>
-            ))}
+            <h3 className="app-info-card__title">Quick actions</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+              <a href="/practice"><Button style={{ width: '100%' }}>Start practising</Button></a>
+              <a href="/learn/catalogue"><Button variant="secondary" style={{ width: '100%' }}>Browse courses</Button></a>
+              <a href="/progress"><Button variant="secondary" style={{ width: '100%' }}>View progress</Button></a>
+            </div>
           </Card>
           <Card>
             <h3 className="app-info-card__title">Account</h3>
@@ -55,17 +45,6 @@ export default async function DashboardPage() {
               <Button type="submit" variant="secondary">Log out</Button>
             </form>
           </Card>
-        </div>
-
-        <h2 className="app-section__title">Recent activity</h2>
-        <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
-          {MOCK_ACTIVITIES.slice(0, 3).map((activity) => (
-            <Card key={activity.id}>
-              <Badge>{activity.type}</Badge>
-              <h3 className="landing__feature-title" style={{ marginTop: '0.5rem' }}>{activity.title}</h3>
-              <p className="landing__feature-desc">{activity.date}</p>
-            </Card>
-          ))}
         </div>
       </Container>
     </main>
