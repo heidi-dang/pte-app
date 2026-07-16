@@ -32,6 +32,8 @@ import { createReorderParagraphHandler } from '../questions/reading/reorder-para
 import { createReadingMultipleChoiceMultipleHandler } from '../questions/reading/multiple-choice-multiple.handler.js';
 import { createReadingMultipleChoiceSingleHandler } from '../questions/reading/multiple-choice-single.handler.js';
 import { createListeningMultipleAnswersHandler } from '../questions/listening/multiple-choice-multiple.handler.js';
+import { createReadingFillBlanksHandler } from '../questions/reading/reading-fill-blanks.handler.js';
+import type { ReadingFillBlanksQuestion, ReorderParagraphQuestion } from '@pte-app/contracts';
 import { getTranscriptPolicy } from '../questions/listening/transcript-policy.js';
 
 function makeScoringProfile(overrides: Partial<ReadingScoringProfile> = {}): ReadingScoringProfile {
@@ -647,6 +649,128 @@ describe('question-engine', () => {
         scoringProfile: null,
       });
       assert.equal(result.valid, true);
+    });
+  });
+
+  describe('Phase J — ReadingFillBlanks validation', () => {
+    const handler = createReadingFillBlanksHandler();
+    const question: ReadingFillBlanksQuestion = {
+      type: 'reading_fill_blanks',
+      passage: { id: 'p1', text: 'Test', wordCount: 5 },
+      instructions: 'Fill',
+      gaps: [{ index: 0 }, { index: 1 }],
+      tokens: [
+        { id: 't1', text: 'in' },
+        { id: 't2', text: 'blanks' },
+      ],
+    };
+
+    it('valid placement for existing gap passes', () => {
+      const result = handler.validateSubmission({
+        response: { placements: { '0': 't1', '1': 't2' } },
+        question,
+        sessionMode: 'learning',
+        allowsEmptySubmission: false,
+        questionVersionId: 'qv1' as QuestionVersionId,
+        modeProfile: { id: 'mp1', version: 1, mode: 'learning' },
+        scoringProfile: null,
+      });
+      assert.equal(result.valid, true);
+    });
+
+    it('placement for non-existent gap fails', () => {
+      const result = handler.validateSubmission({
+        response: { placements: { '99': 't1' } },
+        question,
+        sessionMode: 'learning',
+        allowsEmptySubmission: true,
+        questionVersionId: 'qv1' as QuestionVersionId,
+        modeProfile: { id: 'mp1', version: 1, mode: 'learning' },
+        scoringProfile: null,
+      });
+      assert.equal(result.valid, false);
+      assert.ok(result.reason?.includes('Invalid gap index'));
+    });
+
+    it('unknown token still fails', () => {
+      const result = handler.validateSubmission({
+        response: { placements: { '0': 'unknown_token' } },
+        question,
+        sessionMode: 'learning',
+        allowsEmptySubmission: true,
+        questionVersionId: 'qv1' as QuestionVersionId,
+        modeProfile: { id: 'mp1', version: 1, mode: 'learning' },
+        scoringProfile: null,
+      });
+      assert.equal(result.valid, false);
+      assert.ok(result.reason?.includes('Unknown token'));
+    });
+  });
+
+  describe('Phase J — ReorderParagraph validation', () => {
+    const handler = createReorderParagraphHandler();
+    const question: ReorderParagraphQuestion = {
+      type: 'reorder_paragraph',
+      instructions: 'Order',
+      items: [
+        { id: 'p1', text: 'First' },
+        { id: 'p2', text: 'Second' },
+        { id: 'p3', text: 'Third' },
+      ],
+    };
+
+    it('full valid ordering passes', () => {
+      const result = handler.validateSubmission({
+        response: { orderedIds: ['p1', 'p2', 'p3'] },
+        question,
+        sessionMode: 'learning',
+        allowsEmptySubmission: false,
+        questionVersionId: 'qv1' as QuestionVersionId,
+        modeProfile: { id: 'mp1', version: 1, mode: 'learning' },
+        scoringProfile: null,
+      });
+      assert.equal(result.valid, true);
+    });
+
+    it('partial ordering fails', () => {
+      const result = handler.validateSubmission({
+        response: { orderedIds: ['p1', 'p2'] },
+        question,
+        sessionMode: 'learning',
+        allowsEmptySubmission: false,
+        questionVersionId: 'qv1' as QuestionVersionId,
+        modeProfile: { id: 'mp1', version: 1, mode: 'learning' },
+        scoringProfile: null,
+      });
+      assert.equal(result.valid, false);
+    });
+
+    it('duplicate item fails', () => {
+      const result = handler.validateSubmission({
+        response: { orderedIds: ['p1', 'p1', 'p3'] },
+        question,
+        sessionMode: 'learning',
+        allowsEmptySubmission: false,
+        questionVersionId: 'qv1' as QuestionVersionId,
+        modeProfile: { id: 'mp1', version: 1, mode: 'learning' },
+        scoringProfile: null,
+      });
+      assert.equal(result.valid, false);
+      assert.ok(result.reason?.includes('Duplicate'));
+    });
+
+    it('unknown item fails', () => {
+      const result = handler.validateSubmission({
+        response: { orderedIds: ['p1', 'p2', 'unknown_id'] },
+        question,
+        sessionMode: 'learning',
+        allowsEmptySubmission: false,
+        questionVersionId: 'qv1' as QuestionVersionId,
+        modeProfile: { id: 'mp1', version: 1, mode: 'learning' },
+        scoringProfile: null,
+      });
+      assert.equal(result.valid, false);
+      assert.ok(result.reason?.includes('Unknown'));
     });
   });
 });

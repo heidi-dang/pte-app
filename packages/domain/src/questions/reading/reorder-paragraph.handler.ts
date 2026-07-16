@@ -38,6 +38,10 @@ export function createReorderParagraphHandler(): QuestionTypeHandler<
         return { valid: false, reason: 'Response is empty and empty submission is not allowed' };
       }
 
+      if (response.orderedIds.length !== question.items.length) {
+        return { valid: false, reason: `Expected ${question.items.length} items, got ${response.orderedIds.length}` };
+      }
+
       const seen = new Set<string>();
       for (const id of response.orderedIds) {
         if (seen.has(id)) {

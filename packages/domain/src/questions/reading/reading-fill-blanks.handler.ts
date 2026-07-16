@@ -40,9 +40,15 @@ export function createReadingFillBlanksHandler(): QuestionTypeHandler<
       if (!base.valid) return base;
 
       const { response, question } = input;
+      const validGapCount = question.gaps.length;
       const validTokenIds = new Set(question.tokens.map((t) => t.id));
       const usedTokens = new Set<string>();
-      for (const tokenId of Object.values(response.placements)) {
+
+      for (const [gapIdx, tokenId] of Object.entries(response.placements)) {
+        const idx = parseInt(gapIdx, 10);
+        if (isNaN(idx) || idx < 0 || idx >= validGapCount) {
+          return { valid: false, reason: `Invalid gap index: ${gapIdx}` };
+        }
         if (tokenId === null || tokenId === undefined) continue;
         if (!validTokenIds.has(tokenId)) {
           return { valid: false, reason: `Unknown token ID: ${tokenId}` };
