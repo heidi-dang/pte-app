@@ -393,6 +393,7 @@ test.describe('Phase G content provenance E2E', () => {
       },
     });
     const lic = await licRes.json();
+    await request.post(`${cfg.apiUrl}/content-provenance/licences/${lic.id}/activate`, editorAuth);
 
     const evRes = await request.post(`${cfg.apiUrl}/content-provenance/evidence`, {
       ...editorAuth,
@@ -420,15 +421,21 @@ test.describe('Phase G content provenance E2E', () => {
     });
     const prov = await provRes.json();
 
-    await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/submit`, editorAuth);
-    await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/start-review`, adminAuth);
-    await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/verify`, adminAuth);
-
+    // Create and link similarity check BEFORE verification
     const simRes = await request.post(`${cfg.apiUrl}/content-provenance/similarity-checks`, {
       ...editorAuth,
       data: { contentId: 'content-pub-001', contentVersionId: 'v1' },
     });
     expect(simRes.ok()).toBeTruthy();
+    const sim = await simRes.json();
+    await request.patch(`${cfg.apiUrl}/content-provenance/records/${prov.id}`, {
+      ...editorAuth,
+      data: { similarityCheckId: sim.id, expectedVersion: prov.version },
+    });
+
+    await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/submit`, editorAuth);
+    await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/start-review`, adminAuth);
+    await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/verify`, adminAuth);
 
     const pubRes = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
       ...editorAuth,
@@ -471,6 +478,7 @@ test.describe('Phase G content provenance E2E', () => {
       },
     });
     const lic = await licRes.json();
+    await request.post(`${cfg.apiUrl}/content-provenance/licences/${lic.id}/activate`, auth);
 
     const evRes = await request.post(`${cfg.apiUrl}/content-provenance/evidence`, {
       ...auth,
@@ -521,12 +529,15 @@ test.describe('Phase G content provenance E2E', () => {
   });
 
   test('13. historical decision remains visible after licence change', async ({ request }) => {
-    const email = `cg-hist-${Date.now()}@test.com`;
-    const token = await createUserWithRole(email, pw, 'admin');
-    const auth = await apiAuth(token);
+    const editorEmail = `cg-hist-e-${Date.now()}@test.com`;
+    const adminEmail = `cg-hist-a-${Date.now()}@test.com`;
+    const editorToken = await createUserWithRole(editorEmail, pw, 'content_editor');
+    const adminToken = await createUserWithRole(adminEmail, pw, 'admin');
+    const editorAuth = await apiAuth(editorToken);
+    const adminAuth = await apiAuth(adminToken);
 
     const srcRes = await request.post(`${cfg.apiUrl}/content-provenance/sources`, {
-      ...auth,
+      ...editorAuth,
       data: {
         sourceType: 'original_creation_record',
         title: 'Hist Source',
@@ -539,7 +550,7 @@ test.describe('Phase G content provenance E2E', () => {
     const src = await srcRes.json();
 
     const licRes = await request.post(`${cfg.apiUrl}/content-provenance/licences`, {
-      ...auth,
+      ...editorAuth,
       data: {
         licenceType: 'exclusive',
         licensor: 'Licensor',
@@ -551,9 +562,10 @@ test.describe('Phase G content provenance E2E', () => {
       },
     });
     const lic = await licRes.json();
+    await request.post(`${cfg.apiUrl}/content-provenance/licences/${lic.id}/activate`, editorAuth);
 
     const evRes = await request.post(`${cfg.apiUrl}/content-provenance/evidence`, {
-      ...auth,
+      ...editorAuth,
       data: {
         evidenceType: 'original_draft',
         fileName: 'hist.docx',
@@ -565,7 +577,7 @@ test.describe('Phase G content provenance E2E', () => {
     const ev = await evRes.json();
 
     const provRes = await request.post(`${cfg.apiUrl}/content-provenance/records`, {
-      ...auth,
+      ...editorAuth,
       data: {
         contentId: 'content-hist-001',
         contentVersionId: 'v1',
@@ -578,27 +590,37 @@ test.describe('Phase G content provenance E2E', () => {
     });
     const prov = await provRes.json();
 
-    await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/submit`, auth);
-    await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/start-review`, auth);
-    await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/verify`, auth);
-
-    await request.post(`${cfg.apiUrl}/content-provenance/similarity-checks`, {
-      ...auth,
+    // Create and link similarity check BEFORE verification
+    const simRes2 = await request.post(`${cfg.apiUrl}/content-provenance/similarity-checks`, {
+      ...editorAuth,
       data: { contentId: 'content-hist-001', contentVersionId: 'v1' },
     });
+    const sim2 = await simRes2.json();
+    const patchRes = await request.patch(`${cfg.apiUrl}/content-provenance/records/${prov.id}`, {
+      ...editorAuth,
+      data: { similarityCheckId: sim2.id, expectedVersion: prov.version },
+    });
+    expect(patchRes.ok()).toBeTruthy();
+
+    await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/submit`, editorAuth);
+    await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/start-review`, adminAuth);
+    await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/verify`, adminAuth);
 
     const pub1 = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
-      ...auth,
+      ...editorAuth,
       data: { contentId: 'content-hist-001', contentVersionId: 'v1' },
     });
     const decision1 = await pub1.json();
+    if (!decision1.eligible) {
+      console.error('Publication check 1 not eligible:', JSON.stringify(decision1));
+    }
     expect(decision1.eligible).toBeTruthy();
 
-    const revokeRes = await request.post(`${cfg.apiUrl}/content-provenance/licences/${lic.id}/revoke`, auth);
+    const revokeRes = await request.post(`${cfg.apiUrl}/content-provenance/licences/${lic.id}/revoke`, adminAuth);
     expect(revokeRes.ok()).toBeTruthy();
 
     const pub2 = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
-      ...auth,
+      ...adminAuth,
       data: { contentId: 'content-hist-001', contentVersionId: 'v1' },
     });
     const decision2 = await pub2.json();
@@ -637,6 +659,7 @@ test.describe('Phase G content provenance E2E', () => {
       },
     });
     const lic = await licRes.json();
+    await request.post(`${cfg.apiUrl}/content-provenance/licences/${lic.id}/activate`, auth);
 
     const evRes = await request.post(`${cfg.apiUrl}/content-provenance/evidence`, {
       ...auth,

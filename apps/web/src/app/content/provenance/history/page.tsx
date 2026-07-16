@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Container, Card, Input, Button, Alert, Badge } from '@pte-app/design-system';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export default function HistoryPage() {
   const [contentId, setContentId] = useState('');

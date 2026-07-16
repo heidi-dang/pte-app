@@ -168,6 +168,7 @@ export async function updateProvenance(
     ownershipType?: OwnershipType;
     attribution?: string;
     evidenceIds?: string[];
+    similarityCheckId?: string | null;
   },
   expectedVersion: number,
 ): Promise<ProvenanceRecord | undefined> {
@@ -201,6 +202,10 @@ export async function updateProvenance(
   if (input.evidenceIds !== undefined) {
     fields.push(`evidence_ids = $${idx++}::uuid[]`);
     values.push(input.evidenceIds);
+  }
+  if (input.similarityCheckId !== undefined) {
+    fields.push(`similarity_check_id = $${idx++}`);
+    values.push(input.similarityCheckId);
   }
 
   if (fields.length === 0) return current;
