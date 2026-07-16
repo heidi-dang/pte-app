@@ -18,11 +18,16 @@ export const SummarizeGroupDiscussionQuestionSchema = SpeakingCommonSchema.exten
 });
 
 export const SummarizeGroupDiscussionResponseSchema = z.object({
-  recordingId: z.string().min(1).refine((s) => s.trim() === s, {
-    message: 'Recording ID must not be whitespace-only',
-  }),
-  writtenSummary: z.string().optional().refine(
-    (s) => s === undefined || s.trim().length > 0,
-    { message: 'Written summary must not be whitespace-only if provided' },
-  ),
+  recordingId: z
+    .string()
+    .min(1)
+    .refine((s) => s.trim() === s, {
+      message: 'Recording ID must not be whitespace-only',
+    }),
+  writtenSummary: z
+    .string()
+    .optional()
+    .refine((s) => s === undefined || s.trim().length > 0, {
+      message: 'Written summary must not be whitespace-only if provided',
+    }),
 });
