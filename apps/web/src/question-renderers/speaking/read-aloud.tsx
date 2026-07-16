@@ -11,6 +11,8 @@ export function ReadAloudRenderer({
   onChange,
   disabled,
   recordingProfile,
+  attemptId,
+  recordingProfileId,
 }: QuestionRendererProps<ReadAloudQuestion, ReadAloudResponse>) {
   if (!question || !recordingProfile) return null;
 
@@ -27,7 +29,12 @@ export function ReadAloudRenderer({
         </div>
       )}
       {!disabled && !response?.recordingId && (
-        <SpeakingRecorder recordingProfile={recordingProfile} onComplete={handleComplete} />
+        <SpeakingRecorder
+          recordingProfile={recordingProfile}
+          onComplete={handleComplete}
+          attemptId={attemptId}
+          recordingProfileId={recordingProfileId ?? recordingProfile.id}
+        />
       )}
       {response?.recordingId && <p role="status">Recording complete</p>}
     </div>

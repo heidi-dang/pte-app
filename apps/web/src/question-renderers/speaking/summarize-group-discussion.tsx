@@ -11,6 +11,8 @@ export function SummarizeGroupDiscussionRenderer({
   onChange,
   disabled,
   recordingProfile,
+  attemptId,
+  recordingProfileId,
 }: QuestionRendererProps<SummarizeGroupDiscussionQuestion, SummarizeGroupDiscussionResponse>) {
   if (!question || !recordingProfile) return null;
 
@@ -21,6 +23,8 @@ export function SummarizeGroupDiscussionRenderer({
         <SpeakingRecorder
           recordingProfile={recordingProfile}
           onComplete={(recordingId) => onChange({ recordingId }, 'incomplete')}
+          attemptId={attemptId}
+          recordingProfileId={recordingProfileId ?? recordingProfile.id}
         />
       )}
       {response?.recordingId && (
