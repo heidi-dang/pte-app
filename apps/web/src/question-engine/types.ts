@@ -1,13 +1,14 @@
 import type React from 'react';
-import type { ResponseState, QuestionRendererManifest } from '@pte-app/contracts';
+import type { ResponseState, QuestionRendererManifest, RecordingProfile } from '@pte-app/contracts';
 
 export interface QuestionRendererProps<TQuestion = never, TResponse = never> {
   question: TQuestion;
   response: TResponse;
-  onChange: (response: TResponse, state: ResponseState) => void;
+  onChange: (key: TResponse, state: ResponseState) => void;
   disabled?: boolean;
   sessionMode?: string;
   isReadOnly?: boolean;
+  recordingProfile?: RecordingProfile;
 }
 
 export interface QuestionReviewProps<TQuestion = never, TResponse = never> {

@@ -43,34 +43,13 @@ export type { Feedback } from './feedback.js';
 export { createAuditEvent, auditEventIsCreate, auditEventIsDelete } from './audit-event.js';
 export type { AuditEvent } from './audit-event.js';
 
-export {
-  createQuestionAttempt,
-  attemptIsTerminal,
-  attemptIsActive,
-  attemptIsSubmittable,
-  attemptCanTransition,
-  attemptIsExpired,
-  attemptIsInterrupted,
-  attemptCanRecover,
-  buildResponseEnvelope,
-} from './question-attempt.js';
-export type { QuestionAttempt, QuestionAttemptStatus, QuestionAttemptMode } from './question-attempt.js';
-
-export {
-  createRendererContract,
-  rendererSupportsPlayback,
-  rendererAllowsAnswerMutation,
-  rendererIsTimed,
-} from './question-renderer.js';
-export type {
-  RendererContract,
-  TimerPolicy,
-  PlaybackPolicy,
-  ReviewVisibilityPolicy,
-  AccessibilityContract,
-  ProgressEventContract,
-} from './question-renderer.js';
-
 export * from './content-provenance/index.js';
 
+export * from './question-engine/index.js';
+
 export * from './questions/index.js';
+
+
+
+
+

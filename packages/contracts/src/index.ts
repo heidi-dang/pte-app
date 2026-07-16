@@ -102,8 +102,11 @@ export * from './questions/index.js';
 export type { ResponseState } from './question-engine/response-state.js';
 export type {
   ScoringProfileId,
+  RecordingProfileId,
   QuestionVersionId,
   PlaybackRightId,
   TimingProfileId,
   PlaybackProfileId,
 } from './question-engine/identifiers.js';
+
+export * from './scoring/index.js';
