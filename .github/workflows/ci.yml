@@ -41,12 +41,12 @@ jobs:
     env:
       PG_REQUIRED: 'true'
       POSTGRES_HOST: 127.0.0.1
-      POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
+      POSTGRES_PORT: ${{ job.services.postgres.ports['5432'] }}
       POSTGRES_DATABASE: pte_app
       POSTGRES_USER: pte_app
       POSTGRES_PASSWORD: local_dev_password_only
       REDIS_HOST: 127.0.0.1
-      REDIS_PORT: ${{ job.services.redis.ports[6379] }}
+      REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
     services:
       postgres:
         image: postgres:17-alpine
@@ -103,12 +103,12 @@ jobs:
     env:
       PG_REQUIRED: 'true'
       POSTGRES_HOST: 127.0.0.1
-      POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
+      POSTGRES_PORT: ${{ job.services.postgres.ports['5432'] }}
       POSTGRES_DATABASE: pte_app
       POSTGRES_USER: pte_app
       POSTGRES_PASSWORD: local_dev_password_only
       REDIS_HOST: 127.0.0.1
-      REDIS_PORT: ${{ job.services.redis.ports[6379] }}
+      REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
     services:
       postgres:
         image: postgres:17-alpine
