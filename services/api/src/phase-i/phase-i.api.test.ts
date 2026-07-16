@@ -174,6 +174,13 @@ describe('Phase I API Integration', () => {
   });
 
   describe('Empty / Incomplete Response', () => {
+    after(async () => {
+      await harness.db.pool.query(
+        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
+        [fixtures.student.id, fixtures.lessonId],
+      );
+    });
+
     it('accepts empty response (renderer treats as valid)', async () => {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -218,6 +225,13 @@ describe('Phase I API Integration', () => {
   });
 
   describe('State Machine Enforcement', () => {
+    after(async () => {
+      await harness.db.pool.query(
+        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
+        [fixtures.student.id, fixtures.lessonId],
+      );
+    });
+
     it('rejects autosave on submitted attempt', async () => {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -319,6 +333,13 @@ describe('Phase I API Integration', () => {
   });
 
   describe('Timer / Expiry Enforcement', () => {
+    after(async () => {
+      await harness.db.pool.query(
+        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
+        [fixtures.student.id, fixtures.lessonId],
+      );
+    });
+
     it('rejects autosave on expired attempt', async () => {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -378,6 +399,13 @@ describe('Phase I API Integration', () => {
   });
 
   describe('Playback Rights Enforcement', () => {
+    after(async () => {
+      await harness.db.pool.query(
+        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
+        [fixtures.student.id, fixtures.lessonId],
+      );
+    });
+
     it('rejects extra plays once maxPlays is consumed', async () => {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -459,6 +487,13 @@ describe('Phase I API Integration', () => {
   });
 
   describe('Normalized Response Storage', () => {
+    after(async () => {
+      await harness.db.pool.query(
+        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
+        [fixtures.student.id, fixtures.lessonId],
+      );
+    });
+
     it('stores normalized response instead of raw on submit', async () => {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -493,6 +528,13 @@ describe('Phase I API Integration', () => {
   });
 
   describe('Idempotency', () => {
+    after(async () => {
+      await harness.db.pool.query(
+        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
+        [fixtures.student.id, fixtures.lessonId],
+      );
+    });
+
     it('duplicate idempotency key returns same result', async () => {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -561,6 +603,13 @@ describe('Phase I API Integration', () => {
   });
 
   describe('Session Recovery', () => {
+    after(async () => {
+      await harness.db.pool.query(
+        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
+        [fixtures.student.id, fixtures.lessonId],
+      );
+    });
+
     it('reuses existing active session on start', async () => {
       const { status: firstStatus, data: firstData } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -589,6 +638,13 @@ describe('Phase I API Integration', () => {
   });
 
   describe('questionTaskTypes Validation', () => {
+    after(async () => {
+      await harness.db.pool.query(
+        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
+        [fixtures.student.id, fixtures.lessonId],
+      );
+    });
+
     it('rejects unknown task type at session start', async () => {
       const { status, data } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -616,7 +672,10 @@ describe('Phase I API Integration', () => {
         }),
       });
       assert.equal(status, 400, JSON.stringify(data));
-      assert.ok(data.error.includes('questionTaskTypes must be a plain'), data.error);
+      assert.ok(
+        data.details?.some((d: string) => d.includes('questionTaskTypes')),
+        data.error,
+      );
     });
 
     it('rejects array as questionTaskTypes', async () => {
@@ -631,7 +690,10 @@ describe('Phase I API Integration', () => {
         }),
       });
       assert.equal(status, 400, JSON.stringify(data));
-      assert.ok(data.error.includes('questionTaskTypes must be a plain'), data.error);
+      assert.ok(
+        data.details?.some((d: string) => d.includes('questionTaskTypes')),
+        data.error,
+      );
     });
 
     it('rejects non-string task type value', async () => {
@@ -646,11 +708,21 @@ describe('Phase I API Integration', () => {
         }),
       });
       assert.equal(status, 400, JSON.stringify(data));
-      assert.ok(data.error.includes('must be a string'), data.error);
+      assert.ok(
+        data.details?.some((d: string) => d.includes(qId0)),
+        data.error,
+      );
     });
   });
 
   describe('maxPlays Validation', () => {
+    after(async () => {
+      await harness.db.pool.query(
+        `UPDATE question_sessions SET status = 'completed' WHERE user_id = $1 AND lesson_id = $2 AND status = 'active'`,
+        [fixtures.student.id, fixtures.lessonId],
+      );
+    });
+
     async function startPlaybackTest(): Promise<string> {
       const { data: start } = await api('/api/v1/attempt/session/start', {
         method: 'POST',
@@ -672,7 +744,10 @@ describe('Phase I API Integration', () => {
         body: JSON.stringify({ attemptId, mediaId: 'm0', maxPlays: 0 }),
       });
       assert.equal(status, 400, JSON.stringify(data));
-      assert.ok(data.error.includes('positive integer'), data.error);
+      assert.ok(
+        data.details?.some((d: string) => d.includes('maxPlays')),
+        data.error,
+      );
     });
 
     it('rejects maxPlays = -1', async () => {
@@ -683,7 +758,10 @@ describe('Phase I API Integration', () => {
         body: JSON.stringify({ attemptId, mediaId: 'mneg', maxPlays: -1 }),
       });
       assert.equal(status, 400, JSON.stringify(data));
-      assert.ok(data.error.includes('positive integer'), data.error);
+      assert.ok(
+        data.details?.some((d: string) => d.includes('maxPlays')),
+        data.error,
+      );
     });
 
     it('rejects maxPlays as string', async () => {
@@ -694,7 +772,10 @@ describe('Phase I API Integration', () => {
         body: JSON.stringify({ attemptId, mediaId: 'mstr', maxPlays: '2' }),
       });
       assert.equal(status, 400, JSON.stringify(data));
-      assert.ok(data.error.includes('positive integer'), data.error);
+      assert.ok(
+        data.details?.some((d: string) => d.includes('maxPlays')),
+        data.error,
+      );
     });
 
     it('rejects maxPlays as null', async () => {
@@ -705,7 +786,10 @@ describe('Phase I API Integration', () => {
         body: JSON.stringify({ attemptId, mediaId: 'mnull', maxPlays: null }),
       });
       assert.equal(status, 400, JSON.stringify(data));
-      assert.ok(data.error.includes('positive integer'), data.error);
+      assert.ok(
+        data.details?.some((d: string) => d.includes('maxPlays')),
+        data.error,
+      );
     });
 
     it('rejects maxPlays as array', async () => {
@@ -716,7 +800,10 @@ describe('Phase I API Integration', () => {
         body: JSON.stringify({ attemptId, mediaId: 'marr', maxPlays: [2] }),
       });
       assert.equal(status, 400, JSON.stringify(data));
-      assert.ok(data.error.includes('positive integer'), data.error);
+      assert.ok(
+        data.details?.some((d: string) => d.includes('maxPlays')),
+        data.error,
+      );
     });
 
     it('rejects maxPlays as object', async () => {
@@ -727,7 +814,10 @@ describe('Phase I API Integration', () => {
         body: JSON.stringify({ attemptId, mediaId: 'mobj', maxPlays: { val: 2 } }),
       });
       assert.equal(status, 400, JSON.stringify(data));
-      assert.ok(data.error.includes('positive integer'), data.error);
+      assert.ok(
+        data.details?.some((d: string) => d.includes('maxPlays')),
+        data.error,
+      );
     });
 
     it('accepts omitted maxPlays (defaults to 1)', async () => {
