@@ -215,7 +215,7 @@ echo "  OK"
 # 9. Install dependencies and build
 echo "[9] Installing dependencies..."
 rm -rf node_modules
-npm ci || npm install
+npm ci --include=dev || npm install --include=dev
 echo "  OK"
 
 echo "[10] Building..."
