@@ -168,6 +168,7 @@ export async function updateProvenance(
     ownershipType?: OwnershipType;
     attribution?: string;
     evidenceIds?: string[];
+    similarityCheckId?: string | null;
   },
   expectedVersion: number,
 ): Promise<ProvenanceRecord | undefined> {
