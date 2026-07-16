@@ -38,7 +38,7 @@ CREATE INDEX idx_speaking_recordings_created ON speaking_recordings(created_at);
 CREATE TABLE recording_upload_sessions (
   id UUID PRIMARY KEY,
   recording_id UUID NOT NULL REFERENCES speaking_recordings(id) ON DELETE CASCADE,
-  total_chunks INTEGER NOT NULL DEFAULT 0
+  total_chunks INTEGER NOT NULL
     CHECK (total_chunks > 0),
   acknowledged_chunks INTEGER NOT NULL DEFAULT 0
     CHECK (acknowledged_chunks >= 0),

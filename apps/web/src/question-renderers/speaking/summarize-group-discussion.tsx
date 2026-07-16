@@ -20,9 +20,7 @@ export function SummarizeGroupDiscussionRenderer({
       {!disabled && !response?.recordingId && (
         <SpeakingRecorder
           recordingProfile={recordingProfile}
-          onComplete={(recordingId) =>
-            onChange({ recordingId }, response?.writtenSummary !== undefined ? 'incomplete' : 'complete')
-          }
+          onComplete={(recordingId) => onChange({ recordingId }, 'incomplete')}
         />
       )}
       {response?.recordingId && (

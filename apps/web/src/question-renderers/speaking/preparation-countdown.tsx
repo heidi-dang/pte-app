@@ -16,15 +16,24 @@ export function PreparationCountdown({
 }) {
   const interval = refreshIntervalMs ?? DEFAULT_REFRESH_INTERVAL_MS;
   const [remaining, setRemaining] = useState(profile.countdownSeconds);
+  const onCompleteRef = useRef(onComplete);
+  const completedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
-    if (!profile.autoStartRecording || remaining <= 0) return;
+    if (!profile.autoStartRecording || completedRef.current) return;
+    if (remaining <= 0) {
+      if (!completedRef.current) {
+        completedRef.current = true;
+        if (timerRef.current) clearInterval(timerRef.current);
+        onCompleteRef.current();
+      }
+      return;
+    }
     timerRef.current = setInterval(() => {
       setRemaining((r) => {
         if (r <= 1) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          onComplete();
           return 0;
         }
         return r - 1;
@@ -33,7 +42,15 @@ export function PreparationCountdown({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [profile.autoStartRecording, remaining, onComplete, interval]);
+  }, [profile.autoStartRecording, interval]);
+
+  useEffect(() => {
+    if (remaining <= 0 && !completedRef.current) {
+      completedRef.current = true;
+      if (timerRef.current) clearInterval(timerRef.current);
+      onCompleteRef.current();
+    }
+  }, [remaining]);
 
   return (
     <div role="timer" aria-live="polite" aria-label={`Preparation time: ${remaining} seconds`}>

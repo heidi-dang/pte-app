@@ -60,6 +60,8 @@ export interface SubmissionValidationInput<TResponse = unknown, TQuestion = unkn
   modeProfile: ModeProfileSummary;
   /** The resolved scoring profile attached to this session, or null if not yet scored. */
   scoringProfile: ScoringProfileSummary | null;
+  /** Optional recording context for speaking tasks (Phase L). */
+  recordingContext?: Record<string, unknown>;
 }
 
 export interface SubmissionValidationResult {

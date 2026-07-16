@@ -116,8 +116,8 @@ describe('Recording State Machine', () => {
     it('expired is terminal', () => {
       assert.equal(isTerminalRecordingState('expired'), true);
     });
-    it('failed is terminal', () => {
-      assert.equal(isTerminalRecordingState('failed'), true);
+    it('failed is not terminal', () => {
+      assert.equal(isTerminalRecordingState('failed'), false);
     });
     it('recording is not terminal', () => {
       assert.equal(isTerminalRecordingState('recording'), false);

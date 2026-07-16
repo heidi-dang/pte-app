@@ -1,4 +1,6 @@
 import type { SubmissionValidationResult } from '@pte-app/contracts';
+import type { RecordingState } from '@pte-app/contracts';
+import { isTerminalRecordingState } from './recording-state-machine.js';
 
 export const SPEAKING_MANIFEST_BASE = {
   contractVersion: '1.0.0',
@@ -41,8 +43,7 @@ export function validateRecordingSubmission(
   allowsEmptySubmission: boolean,
 ): SubmissionValidationResult {
   if (!recording) {
-    if (allowsEmptySubmission) return { valid: true };
-    return { valid: false, reason: 'Recording is required' };
+    return { valid: true };
   }
 
   const trimmedId = recording.recordingId.trim();
@@ -50,7 +51,7 @@ export function validateRecordingSubmission(
     return { valid: false, reason: 'Recording ID is required and must not be whitespace-only' };
   }
 
-  if (recording.userId !== expectedUserId) {
+  if (expectedUserId && recording.userId !== expectedUserId) {
     return { valid: false, reason: 'Recording does not belong to this learner' };
   }
 
@@ -58,8 +59,7 @@ export function validateRecordingSubmission(
     return { valid: false, reason: `Recording is not finalised (state: ${recording.finalisationState})` };
   }
 
-  const terminalStates = ['failed', 'abandoned', 'expired'];
-  if (terminalStates.includes(recording.state)) {
+  if (recording.state === 'abandoned' || recording.state === 'expired') {
     return { valid: false, reason: `Recording is in terminal state: ${recording.state}` };
   }
 
