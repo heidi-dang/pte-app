@@ -18,14 +18,17 @@ jobs:
   static-checks:
     runs-on: [self-hosted, linux, x64, alienware-r8]
     timeout-minutes: 30
+    env:
+      TURBO_CACHE_DIR: /home/heidi/.turbo-cache
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - run: cp .env.example .env.local
+      - run: npm ci --prefer-offline
       - run: npm run generate:pte-blueprints
       - run: node scripts/generate-pte-blueprints.mjs --validate
       - run: npm run format:check
@@ -41,6 +44,7 @@ jobs:
     env:
       PG_REQUIRED: 'true'
       CI: 'true'
+      TURBO_CACHE_DIR: /home/heidi/.turbo-cache
     services:
       postgres:
         image: postgres:17-alpine
@@ -49,6 +53,7 @@ jobs:
           POSTGRES_USER: pte_app
           POSTGRES_PASSWORD: local_dev_password_only
         options: >-
+          --pull=missing
           --health-cmd "pg_isready -U pte_app -d pte_app"
           --health-interval 5s
           --health-timeout 5s
@@ -58,6 +63,7 @@ jobs:
       redis:
         image: redis:7-alpine
         options: >-
+          --pull=missing
           --health-cmd "redis-cli ping"
           --health-interval 5s
           --health-timeout 5s
@@ -66,11 +72,13 @@ jobs:
           - 6379
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
+      - run: npm ci --prefer-offline
       - name: Set dynamic service ports
         run: |
           POSTGRES_PORT=${{ job.services.postgres.ports['5432'] }}
@@ -104,13 +112,17 @@ jobs:
   build:
     runs-on: [self-hosted, linux, x64, alienware-r8]
     timeout-minutes: 30
+    env:
+      TURBO_CACHE_DIR: /home/heidi/.turbo-cache
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
+      - run: npm ci --prefer-offline
       - run: cp .env.example .env.local
       - run: npm run build
 
@@ -120,6 +132,7 @@ jobs:
     env:
       PG_REQUIRED: 'true'
       CI: 'true'
+      TURBO_CACHE_DIR: /home/heidi/.turbo-cache
     services:
       postgres:
         image: postgres:17-alpine
@@ -128,6 +141,7 @@ jobs:
           POSTGRES_USER: pte_app
           POSTGRES_PASSWORD: local_dev_password_only
         options: >-
+          --pull=missing
           --health-cmd "pg_isready -U pte_app -d pte_app"
           --health-interval 5s
           --health-timeout 5s
@@ -137,6 +151,7 @@ jobs:
       redis:
         image: redis:7-alpine
         options: >-
+          --pull=missing
           --health-cmd "redis-cli ping"
           --health-interval 5s
           --health-timeout 5s
@@ -145,11 +160,13 @@ jobs:
           - 6379
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
+      - run: npm ci --prefer-offline
       - name: Set dynamic service ports
         run: |
           POSTGRES_PORT=${{ job.services.postgres.ports['5432'] }}
@@ -208,13 +225,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - run: cp .env.example .env.local
-      - run: npm run validate:workspace
+      - run: node scripts/validate-workspace.mjs
       - run: git diff --check
       - name: Fail on tracked file changes
         run: |
