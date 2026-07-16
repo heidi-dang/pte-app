@@ -375,15 +375,39 @@ if [ "$health_ok" = false ]; then
   exit 1
 fi
 
-# 18. Run public HTTPS verification
+# 18. Run public HTTPS verification with bounded polling
 echo "[18] Running public HTTPS verification..."
+HTTPS_MAX_RETRIES="${HTTPS_MAX_RETRIES:-12}"
+HTTPS_RETRY_DELAY="${HTTPS_RETRY_DELAY:-5}"
 https_ok=true
 for domain in "$WEB_DOMAIN" "$API_DOMAIN" "$SCORING_DOMAIN"; do
-  if curl --fail --silent --show-error --location --max-time 10 "https://$domain/" > /dev/null 2>&1; then
-    echo "  https://$domain/: OK"
-  else
-    echo "  https://$domain/: FAILED"
+  domain_ok=false
+  for attempt in $(seq 1 $HTTPS_MAX_RETRIES); do
+    # Check all containers healthy before each attempt
+    for svc in api web scoring worker caddy postgres redis; do
+      hs=$(docker inspect --format '{{.State.Health.Status}}' "pte-prod-${svc}" 2>/dev/null || echo "not_found")
+      if [ "$hs" = "unhealthy" ]; then
+        echo "  [fatal] $svc became unhealthy during HTTPS verification"
+        echo "  --- $svc logs ---"
+        docker logs --tail 20 "pte-prod-${svc}" 2>/dev/null || true
+        exit 1
+      fi
+    done
+    if curl --fail --silent --show-error --location --max-time 10 "https://$domain/" > /dev/null 2>&1; then
+      echo "  https://$domain/: OK (attempt $attempt/$HTTPS_MAX_RETRIES)"
+      domain_ok=true
+      break
+    fi
+    echo "  [https] $domain attempt $attempt/$HTTPS_MAX_RETRIES: not yet reachable"
+    sleep "$HTTPS_RETRY_DELAY"
+  done
+  if [ "$domain_ok" = false ]; then
+    echo "  https://$domain/: FAILED after $HTTPS_MAX_RETRIES attempts"
     https_ok=false
+    echo "  --- Caddy logs ---"
+    docker logs --tail 30 pte-prod-caddy 2>/dev/null || true
+    echo "  --- API logs ---"
+    docker logs --tail 15 pte-prod-api 2>/dev/null || true
   fi
 done
 if [ "$https_ok" = false ]; then
