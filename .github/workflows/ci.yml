@@ -7,14 +7,46 @@ on:
     branches: [main]
   workflow_dispatch:
 
-jobs:
-  validate:
-    runs-on: ubuntu-latest
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+env:
+  CI: 'true'
+
+jobs:
+  static-checks:
+    runs-on: [self-hosted, linux, x64, alienware-r8]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: cp .env.example .env.local
+      - run: npm run generate:pte-blueprints
+      - run: node scripts/generate-pte-blueprints.mjs --validate
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:docs
+      - run: npm run validate:docs
+      - run: npm run test:tooling
+
+  unit-integration-api:
+    runs-on: [self-hosted, linux, x64, alienware-r8]
+    timeout-minutes: 30
     env:
       PG_REQUIRED: 'true'
-      CI: 'true'
-
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
+      POSTGRES_DATABASE: pte_app
+      POSTGRES_USER: pte_app
+      POSTGRES_PASSWORD: local_dev_password_only
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: ${{ job.services.redis.ports[6379] }}
     services:
       postgres:
         image: postgres:17-alpine
@@ -28,7 +60,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5432:5432
+          - 5432
       redis:
         image: redis:7-alpine
         options: >-
@@ -37,40 +69,117 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 6379:6379
-
+          - 6379
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
-
       - run: npm ci
       - run: cp .env.example .env.local
-
-      - name: Prepare E2E runtime environment
-        run: node scripts/prepare-e2e-runtime.mjs
-
-      - run: npm run generate:pte-blueprints
-      - run: node scripts/generate-pte-blueprints.mjs --validate
-
-      - run: npm run format:check
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test:docs
-      - run: npm run validate:docs
-      - run: npm run test:tooling
+      - run: node scripts/prepare-e2e-runtime.mjs
+      - run: npm run build
       - run: npm run test:unit
       - run: npm run test:integration
       - run: npm run test:api
+
+  build:
+    runs-on: [self-hosted, linux, x64, alienware-r8]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: cp .env.example .env.local
       - run: npm run build
 
+  e2e:
+    runs-on: [self-hosted, linux, x64, alienware-r8]
+    timeout-minutes: 60
+    env:
+      PG_REQUIRED: 'true'
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }}
+      POSTGRES_DATABASE: pte_app
+      POSTGRES_USER: pte_app
+      POSTGRES_PASSWORD: local_dev_password_only
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: ${{ job.services.redis.ports[6379] }}
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: pte_app
+          POSTGRES_USER: pte_app
+          POSTGRES_PASSWORD: local_dev_password_only
+        options: >-
+          --health-cmd "pg_isready -U pte_app -d pte_app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: cp .env.example .env.local
+      - run: node scripts/prepare-e2e-runtime.mjs
+      - run: npm run build
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-
+        run: npx playwright install chromium
       - run: npm run test:e2e
+      - name: Upload E2E report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: apps/web/test-results/
+          retention-days: 7
+      - name: Upload service logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-service-logs
+          path: apps/web/.local-runtime/
+          include-hidden-files: true
+          retention-days: 7
 
+  final-workspace-check:
+    runs-on: [self-hosted, linux, x64, alienware-r8]
+    needs: [static-checks, unit-integration-api, build, e2e]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: cp .env.example .env.local
       - run: npm run validate:workspace
       - run: git diff --check
       - name: Fail on tracked file changes
@@ -80,28 +189,3 @@ jobs:
             git diff --stat
             exit 1
           fi
-
-      - name: Upload E2E report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: apps/web/playwright-report/
-          retention-days: 7
-
-      - name: Upload E2E test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: apps/web/test-results/
-          retention-days: 7
-
-      - name: Upload service logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-service-logs
-          path: apps/web/.local-runtime/
-          include-hidden-files: true
-          retention-days: 7
