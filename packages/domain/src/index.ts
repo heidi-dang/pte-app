@@ -62,6 +62,13 @@ export {
   rendererAllowsAnswerMutation,
   rendererIsTimed,
 } from './question-renderer.js';
-export type { RendererContract, TimerPolicy, PlaybackPolicy, ReviewVisibilityPolicy, AccessibilityContract, ProgressEventContract } from './question-renderer.js';
+export type {
+  RendererContract,
+  TimerPolicy,
+  PlaybackPolicy,
+  ReviewVisibilityPolicy,
+  AccessibilityContract,
+  ProgressEventContract,
+} from './question-renderer.js';
 
 export * from './content-provenance/index.js';

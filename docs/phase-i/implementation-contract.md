@@ -1,12 +1,15 @@
 # Phase I — Universal Question Engine
 
 ## Objective
+
 Implement the shared attempt/session/question engine that all later Reading (J), Listening (K), Speaking (L), and Writing (M) task renderers will use.
 
 ## Renderer Contract
+
 File: `packages/contracts/src/phase-i/index.ts` — `RendererContract` interface.
 
 Every task type (Reading, Listening, Speaking, Writing) must implement:
+
 - `taskType` — unique string identifier
 - `responseSchema` — JSON Schema describing valid response shape
 - `emptyResponseFactory()` — returns minimal valid empty response
@@ -20,7 +23,9 @@ Every task type (Reading, Listening, Speaking, Writing) must implement:
 - `progressEventContract` — event names for tracking
 
 ## State Machine
+
 Valid status transitions:
+
 ```
 created → in_progress → autosaved → submitted → reviewable
   │          │              │          │
@@ -29,6 +34,7 @@ created → in_progress → autosaved → submitted → reviewable
 ```
 
 ## Required Adapter Shape for Phase J (Reading)
+
 1. Create a renderer implementing `RendererContract` with `taskType: 'pte:reading:*'`
 2. Define response schema for the specific reading sub-type
 3. Implement `validateResponse` checking reading answer format
@@ -36,12 +42,14 @@ created → in_progress → autosaved → submitted → reviewable
 5. Register via the renderer registry (to be extended from Phase I plugin)
 
 ## Required Adapter Shape for Phase K (Listening)
+
 1. Create a renderer implementing `RendererContract` with `taskType: 'pte:listening:*'`
 2. Include a `playbackPolicy` with `maxPlays`, `consumeOnFirstPlay`, `reconnectResetsConsumed`
 3. Use the `/api/v1/attempt/playback/record` endpoint to track consumption
 4. Implement `validateResponse` for listening answer format
 
 ## What Dev 2 Must Audit
+
 1. State machine transitions correctness
 2. Idempotency on submit (duplicate key prevention)
 3. Empty/corrupt payload handling
@@ -54,6 +62,7 @@ created → in_progress → autosaved → submitted → reviewable
 10. Existing Phase G provenance/licence tests must remain unaffected
 
 ## Files Changed
+
 - `packages/types/src/index.ts` — added `QuestionAttemptId`, `QuestionSessionId`, `QuestionVersionSnapshotId`, `PlaybackConsumptionId`, `IdempotencyKey`
 - `packages/contracts/src/phase-i/index.ts` — NEW: all Phase I contracts, renderer contract, state machine
 - `packages/contracts/src/index.ts` — re-export phase-i
@@ -79,20 +88,21 @@ created → in_progress → autosaved → submitted → reviewable
 
 The following 26 hardening checks were applied and validated:
 
-| # | Check | Implementation |
-|---|-------|----------------|
-| A | Wire renderer validation into API | `renderer-registry.ts` maps `taskType → RendererContract`. `validateAndNormalizeResponse` helper in `plugin.ts` calls `validateResponse` + `normalizeResponse` on autosave and submit. |
-| B | Add renderer registry | `services/api/src/phase-i/renderer-registry.ts` — `registerRenderer`, `resolveRenderer`, `clearRegistry`. Demo renderers registered at plugin init. |
-| C | Enforce corrupt payload rejection | `isObject()` guard on `request.body` in every mutating endpoint. Rejects non-object, null, and array bodies with 400. |
-| D | Support empty/incomplete response | `validateResponse` on each renderer contract allows empty (`{}`) or incomplete (`{selectedIndex: null}`) per demo contract. Normalized via `emptyResponseFactory` fallback. |
-| E | Enforce timed/mock expiry | `isExpired()` check in autosave and submit. Expired attempts auto-transition to `expired` state and are rejected with 400. |
-| F | Strengthen playback-right enforcement | Pre-flight check: if `consumedAt` is set or `playCount >= maxPlays`, existing record is returned without incrementing. Reconnect-safe — count persists across sessions. |
-| G | Lock review mode mutation | Terminal-state (`submitted`, `reviewable`, `expired`) rejection in both autosave and submit before any business logic. |
-| H | Add DB-backed integration tests | `services/api/src/phase-i/phase-i.api.test.ts` — covers registry, validation, corrupt payloads, empty responses, expiry, playback rights, normalized storage, idempotency, session recovery. |
-| I | Check migration works with Phase H | `test-fixtures.ts` rewritten to use `phaseH.courses.createCourse`, `phaseH.modules.createCourseModule`, `phaseH.lessons.createLesson` → phase-eight FK chain satisfied. |
-| J | Update documentation | This section. |
+| #   | Check                                 | Implementation                                                                                                                                                                               |
+| --- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A   | Wire renderer validation into API     | `renderer-registry.ts` maps `taskType → RendererContract`. `validateAndNormalizeResponse` helper in `plugin.ts` calls `validateResponse` + `normalizeResponse` on autosave and submit.       |
+| B   | Add renderer registry                 | `services/api/src/phase-i/renderer-registry.ts` — `registerRenderer`, `resolveRenderer`, `clearRegistry`. Demo renderers registered at plugin init.                                          |
+| C   | Enforce corrupt payload rejection     | `isObject()` guard on `request.body` in every mutating endpoint. Rejects non-object, null, and array bodies with 400.                                                                        |
+| D   | Support empty/incomplete response     | `validateResponse` on each renderer contract allows empty (`{}`) or incomplete (`{selectedIndex: null}`) per demo contract. Normalized via `emptyResponseFactory` fallback.                  |
+| E   | Enforce timed/mock expiry             | `isExpired()` check in autosave and submit. Expired attempts auto-transition to `expired` state and are rejected with 400.                                                                   |
+| F   | Strengthen playback-right enforcement | Pre-flight check: if `consumedAt` is set or `playCount >= maxPlays`, existing record is returned without incrementing. Reconnect-safe — count persists across sessions.                      |
+| G   | Lock review mode mutation             | Terminal-state (`submitted`, `reviewable`, `expired`) rejection in both autosave and submit before any business logic.                                                                       |
+| H   | Add DB-backed integration tests       | `services/api/src/phase-i/phase-i.api.test.ts` — covers registry, validation, corrupt payloads, empty responses, expiry, playback rights, normalized storage, idempotency, session recovery. |
+| I   | Check migration works with Phase H    | `test-fixtures.ts` rewritten to use `phaseH.courses.createCourse`, `phaseH.modules.createCourseModule`, `phaseH.lessons.createLesson` → phase-eight FK chain satisfied.                      |
+| J   | Update documentation                  | This section.                                                                                                                                                                                |
 
 ## Files Changed (Phase I Hardening)
+
 - `services/api/src/phase-i/renderer-registry.ts` — NEW: renderer registry
 - `services/api/src/phase-i/plugin.ts` — renderer validation, corrupt payload rejection, expiry enforcement, terminal-state lock, playback-right pre-flight
 - `services/api/src/phase-i/test-fixtures.ts` — proper course/module/lesson creation via Phase H API
@@ -101,6 +111,7 @@ The following 26 hardening checks were applied and validated:
 - `docs/phase-i/implementation-contract.md` — this section
 
 ## What Was Intentionally Not Implemented
+
 - Phase J Reading task types
 - Phase K Listening task types
 - Speaking recorder

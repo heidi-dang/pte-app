@@ -7,9 +7,18 @@ import type {
   ProgressEventContract,
 } from '@pte-app/contracts';
 
-export type { RendererContract, TimerPolicy, PlaybackPolicy, ReviewVisibilityPolicy, AccessibilityContract, ProgressEventContract };
+export type {
+  RendererContract,
+  TimerPolicy,
+  PlaybackPolicy,
+  ReviewVisibilityPolicy,
+  AccessibilityContract,
+  ProgressEventContract,
+};
 
-export function createRendererContract(partial: Partial<RendererContract> & { taskType: string; responseSchema: Record<string, unknown> }): RendererContract {
+export function createRendererContract(
+  partial: Partial<RendererContract> & { taskType: string; responseSchema: Record<string, unknown> },
+): RendererContract {
   return {
     taskType: partial.taskType,
     responseSchema: partial.responseSchema as Record<string, unknown>,

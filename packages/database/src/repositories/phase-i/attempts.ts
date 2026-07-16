@@ -75,10 +75,10 @@ export async function updateSessionStatus(
   sessionId: string,
   status: string,
 ): Promise<void> {
-  await connection.pool.query(
-    `UPDATE question_sessions SET status = $2, updated_at = NOW() WHERE id = $1`,
-    [sessionId, status],
-  );
+  await connection.pool.query(`UPDATE question_sessions SET status = $2, updated_at = NOW() WHERE id = $1`, [
+    sessionId,
+    status,
+  ]);
 }
 
 export async function updateSessionCurrentAttempt(
@@ -227,10 +227,10 @@ export async function updateAttemptStatus(
   attemptId: string,
   status: QuestionAttemptStatus,
 ): Promise<void> {
-  await connection.pool.query(
-    `UPDATE question_attempts SET status = $2, updated_at = NOW() WHERE id = $1`,
-    [attemptId, status],
-  );
+  await connection.pool.query(`UPDATE question_attempts SET status = $2, updated_at = NOW() WHERE id = $1`, [
+    attemptId,
+    status,
+  ]);
 }
 
 export async function autosaveAttempt(
@@ -269,10 +269,7 @@ export async function submitAttempt(
   return result.rows[0] as unknown as QuestionAttemptRecord | undefined;
 }
 
-export async function finalizeAttemptReview(
-  connection: DatabaseConnection,
-  attemptId: string,
-): Promise<void> {
+export async function finalizeAttemptReview(connection: DatabaseConnection, attemptId: string): Promise<void> {
   await connection.pool.query(
     `UPDATE question_attempts SET status = 'reviewable', updated_at = NOW()
      WHERE id = $1 AND status = 'submitted'`,

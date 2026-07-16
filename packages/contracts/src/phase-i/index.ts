@@ -18,14 +18,7 @@ export type { QuestionAttemptId, QuestionSessionId, QuestionVersionSnapshotId, P
 // ─── Status & Mode enum types ─────────────────────────────────
 
 export type QuestionAttemptStatus =
-  | 'created'
-  | 'in_progress'
-  | 'autosaved'
-  | 'submitted'
-  | 'reviewable'
-  | 'expired'
-  | 'interrupted'
-  | 'recovered';
+  'created' | 'in_progress' | 'autosaved' | 'submitted' | 'reviewable' | 'expired' | 'interrupted' | 'recovered';
 
 export type QuestionAttemptMode = 'learning' | 'review' | 'timed' | 'mock';
 

@@ -4,7 +4,16 @@ import { isValidTransition, VALID_ATTEMPT_TRANSITIONS } from '@pte-app/contracts
 
 describe('Phase I - State Machine Contract', () => {
   it('exports all expected statuses in transition map', () => {
-    const expectedStatuses = ['created', 'in_progress', 'autosaved', 'submitted', 'reviewable', 'expired', 'interrupted', 'recovered'];
+    const expectedStatuses = [
+      'created',
+      'in_progress',
+      'autosaved',
+      'submitted',
+      'reviewable',
+      'expired',
+      'interrupted',
+      'recovered',
+    ];
     for (const status of expectedStatuses) {
       assert.ok(status in VALID_ATTEMPT_TRANSITIONS, `Missing transition map entry for '${status}'`);
     }

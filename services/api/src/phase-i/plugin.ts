@@ -143,16 +143,22 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
       let snapshotId: string | null = null;
       const taskType = questionTaskTypes?.[qId];
       if (taskType) {
-        const snapshot = await repo.attempts.createVersionSnapshot(
-          db, qId, taskType, {}, {},
-        );
+        const snapshot = await repo.attempts.createVersionSnapshot(db, qId, taskType, {}, {});
         snapshotId = snapshot.id;
       }
 
       const timeLimitSeconds = null;
       const expiresAt = null;
       const attempt = await repo.attempts.createAttempt(
-        db, auth.userId, qId, lessonId, session.id, modeEnum, snapshotId, timeLimitSeconds, expiresAt,
+        db,
+        auth.userId,
+        qId,
+        lessonId,
+        session.id,
+        modeEnum,
+        snapshotId,
+        timeLimitSeconds,
+        expiresAt,
       );
       // Transition from created to in_progress
       await repo.attempts.updateAttemptStatus(db, attempt.id, 'in_progress');
@@ -319,7 +325,12 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
     }
 
     // Check for duplicate idempotency key across attempts
-    const existingByKey = await repo.attempts.getAttemptByIdempotencyKey(db, auth.userId, attempt.lessonId, idempotencyKey);
+    const existingByKey = await repo.attempts.getAttemptByIdempotencyKey(
+      db,
+      auth.userId,
+      attempt.lessonId,
+      idempotencyKey,
+    );
     if (existingByKey && existingByKey.id !== attemptId) {
       return reply.status(409).send({
         error: 'Idempotency key already used for a different attempt',
@@ -472,10 +483,10 @@ export async function phaseIPlugin(app: FastifyInstance, options: { db: Database
 
     // Update play count on attempt
     if (playback.playCount > attempt.playCount) {
-      await db.pool.query(
-        `UPDATE question_attempts SET play_count = $2, updated_at = NOW() WHERE id = $1`,
-        [attemptId, playback.playCount],
-      );
+      await db.pool.query(`UPDATE question_attempts SET play_count = $2, updated_at = NOW() WHERE id = $1`, [
+        attemptId,
+        playback.playCount,
+      ]);
     }
 
     return reply.status(200).send({

@@ -271,10 +271,7 @@ describe('Phase I API Integration', () => {
         }),
       });
 
-      await harness.db.pool.query(
-        `UPDATE question_attempts SET status = 'reviewable' WHERE id = $1`,
-        [attemptId],
-      );
+      await harness.db.pool.query(`UPDATE question_attempts SET status = 'reviewable' WHERE id = $1`, [attemptId]);
 
       const { status, data } = await api('/api/v1/attempt/autosave', {
         method: 'POST',
@@ -487,10 +484,7 @@ describe('Phase I API Integration', () => {
       assert.equal(status, 200, JSON.stringify(data));
 
       // Verify normalized response was stored (extra field stripped)
-      const stored = await harness.db.pool.query(
-        `SELECT response FROM question_attempts WHERE id = $1`,
-        [attemptId],
-      );
+      const stored = await harness.db.pool.query(`SELECT response FROM question_attempts WHERE id = $1`, [attemptId]);
       const storedResponse = stored.rows[0]?.response;
       assert.ok(storedResponse, 'response should exist');
       assert.equal(storedResponse.selectedIndex, 2);
