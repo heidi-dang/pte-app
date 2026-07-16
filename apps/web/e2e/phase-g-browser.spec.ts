@@ -280,6 +280,7 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     if (!pubCheck1.ok()) console.error('Pub check 1 failed:', pubCheck1.status(), await pubCheck1.text());
     expect(pubCheck1.ok()).toBeTruthy();
     const pubResult1 = await pubCheck1.json();
+    if (!pubResult1.eligible) console.error('Pub check 1 not eligible:', JSON.stringify(pubResult1));
     expect(pubResult1.eligible).toBeTruthy();
 
     // ─── 29-30: Revoke licence through UI, verify publication becomes blocked ───
