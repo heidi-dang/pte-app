@@ -24,7 +24,7 @@ export function ReadingMultipleChoiceMultipleRenderer({
     (key: string) => {
       const isSelected = selectedKeys.includes(key);
       const newSelected = isSelected ? selectedKeys.filter((k) => k !== key) : [...selectedKeys, key];
-      onChange({ selectedKeys: newSelected }, 'complete');
+      onChange({ selectedKeys: newSelected }, newSelected.length > 0 ? 'complete' : 'empty');
     },
     [selectedKeys, onChange],
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import type { QuestionRendererProps } from '../../question-engine/types.js';
 import type { SummariseSpokenTextQuestion, SummariseSpokenTextResponse } from '@pte-app/contracts';
 import { ListeningAudioController, ListeningAudioStatus } from './listening-audio-controller.js';
@@ -19,8 +19,6 @@ export function SummariseSpokenTextRenderer({
   onChange,
   disabled,
 }: QuestionRendererProps<SummariseSpokenTextQuestion, SummariseSpokenTextResponse>) {
-  const [audioState, setAudioState] = useState<string>('preload');
-
   const handleTextChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const text = e.target.value;
@@ -36,7 +34,6 @@ export function SummariseSpokenTextRenderer({
 
       <ListeningAudioController playbackGrant={null} isPlaybackAllowed={true}>
         {(state) => {
-          setAudioState(state);
           return <ListeningAudioStatus state={state as never} />;
         }}
       </ListeningAudioController>
@@ -48,7 +45,7 @@ export function SummariseSpokenTextRenderer({
         id="sst-summary"
         value={response?.summary ?? ''}
         onChange={handleTextChange}
-        disabled={disabled || audioState === 'preload'}
+        disabled={disabled}
         placeholder="Write your summary here..."
         rows={8}
         aria-label="Summary text"

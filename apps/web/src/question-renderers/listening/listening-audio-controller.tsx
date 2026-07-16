@@ -5,37 +5,26 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 export type AudioState = 'preload' | 'ready' | 'playing' | 'paused' | 'ended' | 'failed';
 
 export interface ListeningAudioControllerProps {
-  /** Server playback grant URL or token. */
   playbackGrant: string | null;
-  /** Whether playback is allowed by the server. */
   isPlaybackAllowed: boolean;
-  /** Callback when playback completes. */
+  maxPlays?: number;
   onPlaybackComplete?: () => void;
-  /** Callback on playback failure. */
   onPlaybackFailed?: (error: Error) => void;
-  /** Children to render with audio context. */
   children: (state: AudioState, audioRef: React.RefObject<HTMLAudioElement | null>) => React.ReactNode;
 }
 
-/**
- * Listening Audio Controller provides audio playback state management.
- * - Visible preload state
- * - Visible ready state
- * - Visible playing state
- * - Failure state
- * - Response retained after player failure
- * - Server playback grant required before playback
- * - No client-side playback-right reset
- */
 export function ListeningAudioController({
   playbackGrant,
   isPlaybackAllowed,
+  maxPlays = 1,
   onPlaybackComplete,
   onPlaybackFailed,
   children,
 }: ListeningAudioControllerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [state, setState] = useState<AudioState>('preload');
+  const [playCount, setPlayCount] = useState(0);
+  const playsRemaining = maxPlays - playCount;
 
   useEffect(() => {
     if (!playbackGrant || !isPlaybackAllowed) {
@@ -46,17 +35,35 @@ export function ListeningAudioController({
   }, [playbackGrant, isPlaybackAllowed]);
 
   const handlePlay = useCallback(() => {
-    if (!audioRef.current || !isPlaybackAllowed) return;
+    if (!audioRef.current || !isPlaybackAllowed || playsRemaining <= 0) return;
     audioRef.current
       .play()
       .then(() => {
         setState('playing');
+        setPlayCount((c) => c + 1);
       })
       .catch((err) => {
         setState('failed');
         onPlaybackFailed?.(err instanceof Error ? err : new Error(String(err)));
       });
-  }, [isPlaybackAllowed, onPlaybackFailed]);
+  }, [isPlaybackAllowed, playsRemaining, onPlaybackFailed]);
+
+  const handlePause = useCallback(() => {
+    audioRef.current?.pause();
+    setState('paused');
+  }, []);
+
+  const handleResume = useCallback(() => {
+    if (!audioRef.current) return;
+    audioRef.current.play().catch(() => setState('failed'));
+    setState('playing');
+  }, []);
+
+  const handleReplay = useCallback(() => {
+    if (!audioRef.current || playsRemaining <= 0) return;
+    audioRef.current.currentTime = 0;
+    handlePlay();
+  }, [handlePlay, playsRemaining]);
 
   const handleEnded = useCallback(() => {
     setState('ended');
@@ -67,6 +74,9 @@ export function ListeningAudioController({
     setState('failed');
     onPlaybackFailed?.(new Error('Audio playback error'));
   }, [onPlaybackFailed]);
+
+  const canPlay = playsRemaining > 0 && isPlaybackAllowed;
+  const playDisabled = !canPlay || state === 'playing' || state === 'preload';
 
   return (
     <div role="region" aria-label="Audio playback">
@@ -90,10 +100,53 @@ export function ListeningAudioController({
         <button
           type="button"
           onClick={handlePlay}
+          disabled={playDisabled}
           aria-label="Play audio"
           style={{ minHeight: '44px', minWidth: '44px' }}
         >
-          Play
+          Play ({playsRemaining} remaining)
+        </button>
+      )}
+      {state === 'playing' && (
+        <>
+          <button
+            type="button"
+            onClick={handlePause}
+            aria-label="Pause audio"
+            style={{ minHeight: '44px', minWidth: '44px' }}
+          >
+            Pause
+          </button>
+          <button
+            type="button"
+            onClick={handleReplay}
+            disabled={playDisabled}
+            aria-label="Replay audio"
+            style={{ minHeight: '44px', minWidth: '44px' }}
+          >
+            Replay ({playsRemaining} remaining)
+          </button>
+        </>
+      )}
+      {state === 'paused' && (
+        <button
+          type="button"
+          onClick={handleResume}
+          aria-label="Resume audio"
+          style={{ minHeight: '44px', minWidth: '44px' }}
+        >
+          Resume
+        </button>
+      )}
+      {state === 'ended' && (
+        <button
+          type="button"
+          onClick={handleReplay}
+          disabled={playDisabled}
+          aria-label="Replay audio"
+          style={{ minHeight: '44px', minWidth: '44px' }}
+        >
+          {playsRemaining > 0 ? `Replay (${playsRemaining} remaining)` : 'Max plays reached'}
         </button>
       )}
       {state === 'failed' && (

@@ -29,7 +29,7 @@ export function HighlightIncorrectWordsRenderer({
     (index: number) => {
       const isFlagged = flaggedIndices.includes(index);
       const newFlagged = isFlagged ? flaggedIndices.filter((i) => i !== index) : [...flaggedIndices, index];
-      onChange({ flaggedWordIndices: newFlagged }, 'complete');
+      onChange({ flaggedWordIndices: newFlagged }, newFlagged.length > 0 ? 'complete' : 'empty');
     },
     [flaggedIndices, onChange],
   );

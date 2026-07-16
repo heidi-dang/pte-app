@@ -23,7 +23,8 @@ export function ListeningFillBlanksRenderer({
   const handleChange = useCallback(
     (gapIndex: number, value: string) => {
       const newPlacements = { ...placements, [String(gapIndex)]: value || null };
-      onChange({ placements: newPlacements }, 'incomplete');
+      const hasInput = Object.values(newPlacements).some((v) => v !== null && v !== undefined && v !== '');
+      onChange({ placements: newPlacements }, hasInput ? 'incomplete' : 'empty');
     },
     [placements, onChange],
   );
