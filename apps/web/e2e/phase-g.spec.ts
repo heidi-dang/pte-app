@@ -593,10 +593,11 @@ test.describe('Phase G content provenance E2E', () => {
       data: { contentId: 'content-hist-001', contentVersionId: 'v1' },
     });
     const sim2 = await simRes2.json();
-    await request.patch(`${cfg.apiUrl}/content-provenance/records/${prov.id}`, {
+    const patchRes = await request.patch(`${cfg.apiUrl}/content-provenance/records/${prov.id}`, {
       ...auth,
       data: { similarityCheckId: sim2.id, expectedVersion: prov.version },
     });
+    expect(patchRes.ok()).toBeTruthy();
 
     await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/submit`, auth);
     await request.post(`${cfg.apiUrl}/content-provenance/records/${prov.id}/start-review`, auth);

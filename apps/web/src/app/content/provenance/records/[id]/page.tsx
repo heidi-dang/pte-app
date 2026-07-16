@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { Container, Card, Badge, Button, Alert, Input } from '@pte-app/design-system';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 interface ProvenanceDetail {
   id: string;
@@ -47,10 +47,12 @@ export default function RecordDetailPage({ params }: { params: Promise<{ id: str
   async function doAction(action: string, body?: Record<string, unknown>) {
     setActionError('');
     setActionSuccess('');
+    const headers: Record<string, string> = {};
+    if (body) headers['Content-Type'] = 'application/json';
     try {
       const res = await fetch(`${API_URL}/content-provenance/records/${id}/${action}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: body ? JSON.stringify(body) : undefined,
       });
@@ -89,7 +91,7 @@ export default function RecordDetailPage({ params }: { params: Promise<{ id: str
           Record <span data-testid="record-id-display">#{record.id}</span>
         </h1>
         {actionError && <Alert>{actionError}</Alert>}
-        {actionSuccess && <Alert>{actionSuccess}</Alert>}
+        {actionSuccess && <Alert data-testid="action-success">{actionSuccess}</Alert>}
         <Card data-testid="record-detail-card">
           <dl style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: '0.5rem' }}>
             <dt style={{ fontWeight: 600 }}>Status:</dt>
