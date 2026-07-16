@@ -177,6 +177,7 @@ echo "  OK"
 
 # 9. Run repository tests (must pass before deployment)
 echo "[9] Running repository tests..."
+rm -rf node_modules package-lock.json
 npm install
 npm run ci
 echo "  OK"
