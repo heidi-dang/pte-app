@@ -722,6 +722,22 @@ export async function contentProvenancePlugin(
     }
   });
 
+  // ─── PUBLICATION DECISIONS ──────────────────────────────────
+  app.get('/content-provenance/decisions/:contentId', async (request, reply) => {
+    const auth = getAuth(request, reply);
+    if (!auth) return;
+    if (!requireRoles(auth, ['content_editor', 'admin', 'support'], reply)) return;
+    const { contentId } = request.params as { contentId: string };
+    const result = await db.pool.query(
+      `SELECT id, eligible, blockers, warnings, policy_version, created_at
+       FROM content_publication_decisions
+       WHERE content_id = $1
+       ORDER BY created_at DESC`,
+      [contentId],
+    );
+    return reply.status(200).send(result.rows);
+  });
+
   // ─── PROHIBITED MATCHES ────────────────────────────────────
   app.get('/content-provenance/prohibited-matches', async (request, reply) => {
     const auth = getAuth(request, reply);
