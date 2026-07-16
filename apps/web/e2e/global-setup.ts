@@ -1,9 +1,11 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { loadEnvLocal, applyEnvLocal } from '@pte-app/database/testing/env';
-import { loadDatabaseConfig } from '@pte-app/database';
+import { loadDatabaseConfig, createConnection } from '@pte-app/database';
 import { setupTestDatabase } from '@pte-app/database/testing/setup';
+import { policyRepo } from '@pte-app/database';
 
 applyEnvLocal();
 
@@ -69,6 +71,32 @@ async function main(): Promise<void> {
     api.kill('SIGKILL');
     web.kill('SIGKILL');
     throw new Error(`Web did not start at ${webUrl}`);
+  }
+
+  // Seed a default provenance policy
+  const testConfig = { ...baseConfig, database: testDbName };
+  const db = await createConnection(testConfig);
+  try {
+    const existing = await db.pool.query('SELECT COUNT(*) FROM content_policies');
+    if (parseInt(existing.rows[0]?.count || '0', 10) === 0) {
+      await policyRepo.createPolicy(db, {
+        id: randomUUID() as any,
+        version: '1.0.0-e2e' as any,
+        status: 'active',
+        effectiveFrom: new Date(Date.now() - 86400000).toISOString(),
+        effectiveUntil: null,
+        similarityReviewThreshold: 0.3,
+        similarityBlockThreshold: 0.5,
+        expiryWarningDays: 30,
+        evidenceRetentionDays: 365,
+        requiredEvidenceByOwnership: {},
+        prohibitedRules: [],
+        supportedSourceTypes: ['original_creation_record'],
+        supportedLicenceTypes: ['exclusive', 'open'],
+      });
+    }
+  } finally {
+    await db.close();
   }
 
   const runtimeDir = resolve(process.cwd(), '.local-runtime');
