@@ -43,6 +43,18 @@ async function logoutViaApi(context: any): Promise<void> {
   await context.clearCookies();
 }
 
+async function verifyLessonData(context: any, lessonId: string): Promise<void> {
+  const res = await apiRequest(context, `/learn/lessons/${lessonId}`);
+  const data = await res.json();
+  if (res.status() !== 200) {
+    throw new Error(`Lesson API returned ${res.status()} for ${lessonId}: ${JSON.stringify(data)}`);
+  }
+  const blocks = data.blocks as Array<unknown> | undefined;
+  if (!blocks || blocks.length === 0) {
+    throw new Error(`Lesson ${lessonId} has ${blocks?.length ?? 0} blocks — cannot proceed`);
+  }
+}
+
 async function waitForBlock(page: any, testId: string, timeout = 10000) {
   await expect(page.getByTestId('btn-next-block')).toBeEnabled({ timeout });
   await page.getByTestId('btn-next-block').click();
@@ -73,6 +85,7 @@ test.describe('Phase H Critical Journey', () => {
 
   test('navigate through all interactive blocks', async ({ page, context }) => {
     await loginViaApi(context, state.studentEmail, state.studentPassword);
+    await verifyLessonData(context, state.paidCourseLesson1Id);
     await page.goto(`${state.webUrl}/learn/lessons/${state.paidCourseLesson1Id}`);
     await expect(page.getByTestId('lesson-title')).toBeVisible();
     await expect(page.getByTestId('btn-next-block')).toBeEnabled({ timeout: 10000 });
@@ -111,6 +124,7 @@ test.describe('Phase H Critical Journey', () => {
 
   test('save progress and resume after refresh', async ({ page, context }) => {
     await loginViaApi(context, state.studentEmail, state.studentPassword);
+    await verifyLessonData(context, state.paidCourseLesson1Id);
     await page.goto(`${state.webUrl}/learn/lessons/${state.paidCourseLesson1Id}`);
     await expect(page.getByTestId('lesson-title')).toBeVisible();
     await expect(page.getByTestId('btn-next-block')).toBeEnabled({ timeout: 10000 });
@@ -176,6 +190,7 @@ test.describe('Phase H Critical Journey', () => {
 
   test('interactive blocks: keyboard and accessibility', async ({ page, context, isMobile }) => {
     await loginViaApi(context, state.studentEmail, state.studentPassword);
+    await verifyLessonData(context, state.paidCourseLesson1Id);
     await page.goto(`${state.webUrl}/learn/lessons/${state.paidCourseLesson1Id}`);
     await expect(page.getByTestId('lesson-title')).toBeVisible();
     await expect(page.getByTestId('btn-next-block')).toBeEnabled({ timeout: 10000 });
@@ -207,6 +222,7 @@ test.describe('Phase H Critical Journey', () => {
   test('teacher notes: assigned sees notes, unassigned and student do not', async ({ page, context }) => {
     // Assigned teacher logs in and views lesson
     await loginViaApi(context, state.teacherEmail, state.teacherPassword);
+    await verifyLessonData(context, state.paidCourseLesson1Id);
     await page.goto(`${state.webUrl}/learn/lessons/${state.paidCourseLesson1Id}`);
     await expect(page.getByTestId('lesson-title')).toBeVisible({ timeout: 15000 });
 
