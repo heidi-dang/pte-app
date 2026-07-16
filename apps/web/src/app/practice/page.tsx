@@ -7,7 +7,17 @@ export const metadata = {
   description: 'Practise every PTE Academic task type with realistic prompts and AI feedback.',
 };
 
-function SkillCard({ title, href, count, tasks }: { title: string; href: string; count: number; tasks: { type: string; title: string; id: string }[] }) {
+function SkillCard({
+  title,
+  href,
+  count,
+  tasks,
+}: {
+  title: string;
+  href: string;
+  count: number;
+  tasks: { type: string; title: string; id: string }[];
+}) {
   return (
     <Card>
       <h3 className="landing__feature-title">{title}</h3>
@@ -15,14 +25,17 @@ function SkillCard({ title, href, count, tasks }: { title: string; href: string;
       <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', margin: '1rem 0' }}>
         {tasks.map((task) => (
           <li key={task.id}>
-            <a href={`/practice/${href}/${task.id}`} style={{ fontSize: '0.875rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <a
+              href={`/practice/${href}/${task.id}`}
+              style={{ fontSize: '0.875rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+            >
               <span>{task.title}</span>
               <Badge variant="default">{task.type}</Badge>
             </a>
           </li>
         ))}
       </ul>
-        <a href={`/practice/${href}`}>
+      <a href={`/practice/${href}`}>
         <Badge style={{ cursor: 'pointer' }}>View all</Badge>
       </a>
     </Card>

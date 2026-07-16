@@ -11,7 +11,9 @@ export default function AboutPage() {
       <Container>
         <div className="landing__section-header">
           <h1 className="landing__section-title">About PTE Academy</h1>
-          <p className="landing__section-subtitle">An independent, student-focused PTE Academic preparation platform.</p>
+          <p className="landing__section-subtitle">
+            An independent, student-focused PTE Academic preparation platform.
+          </p>
         </div>
         <div className="status-grid">
           <Card>

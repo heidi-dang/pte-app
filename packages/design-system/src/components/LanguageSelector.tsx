@@ -18,7 +18,9 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
   const [lang, setLang] = useState('en');
   return (
     <div className={`ds-language-selector ${className}`}>
-      <span className="ds-language-selector__icon" aria-hidden="true">🌐</span>
+      <span className="ds-language-selector__icon" aria-hidden="true">
+        🌐
+      </span>
       <select
         className="ds-language-selector__select"
         value={lang}
@@ -26,7 +28,9 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
         aria-label="Select language"
       >
         {LANGUAGES.map((l) => (
-          <option key={l.value} value={l.value}>{l.label}</option>
+          <option key={l.value} value={l.value}>
+            {l.label}
+          </option>
         ))}
       </select>
     </div>

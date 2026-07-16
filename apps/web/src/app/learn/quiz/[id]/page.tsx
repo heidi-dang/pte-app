@@ -7,7 +7,12 @@ const MOCK_ITEMS = [
   {
     id: 'qi-1',
     question: 'What is the primary purpose of the introduction paragraph in a PTE essay?',
-    options: ['To summarise the conclusion', 'To present the main argument and outline', 'To list every example', 'To repeat the prompt'],
+    options: [
+      'To summarise the conclusion',
+      'To present the main argument and outline',
+      'To list every example',
+      'To repeat the prompt',
+    ],
     correct: [1],
   },
   {
@@ -93,11 +98,16 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
   return (
     <main>
       <Container>
-        <h1 data-testid="quiz-title" className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Quiz</h1>
+        <h1 data-testid="quiz-title" className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Quiz
+        </h1>
         {result ? (
           <Card data-testid="quiz-result">
             <p style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
-              Score: <strong>{result.attempt.score}/{result.attempt.totalItems}</strong>
+              Score:{' '}
+              <strong>
+                {result.attempt.score}/{result.attempt.totalItems}
+              </strong>
             </p>
             <Badge variant={result.passed ? 'success' : 'danger'}>{result.passed ? 'passed' : 'failed'}</Badge>
             <div style={{ marginTop: '1rem' }}>
@@ -112,7 +122,16 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
               <Card key={item.id} style={{ marginBottom: '1rem' }}>
                 <p style={{ fontWeight: 500, marginBottom: '1rem' }}>{item.question}</p>
                 {item.options.map((option: string, optionIdx: number) => (
-                  <label key={optionIdx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0', cursor: 'pointer' }}>
+                  <label
+                    key={optionIdx}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      margin: '0.5rem 0',
+                      cursor: 'pointer',
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={answers[itemIdx]?.includes(optionIdx)}

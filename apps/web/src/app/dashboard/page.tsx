@@ -17,7 +17,9 @@ export default async function DashboardPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '0.5rem' }}>Dashboard</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '0.5rem' }}>
+          Dashboard
+        </h1>
         <p className="app-page-header__subtitle" style={{ marginBottom: '1.5rem' }}>
           Welcome back, {user?.displayName || user?.email}.
         </p>
@@ -39,7 +41,14 @@ export default async function DashboardPage() {
               { label: 'Listening', value: SKILL_BREAKDOWN.listening },
             ].map((skill) => (
               <div key={skill.label} style={{ marginBottom: '0.75rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '0.875rem',
+                    marginBottom: '0.25rem',
+                  }}
+                >
                   <span>{skill.label}</span>
                   <strong>{skill.value}</strong>
                 </div>
@@ -49,10 +58,16 @@ export default async function DashboardPage() {
           </Card>
           <Card>
             <h3 className="app-info-card__title">Account</h3>
-            <p style={{ marginBottom: '0.5rem' }}><strong>Email:</strong> {user?.email}</p>
-            <p style={{ marginBottom: '0.5rem' }}><strong>Roles:</strong> {user?.roles.join(', ') || 'none'}</p>
+            <p style={{ marginBottom: '0.5rem' }}>
+              <strong>Email:</strong> {user?.email}
+            </p>
+            <p style={{ marginBottom: '0.5rem' }}>
+              <strong>Roles:</strong> {user?.roles.join(', ') || 'none'}
+            </p>
             <form action={logoutAccount} style={{ marginTop: '1rem' }}>
-              <Button type="submit" variant="secondary">Log out</Button>
+              <Button type="submit" variant="secondary">
+                Log out
+              </Button>
             </form>
           </Card>
         </div>
@@ -62,7 +77,9 @@ export default async function DashboardPage() {
           {MOCK_ACTIVITIES.slice(0, 3).map((activity) => (
             <Card key={activity.id}>
               <Badge>{activity.type}</Badge>
-              <h3 className="landing__feature-title" style={{ marginTop: '0.5rem' }}>{activity.title}</h3>
+              <h3 className="landing__feature-title" style={{ marginTop: '0.5rem' }}>
+                {activity.title}
+              </h3>
               <p className="landing__feature-desc">{activity.date}</p>
             </Card>
           ))}

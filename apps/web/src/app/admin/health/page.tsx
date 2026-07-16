@@ -17,7 +17,9 @@ export default function PlatformHealthPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Platform health</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Platform health
+        </h1>
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           {services.map((service) => (
             <Card key={service.name}>

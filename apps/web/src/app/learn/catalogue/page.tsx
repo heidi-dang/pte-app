@@ -46,7 +46,9 @@ export default function CourseCatalogue() {
               c.summary.toLowerCase().includes(term) ||
               c.tags.some((t) => t.toLowerCase().includes(term)),
           );
-          setCourses(filtered.map((c) => ({ ...c, id: c.id, slug: c.slug })) as unknown as Array<Record<string, unknown>>);
+          setCourses(
+            filtered.map((c) => ({ ...c, id: c.id, slug: c.slug })) as unknown as Array<Record<string, unknown>>,
+          );
           setUsingMock(true);
         })
         .finally(() => {
@@ -68,7 +70,9 @@ export default function CourseCatalogue() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '0.5rem' }}>Course catalogue</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '0.5rem' }}>
+          Course catalogue
+        </h1>
         <p className="app-page-header__subtitle" style={{ marginBottom: '1.5rem' }}>
           Browse courses, lessons, and practice tracks to reach your target PTE score.
         </p>
@@ -98,9 +102,32 @@ export default function CourseCatalogue() {
           >
             {[1, 2, 3].map((i) => (
               <Card key={i} style={{ minHeight: '120px' }}>
-                <div style={{ height: '1rem', width: '60%', background: 'var(--color-border)', borderRadius: '0.25rem', marginBottom: '0.75rem' }} />
-                <div style={{ height: '0.75rem', width: '100%', background: 'var(--color-border)', borderRadius: '0.25rem', marginBottom: '0.5rem' }} />
-                <div style={{ height: '0.75rem', width: '40%', background: 'var(--color-border)', borderRadius: '0.25rem' }} />
+                <div
+                  style={{
+                    height: '1rem',
+                    width: '60%',
+                    background: 'var(--color-border)',
+                    borderRadius: '0.25rem',
+                    marginBottom: '0.75rem',
+                  }}
+                />
+                <div
+                  style={{
+                    height: '0.75rem',
+                    width: '100%',
+                    background: 'var(--color-border)',
+                    borderRadius: '0.25rem',
+                    marginBottom: '0.5rem',
+                  }}
+                />
+                <div
+                  style={{
+                    height: '0.75rem',
+                    width: '40%',
+                    background: 'var(--color-border)',
+                    borderRadius: '0.25rem',
+                  }}
+                />
               </Card>
             ))}
           </div>
@@ -133,16 +160,32 @@ export default function CourseCatalogue() {
                 style={{ textDecoration: 'none' }}
                 data-testid="course-card"
               >
-                <Card style={{ height: '100%', transition: 'transform 150ms ease, box-shadow 150ms ease' }} className="course-card">
+                <Card
+                  style={{ height: '100%', transition: 'transform 150ms ease, box-shadow 150ms ease' }}
+                  className="course-card"
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <Badge variant={c.accessLevel === 'free' ? 'success' : 'warning'}>{c.accessLevel as string}</Badge>
                     <Badge>{c.difficulty as string}</Badge>
                   </div>
-                  <h2 style={{ fontSize: '1.1rem', marginBottom: '0.25rem', color: 'var(--color-text)' }}>{c.title as string}</h2>
+                  <h2 style={{ fontSize: '1.1rem', marginBottom: '0.25rem', color: 'var(--color-text)' }}>
+                    {c.title as string}
+                  </h2>
                   <p style={{ fontSize: '0.85rem', color: 'var(--color-muted)' }}>{(c.summary as string) || ''}</p>
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
-                    {(c.tags as string[] || []).slice(0, 3).map((tag) => (
-                      <span key={tag} style={{ fontSize: '0.75rem', color: 'var(--color-muted)', background: 'var(--color-surface)', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>{tag}</span>
+                    {((c.tags as string[]) || []).slice(0, 3).map((tag) => (
+                      <span
+                        key={tag}
+                        style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--color-muted)',
+                          background: 'var(--color-surface)',
+                          padding: '0.125rem 0.5rem',
+                          borderRadius: '9999px',
+                        }}
+                      >
+                        {tag}
+                      </span>
                     ))}
                   </div>
                   <p style={{ fontSize: '0.75rem', marginTop: '0.75rem', color: 'var(--color-muted)' }}>

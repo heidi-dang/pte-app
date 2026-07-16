@@ -47,14 +47,28 @@ export default function PracticeTaskPage({ params }: { params: Promise<{ skill: 
             { label: task.skill === 'Writing' ? 'Vocabulary' : 'Form', value: 75 },
           ].map((item) => (
             <div key={item.label}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '0.875rem',
+                  marginBottom: '0.25rem',
+                }}
+              >
                 <span>{item.label}</span>
                 <strong>{item.value}</strong>
               </div>
               <Progress value={item.value} />
             </div>
           ))}
-          <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'var(--color-surface)', borderRadius: 'var(--radius-md)' }}>
+          <div
+            style={{
+              marginTop: '0.5rem',
+              padding: '0.75rem',
+              background: 'var(--color-surface)',
+              borderRadius: 'var(--radius-md)',
+            }}
+          >
             <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>
               Suggestion: Focus on clearer main-point coverage and smoother transitions. Try recording again to compare.
             </p>
@@ -75,12 +89,8 @@ export default function PracticeTaskPage({ params }: { params: Promise<{ skill: 
         <li style={{ fontSize: '0.875rem' }}>
           <strong>Today</strong> — Score 74 · 2 attempts
         </li>
-        <li style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>
-          Yesterday — Score 70 · 1 attempt
-        </li>
-        <li style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>
-          3 days ago — Score 68 · 1 attempt
-        </li>
+        <li style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>Yesterday — Score 70 · 1 attempt</li>
+        <li style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>3 days ago — Score 68 · 1 attempt</li>
       </ul>
     </Card>
   );
@@ -91,13 +101,21 @@ export default function PracticeTaskPage({ params }: { params: Promise<{ skill: 
         <div className="app-page-header">
           <div>
             <h1 className="app-page-header__title">{task.title}</h1>
-            <p className="app-page-header__subtitle">{task.type} · {task.skill}</p>
+            <p className="app-page-header__subtitle">
+              {task.type} · {task.skill}
+            </p>
           </div>
           <div className="app-page-header__actions">
             <Button variant="secondary" onClick={() => setBookmarked((b) => !b)}>
               {bookmarked ? 'Bookmarked' : 'Bookmark'}
             </Button>
-            <Button onClick={() => { setSubmitted(false); setTimeLeft(task.timeLimitSeconds); setIsRunning(false); }}>
+            <Button
+              onClick={() => {
+                setSubmitted(false);
+                setTimeLeft(task.timeLimitSeconds);
+                setIsRunning(false);
+              }}
+            >
               Retry
             </Button>
           </div>
@@ -105,9 +123,21 @@ export default function PracticeTaskPage({ params }: { params: Promise<{ skill: 
 
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)', marginBottom: '1.5rem' }}>
           <Card>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1rem',
+              }}
+            >
               <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <Badge variant={task.difficulty === 'Easy' ? 'success' : task.difficulty === 'Medium' ? 'warning' : 'danger'}>{task.difficulty}</Badge>
+                <Badge
+                  variant={task.difficulty === 'Easy' ? 'success' : task.difficulty === 'Medium' ? 'warning' : 'danger'}
+                >
+                  {task.difficulty}
+                </Badge>
                 <Badge>{formatTime(timeLeft)}</Badge>
               </div>
               <Progress value={Math.max(0, (timeLeft / task.timeLimitSeconds) * 100)} />
@@ -119,7 +149,15 @@ export default function PracticeTaskPage({ params }: { params: Promise<{ skill: 
           <Card>
             <h3 className="app-info-card__title">Instructions</h3>
             <p style={{ color: 'var(--color-text)', marginBottom: '1rem' }}>{task.instructions}</p>
-            <div style={{ padding: '1.5rem', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', border: '1px dashed var(--color-border)', marginBottom: '1rem' }}>
+            <div
+              style={{
+                padding: '1.5rem',
+                background: 'var(--color-surface)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px dashed var(--color-border)',
+                marginBottom: '1rem',
+              }}
+            >
               <p style={{ color: 'var(--color-muted)', textAlign: 'center' }}>
                 {task.skill === 'Speaking' && 'Recording simulation — your microphone will be used when enabled.'}
                 {task.skill === 'Writing' && 'Type your response in the area below.'}
@@ -136,8 +174,16 @@ export default function PracticeTaskPage({ params }: { params: Promise<{ skill: 
               />
             )}
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-              <Button onClick={() => setIsRunning(true)} disabled={isRunning || submitted}>Start</Button>
-              <Button onClick={() => { setIsRunning(false); setSubmitted(true); }} disabled={submitted}>
+              <Button onClick={() => setIsRunning(true)} disabled={isRunning || submitted}>
+                Start
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsRunning(false);
+                  setSubmitted(true);
+                }}
+                disabled={submitted}
+              >
                 Submit response
               </Button>
             </div>
@@ -154,7 +200,9 @@ export default function PracticeTaskPage({ params }: { params: Promise<{ skill: 
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
-              <Button variant="secondary" size="sm" style={{ marginTop: '0.75rem' }}>Save notes</Button>
+              <Button variant="secondary" size="sm" style={{ marginTop: '0.75rem' }}>
+                Save notes
+              </Button>
             </Card>
           </div>
         </div>

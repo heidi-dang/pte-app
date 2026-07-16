@@ -1,5 +1,3 @@
-
-
 export interface ChartBarProps {
   data: Array<{ label: string; value: number; color?: string }>;
   max?: number;
@@ -43,7 +41,13 @@ export function ChartLine({ data, className = '' }: ChartLineProps) {
     .join(' ');
   return (
     <div className={`ds-chart-line ${className}`}>
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="ds-chart-line__svg" role="img" aria-label="Line chart">
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        className="ds-chart-line__svg"
+        role="img"
+        aria-label="Line chart"
+      >
         <polyline fill="none" stroke="currentColor" strokeWidth="2" points={points} />
         {data.map((d, i) => {
           const x = (i / (data.length - 1 || 1)) * 100;
@@ -53,7 +57,9 @@ export function ChartLine({ data, className = '' }: ChartLineProps) {
       </svg>
       <div className="ds-chart-line__labels">
         {data.map((d, i) => (
-          <span key={i} className="ds-chart-line__label">{d.label}</span>
+          <span key={i} className="ds-chart-line__label">
+            {d.label}
+          </span>
         ))}
       </div>
     </div>

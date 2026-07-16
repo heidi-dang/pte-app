@@ -21,15 +21,17 @@ export default function Home() {
               <span className="landing__eyebrow">PTE Academic Platform</span>
               <h1 className="landing__title">Master PTE Academic with AI-Powered Practice</h1>
               <p className="landing__subtitle">
-                Adaptive lessons, realistic mock exams, and instant AI feedback for every PTE task type.
-                Prepare smarter, track progress, and reach your target score faster.
+                Adaptive lessons, realistic mock exams, and instant AI feedback for every PTE task type. Prepare
+                smarter, track progress, and reach your target score faster.
               </p>
               <div className="landing__hero-actions">
                 <a href="/register">
                   <Button size="lg">Start free trial</Button>
                 </a>
                 <a href="/practice">
-                  <Button variant="secondary" size="lg">Try a practice task</Button>
+                  <Button variant="secondary" size="lg">
+                    Try a practice task
+                  </Button>
                 </a>
               </div>
               <div className="landing__trust">
@@ -40,7 +42,9 @@ export default function Home() {
                     </span>
                   ))}
                 </div>
-                <p className="landing__trust-text">Students improved an average of <strong>12 points</strong> in 6 weeks</p>
+                <p className="landing__trust-text">
+                  Students improved an average of <strong>12 points</strong> in 6 weeks
+                </p>
               </div>
             </div>
             <div className="landing__hero-visual">
@@ -196,7 +200,9 @@ export default function Home() {
                 <Button size="lg">Create account</Button>
               </a>
               <a href="/login">
-                <Button variant="secondary" size="lg">Log in</Button>
+                <Button variant="secondary" size="lg">
+                  Log in
+                </Button>
               </a>
             </div>
           </div>

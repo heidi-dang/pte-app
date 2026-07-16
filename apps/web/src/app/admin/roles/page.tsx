@@ -24,7 +24,15 @@ export default function RolesPage() {
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           {roles.map((role) => (
             <Card key={role.name}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem',
+                }}
+              >
                 <div>
                   <h3 className="landing__feature-title">{role.name}</h3>
                   <p className="landing__feature-desc">{role.description}</p>

@@ -10,7 +10,9 @@ export default function TeacherDashboard() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Teacher Dashboard</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Teacher Dashboard
+        </h1>
         <div className="status-grid">
           <Card>
             <h3 className="app-info-card__title">Active students</h3>
@@ -27,14 +29,26 @@ export default function TeacherDashboard() {
           </Card>
         </div>
 
-        <h2 className="app-section__title" style={{ marginTop: '2rem' }}>Recent student activity</h2>
+        <h2 className="app-section__title" style={{ marginTop: '2rem' }}>
+          Recent student activity
+        </h2>
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           {MOCK_STUDENTS.slice(0, 3).map((student) => (
             <Card key={student.id}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem',
+                }}
+              >
                 <div>
                   <h3 className="landing__feature-title">{student.name}</h3>
-                  <p className="landing__feature-desc">Target: {student.targetScore} · Current: {student.estimatedScore}</p>
+                  <p className="landing__feature-desc">
+                    Target: {student.targetScore} · Current: {student.estimatedScore}
+                  </p>
                 </div>
                 <a href={`/teacher/students/${student.id}`}>
                   <Button size="sm">Review</Button>

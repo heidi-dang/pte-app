@@ -53,9 +53,31 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
         } as Record<string, unknown>);
         setBlocks([
           { id: 'b-1', blockType: 'text', title: 'Introduction', content: { body: mockLesson.summary } },
-          { id: 'b-2', blockType: 'video', title: 'Video lesson', content: { title: mockLesson.title, transcript: 'In this lesson we explore the key strategies for this task type.' } },
-          { id: 'b-3', blockType: 'audio', title: 'Audio example', content: { title: 'Sample audio', transcript: 'Audio transcript: example response for this task.' } },
-          { id: 'b-4', blockType: 'interactive', title: 'Interactive check', content: { type: 'reveal', front: 'What is the most important element?', back: 'Fluency and clear pronunciation.' } },
+          {
+            id: 'b-2',
+            blockType: 'video',
+            title: 'Video lesson',
+            content: {
+              title: mockLesson.title,
+              transcript: 'In this lesson we explore the key strategies for this task type.',
+            },
+          },
+          {
+            id: 'b-3',
+            blockType: 'audio',
+            title: 'Audio example',
+            content: { title: 'Sample audio', transcript: 'Audio transcript: example response for this task.' },
+          },
+          {
+            id: 'b-4',
+            blockType: 'interactive',
+            title: 'Interactive check',
+            content: {
+              type: 'reveal',
+              front: 'What is the most important element?',
+              back: 'Fluency and clear pronunciation.',
+            },
+          },
         ]);
         setProgress({ status: 'in_progress', blockPosition: 0 });
         setQuiz({ id: 'q-1' });
@@ -142,7 +164,16 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
     <div>
       <div style={{ marginBottom: '1rem' }}>
         <Progress value={pct} data-testid="lesson-progress-bar" />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '0.5rem',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+          }}
+        >
           <span style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>{pct}% complete</span>
           {saveStatus !== 'idle' && (
             <span
@@ -184,7 +215,15 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
           {(block.blockType as string) === 'video' && (
             <div data-testid="block-video">
               <h2>{block.title as string}</h2>
-              <div style={{ padding: '1rem', background: 'var(--color-surface)', borderRadius: 'var(--radius-md)', textAlign: 'center', border: '1px solid var(--color-border)' }}>
+              <div
+                style={{
+                  padding: '1rem',
+                  background: 'var(--color-surface)',
+                  borderRadius: 'var(--radius-md)',
+                  textAlign: 'center',
+                  border: '1px solid var(--color-border)',
+                }}
+              >
                 Video content: {((block.content as Record<string, unknown>)?.title as string) || 'Untitled'}
               </div>
               {(block.content as Record<string, unknown>)?.transcript != null && (
@@ -200,7 +239,14 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
           {(block.blockType as string) === 'audio' && (
             <div data-testid="block-audio">
               <h2>{block.title as string}</h2>
-              <div style={{ padding: '1rem', background: 'var(--color-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+              <div
+                style={{
+                  padding: '1rem',
+                  background: 'var(--color-surface)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border)',
+                }}
+              >
                 Audio content: {((block.content as Record<string, unknown>)?.title as string) || 'Untitled'}
                 <p style={{ fontSize: '0.8rem', color: 'var(--color-muted)' }}>Audio playback available</p>
               </div>
@@ -225,7 +271,15 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
           <p>No content available</p>
         </Card>
       )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: '1rem',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+        }}
+      >
         <Button
           data-testid="btn-prev-block"
           disabled={currentBlock === 0}
@@ -242,10 +296,7 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
             Save Progress
           </Button>
           {!completed && progress && progress.status !== 'not_started' && (
-            <Button
-              data-testid="btn-complete-lesson"
-              onClick={handleComplete}
-            >
+            <Button data-testid="btn-complete-lesson" onClick={handleComplete}>
               Complete Lesson
             </Button>
           )}
@@ -295,7 +346,13 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
       </div>
       {teacherNotes.length > 0 && (
         <div
-          style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}
+          style={{
+            marginTop: '1.5rem',
+            padding: '1rem',
+            background: 'var(--color-surface)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--color-border)',
+          }}
           data-testid="teacher-notes"
         >
           <h3 style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--color-muted)' }}>Teacher Notes</h3>
@@ -340,13 +397,19 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
       <h3 className="app-info-card__title">Downloads</h3>
       <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         <li>
-          <Button variant="secondary" size="sm">Lesson slides (PDF)</Button>
+          <Button variant="secondary" size="sm">
+            Lesson slides (PDF)
+          </Button>
         </li>
         <li>
-          <Button variant="secondary" size="sm">Practice worksheet</Button>
+          <Button variant="secondary" size="sm">
+            Practice worksheet
+          </Button>
         </li>
         <li>
-          <Button variant="secondary" size="sm">Audio transcript</Button>
+          <Button variant="secondary" size="sm">
+            Audio transcript
+          </Button>
         </li>
       </ul>
     </Card>
@@ -355,10 +418,10 @@ export default function LessonViewerPage({ params }: { params: Promise<{ id: str
   return (
     <main>
       <Container>
-        <h1 data-testid="lesson-title" className="app-page-header__title" style={{ marginBottom: '0.5rem' }}>{lesson.title as string}</h1>
-        <p style={{ color: 'var(--color-muted)', marginBottom: '1.5rem' }}>
-          {lesson.courseTitle as string}
-        </p>
+        <h1 data-testid="lesson-title" className="app-page-header__title" style={{ marginBottom: '0.5rem' }}>
+          {lesson.title as string}
+        </h1>
+        <p style={{ color: 'var(--color-muted)', marginBottom: '1.5rem' }}>{lesson.courseTitle as string}</p>
         <Tabs
           defaultTab="content"
           tabs={[

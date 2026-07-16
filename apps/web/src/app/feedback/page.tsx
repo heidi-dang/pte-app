@@ -9,7 +9,9 @@ export default function AIFeedbackPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>AI feedback</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          AI feedback
+        </h1>
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           <Card>
             <h3 className="app-info-card__title">Latest speaking analysis</h3>
@@ -20,7 +22,14 @@ export default function AIFeedbackPage() {
                 { label: 'Content', value: 78 },
               ].map((item) => (
                 <div key={item.label}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      fontSize: '0.875rem',
+                      marginBottom: '0.25rem',
+                    }}
+                  >
                     <span>{item.label}</span>
                     <strong>{item.value}</strong>
                   </div>
@@ -28,7 +37,9 @@ export default function AIFeedbackPage() {
                 </div>
               ))}
             </div>
-            <a href="/feedback/speaking" style={{ display: 'inline-block', marginTop: '1rem' }}>View full analysis</a>
+            <a href="/feedback/speaking" style={{ display: 'inline-block', marginTop: '1rem' }}>
+              View full analysis
+            </a>
           </Card>
           <Card>
             <h3 className="app-info-card__title">Latest writing analysis</h3>
@@ -41,7 +52,14 @@ export default function AIFeedbackPage() {
                 { label: 'Spelling', value: 88 },
               ].map((item) => (
                 <div key={item.label}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      fontSize: '0.875rem',
+                      marginBottom: '0.25rem',
+                    }}
+                  >
                     <span>{item.label}</span>
                     <strong>{item.value}</strong>
                   </div>
@@ -49,7 +67,9 @@ export default function AIFeedbackPage() {
                 </div>
               ))}
             </div>
-            <a href="/feedback/writing" style={{ display: 'inline-block', marginTop: '1rem' }}>View full analysis</a>
+            <a href="/feedback/writing" style={{ display: 'inline-block', marginTop: '1rem' }}>
+              View full analysis
+            </a>
           </Card>
         </div>
       </Container>

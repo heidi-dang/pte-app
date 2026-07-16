@@ -13,7 +13,9 @@ export default function ExamLobbyPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '0.5rem' }}>Exam lobby</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '0.5rem' }}>
+          Exam lobby
+        </h1>
         <p className="app-page-header__subtitle" style={{ marginBottom: '1.5rem' }}>
           Complete the device checks before starting your mock exam.
         </p>
@@ -23,14 +25,32 @@ export default function ExamLobbyPage() {
             <Card key={check.label}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span>{check.label}</span>
-                <Badge variant={check.status === 'ok' ? 'success' : 'warning'}>{check.status === 'ok' ? 'Ready' : 'Check recommended'}</Badge>
+                <Badge variant={check.status === 'ok' ? 'success' : 'warning'}>
+                  {check.status === 'ok' ? 'Ready' : 'Check recommended'}
+                </Badge>
               </div>
               {check.label.includes('Microphone') && (
                 <div style={{ marginTop: '1rem' }}>
-                  <div style={{ height: '0.5rem', background: 'var(--color-surface)', borderRadius: '9999px', overflow: 'hidden' }}>
-                    <div style={{ width: '70%', height: '100%', background: 'var(--color-primary)', borderRadius: '9999px' }} />
+                  <div
+                    style={{
+                      height: '0.5rem',
+                      background: 'var(--color-surface)',
+                      borderRadius: '9999px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '70%',
+                        height: '100%',
+                        background: 'var(--color-primary)',
+                        borderRadius: '9999px',
+                      }}
+                    />
                   </div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--color-muted)', marginTop: '0.25rem' }}>Speak to test your microphone level</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--color-muted)', marginTop: '0.25rem' }}>
+                    Speak to test your microphone level
+                  </p>
                 </div>
               )}
             </Card>

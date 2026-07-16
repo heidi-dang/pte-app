@@ -15,7 +15,9 @@ export default function LogsPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Logs</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Logs
+        </h1>
         <Card>
           <div className="ds-table-wrapper">
             <table className="ds-table">
@@ -31,7 +33,11 @@ export default function LogsPage() {
                   <tr key={log.id} className="ds-table__row">
                     <td className="ds-table__td">{log.time}</td>
                     <td className="ds-table__td">
-                      <Badge variant={log.level === 'error' ? 'danger' : log.level === 'warning' ? 'warning' : 'default'}>{log.level}</Badge>
+                      <Badge
+                        variant={log.level === 'error' ? 'danger' : log.level === 'warning' ? 'warning' : 'default'}
+                      >
+                        {log.level}
+                      </Badge>
                     </td>
                     <td className="ds-table__td">{log.message}</td>
                   </tr>

@@ -37,8 +37,12 @@ export default function MediaLibraryPage() {
                     <td className="ds-table__td">{item.name}</td>
                     <td className="ds-table__td">{item.type}</td>
                     <td className="ds-table__td">{item.size}</td>
-                    <td className="ds-table__td"><Badge variant="success">{item.status}</Badge></td>
-                    <td className="ds-table__td"><Button size="sm">Preview</Button></td>
+                    <td className="ds-table__td">
+                      <Badge variant="success">{item.status}</Badge>
+                    </td>
+                    <td className="ds-table__td">
+                      <Button size="sm">Preview</Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

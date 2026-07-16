@@ -10,7 +10,9 @@ export default function SupportPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Support Dashboard</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Support Dashboard
+        </h1>
         <div className="status-grid">
           <Card>
             <h3 className="app-info-card__title">Open tickets</h3>
@@ -26,7 +28,9 @@ export default function SupportPage() {
             <p style={{ fontSize: '2rem', fontWeight: 700 }}>3h</p>
           </Card>
         </div>
-        <h2 className="app-section__title" style={{ marginTop: '2rem' }}>Tickets</h2>
+        <h2 className="app-section__title" style={{ marginTop: '2rem' }}>
+          Tickets
+        </h2>
         <Card>
           <div className="ds-table-wrapper">
             <table className="ds-table">
@@ -45,12 +49,20 @@ export default function SupportPage() {
                     <td className="ds-table__td">{ticket.id}</td>
                     <td className="ds-table__td">{ticket.subject}</td>
                     <td className="ds-table__td">
-                      <Badge variant={ticket.priority === 'high' ? 'danger' : ticket.priority === 'medium' ? 'warning' : 'default'}>{ticket.priority}</Badge>
+                      <Badge
+                        variant={
+                          ticket.priority === 'high' ? 'danger' : ticket.priority === 'medium' ? 'warning' : 'default'
+                        }
+                      >
+                        {ticket.priority}
+                      </Badge>
                     </td>
                     <td className="ds-table__td">
                       <Badge variant={ticket.status === 'resolved' ? 'success' : 'warning'}>{ticket.status}</Badge>
                     </td>
-                    <td className="ds-table__td"><Button size="sm">View</Button></td>
+                    <td className="ds-table__td">
+                      <Button size="sm">View</Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

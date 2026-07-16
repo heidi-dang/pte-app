@@ -9,11 +9,21 @@ export default function PreviewPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Preview</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Preview
+        </h1>
         <Card>
           <h3 className="app-info-card__title">Lesson preview</h3>
           <p className="landing__feature-desc">This is how the lesson will appear to students.</p>
-          <div style={{ padding: '2rem', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', marginTop: '1rem', border: '1px dashed var(--color-border)' }}>
+          <div
+            style={{
+              padding: '2rem',
+              background: 'var(--color-surface)',
+              borderRadius: 'var(--radius-lg)',
+              marginTop: '1rem',
+              border: '1px dashed var(--color-border)',
+            }}
+          >
             <p style={{ color: 'var(--color-muted)', textAlign: 'center' }}>Preview content renders here</p>
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>

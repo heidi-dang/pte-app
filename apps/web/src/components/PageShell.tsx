@@ -46,11 +46,21 @@ export function StatGrid({ children, className = '' }: StatGridProps) {
 
 export function StatusBadge({ status, label }: { status: 'ok' | 'warning' | 'error' | 'loading'; label?: string }) {
   const variant = status === 'ok' ? 'success' : status === 'warning' ? 'warning' : 'danger';
-  const text = label || (status === 'ok' ? 'Operational' : status === 'warning' ? 'Warning' : status === 'loading' ? 'Loading' : 'Error');
+  const text =
+    label ||
+    (status === 'ok' ? 'Operational' : status === 'warning' ? 'Warning' : status === 'loading' ? 'Loading' : 'Error');
   return <Badge variant={variant}>{text}</Badge>;
 }
 
-export function InfoCard({ title, children, className = '' }: { title?: string; children: ReactNode; className?: string }) {
+export function InfoCard({
+  title,
+  children,
+  className = '',
+}: {
+  title?: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <Card className={`app-info-card ${className}`}>
       {title && <h3 className="app-info-card__title">{title}</h3>}

@@ -17,7 +17,15 @@ export default function CourseManagerPage() {
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           {MOCK_COURSES.map((course) => (
             <Card key={course.id}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem',
+                }}
+              >
                 <div>
                   <h3 className="landing__feature-title">{course.title}</h3>
                   <p className="landing__feature-desc">{course.summary}</p>
