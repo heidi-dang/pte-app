@@ -8,8 +8,12 @@ async function apiRequest(context: any, path: string, options: Record<string, an
   const fullUrl = path.startsWith('http') ? path : `${state.apiUrl}${path}`;
   const { data, headers, ...rest } = options;
   const fetchOptions: Record<string, any> = { ...rest };
-  if (data !== undefined) fetchOptions.data = data;
-  if (headers) fetchOptions.headers = headers;
+  if (data !== undefined) {
+    fetchOptions.data = data;
+    fetchOptions.headers = { ...headers, 'content-type': 'application/json' };
+  } else {
+    fetchOptions.headers = { ...headers };
+  }
   return context.request.fetch(fullUrl, fetchOptions);
 }
 
