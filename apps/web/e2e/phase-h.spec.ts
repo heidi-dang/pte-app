@@ -10,7 +10,10 @@ async function apiRequest(context: any, path: string, options: Record<string, an
   const fetchOptions: Record<string, any> = { ...rest };
   if (data !== undefined) {
     fetchOptions.data = data;
-    fetchOptions.headers = { ...headers, 'content-type': data === '' ? 'text/plain' : 'application/json' };
+    fetchOptions.headers = { ...headers };
+    if (data !== '') {
+      fetchOptions.headers['content-type'] = 'application/json';
+    }
   } else {
     fetchOptions.headers = { ...headers };
   }
