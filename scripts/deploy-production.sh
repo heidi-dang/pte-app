@@ -393,7 +393,21 @@ for domain in "$WEB_DOMAIN" "$API_DOMAIN" "$SCORING_DOMAIN"; do
         exit 1
       fi
     done
-    if curl --fail --silent --show-error --location --max-time 10 "https://$domain/" > /dev/null 2>&1; then
+    case "$domain" in
+      "$WEB_DOMAIN")
+        health_url="https://$domain/"
+        ;;
+      "$API_DOMAIN")
+        health_url="https://$domain/health/ready"
+        ;;
+      "$SCORING_DOMAIN")
+        health_url="https://$domain/health/live"
+        ;;
+      *)
+        health_url="https://$domain/"
+        ;;
+    esac
+    if curl --fail --silent --show-error --location --max-time 10 "$health_url" > /dev/null 2>&1; then
       echo "  https://$domain/: OK (attempt $attempt/$HTTPS_MAX_RETRIES)"
       domain_ok=true
       break
