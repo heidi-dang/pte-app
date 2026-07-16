@@ -20,7 +20,6 @@ async function logout(page: Page): Promise<string> {
 
   await page.request.post(`${cfg.apiUrl}/auth/logout`, {
     headers: { authorization: `Bearer ${oldToken}` },
-    data: '{}',
   });
 
   const cookiesAfter = await page.context().cookies();

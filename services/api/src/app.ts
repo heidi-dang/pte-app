@@ -14,6 +14,23 @@ export type App = FastifyInstance;
 export async function buildApp(config: Config, options: { skipDb?: boolean } = {}): Promise<FastifyInstance> {
   const app = Fastify({ logger: { level: config.logLevel } });
 
+  // Override default JSON parser to accept empty bodies (Playwright sends application/json even for bodyless POST)
+  app.addContentTypeParser(
+    'application/json',
+    { parseAs: 'string' },
+    (_req: FastifyRequest, body: string, done: (err: Error | null, result: unknown) => void) => {
+      if (body === '' || body === undefined || body === null) {
+        done(null, {});
+      } else {
+        try {
+          done(null, JSON.parse(body));
+        } catch (e) {
+          done(e as Error, undefined);
+        }
+      }
+    },
+  );
+
   await app.register(cors, { origin: config.webOrigin, credentials: true });
   await app.register(cookie);
 
