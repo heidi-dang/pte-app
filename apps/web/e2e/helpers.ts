@@ -25,8 +25,18 @@ export async function register(email: string, password: string): Promise<string>
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ email, password, displayName: email.split('@')[0] }),
   });
-  if (!res.ok) throw new Error(`Registration failed: ${res.status} ${await res.text()}`);
+  if (!res.ok && res.status !== 409) throw new Error(`Registration failed: ${res.status} ${await res.text()}`);
   const data = await res.json();
+  // If account already exists, login to get a token
+  if (res.status === 409 && !data.token) {
+    const loginRes = await fetch(`${cfg.apiUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!loginRes.ok) throw new Error(`Login after 409 failed: ${loginRes.status}`);
+    return (await loginRes.json()).token;
+  }
   return data.token;
 }
 
