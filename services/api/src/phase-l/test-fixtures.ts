@@ -52,12 +52,7 @@ export async function buildTestFixtures(db: DatabaseConnection): Promise<PhaseLT
 
   const admin = await createUser(db, `phase-l-admin-${runId}@test.pte.app`, 'admin-pw', ['admin']);
   const student = await createUser(db, `phase-l-student-${runId}@test.pte.app`, 'student-pw', ['student']);
-  const otherStudent = await createUser(
-    db,
-    `phase-l-other-${runId}@test.pte.app`,
-    'other-pw',
-    ['student'],
-  );
+  const otherStudent = await createUser(db, `phase-l-other-${runId}@test.pte.app`, 'other-pw', ['student']);
 
   const course = await phaseH.courses.createCourse(db, {
     slug: `phase-l-test-${runId}`,

@@ -199,13 +199,7 @@ describe('Phase L API Integration', () => {
     await harness.db.pool.query(
       `INSERT INTO question_attempts (id, user_id, question_id, lesson_id, session_id, status, mode)
        VALUES ($1, $2, $3, $4, $5, 'created', 'learning')`,
-      [
-        otherAttemptId,
-        fixtures.otherStudent.id,
-        randomUUID(),
-        fixtures.lessonId,
-        fixtures.sessionId,
-      ],
+      [otherAttemptId, fixtures.otherStudent.id, randomUUID(), fixtures.lessonId, fixtures.sessionId],
     );
 
     const { data: otherRec } = await api('/api/v1/speaking/recording/start', {
