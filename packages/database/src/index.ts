@@ -20,3 +20,4 @@ export * as policyRepo from './repositories/policies.js';
 export * as contentAuditRepo from './repositories/content-audit.js';
 export * as phaseH from './repositories/phase-h/index.js';
 export * as phaseI from './repositories/phase-i/index.js';
+export * as phaseL from './repositories/phase-l/index.js';

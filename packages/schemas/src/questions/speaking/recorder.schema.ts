@@ -46,42 +46,89 @@ export const RecordingStateSchema = z.enum([
   'available',
   'failed',
   'abandoned',
+  'expired',
 ]);
 
-export const RecordingResponseSchema = z.object({
-  recordingId: z.string(),
-  mediaObjectId: z.string().optional(),
-  uploadSessionId: z.string().optional(),
-  recordingProfileId: z.string(),
-  durationMs: z.number().int().min(0),
-  localPreservationState: z.enum(['none', 'preserved', 'expired']),
-  uploadedChunkCount: z.number().int().min(0),
-  totalChunkCount: z.number().int().min(0),
-  checksum: z.string().optional(),
-  finalisationState: z.enum(['pending', 'finalised', 'rejected']),
-});
+const iso8601String = z
+  .string()
+  .refine((s) => !isNaN(Date.parse(s)), { message: 'Must be a valid ISO-8601 timestamp' });
 
-export const UploadSessionSchema = z.object({
-  id: z.string(),
-  recordingId: z.string(),
-  totalChunks: z.number().int().min(0),
-  acknowledgedChunks: z.number().int().min(0),
-  state: z.enum(['active', 'paused', 'completed', 'failed']),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
+export const RecordingResponseSchema = z
+  .object({
+    recordingId: z
+      .string()
+      .min(1)
+      .refine((s) => s.trim() === s, {
+        message: 'Recording ID must not be whitespace-only',
+      }),
+    mediaObjectId: z.string().optional(),
+    uploadSessionId: z.string().optional(),
+    recordingProfileId: z.string().min(1),
+    durationMs: z.number().int().min(0),
+    localPreservationState: z.enum(['none', 'preserved', 'expired']),
+    uploadedChunkCount: z.number().int().min(0),
+    totalChunkCount: z.number().int().min(0),
+    checksum: z.string().optional(),
+    finalisationState: z.enum(['pending', 'finalised', 'rejected']),
+  })
+  .superRefine((data, ctx) => {
+    if (data.uploadedChunkCount > data.totalChunkCount) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'uploadedChunkCount cannot exceed totalChunkCount',
+        path: ['uploadedChunkCount'],
+      });
+    }
+    if (data.finalisationState === 'finalised') {
+      if (data.totalChunkCount <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Finalised recording must have totalChunkCount >= 1',
+          path: ['totalChunkCount'],
+        });
+      }
+      if (data.uploadedChunkCount < data.totalChunkCount) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Finalised recording cannot have missing chunks',
+          path: ['uploadedChunkCount'],
+        });
+      }
+    }
+  });
+
+export const UploadSessionSchema = z
+  .object({
+    id: z.string(),
+    recordingId: z.string(),
+    totalChunks: z.number().int().min(1),
+    acknowledgedChunks: z.number().int().min(0),
+    state: z.enum(['active', 'paused', 'completed', 'failed', 'expired']),
+    createdAt: iso8601String,
+    updatedAt: iso8601String,
+  })
+  .superRefine((data, ctx) => {
+    if (data.acknowledgedChunks > data.totalChunks) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'acknowledgedChunks cannot exceed totalChunks',
+        path: ['acknowledgedChunks'],
+      });
+    }
+  });
 
 export const UploadChunkSchema = z.object({
   id: z.string(),
   uploadSessionId: z.string(),
   sequenceNumber: z.number().int().min(0),
-  acknowledgedAt: z.string().optional(),
+  byteCount: z.number().int().min(1),
+  acknowledgedAt: iso8601String.optional(),
 });
 
 export const MediaCapabilityDescriptorSchema = z.object({
-  mimeTypes: z.array(z.string()),
+  mimeTypes: z.array(z.string().regex(/^\w+\/[\w.+-]+$/, 'Must be a valid MIME type')),
   codecs: z.array(z.string()),
-  sampleRates: z.array(z.number()),
+  sampleRates: z.array(z.number().int().min(1)),
   channelCount: z.number().int().min(1),
   browserCapabilityResult: z.enum(['supported', 'partial', 'unsupported', 'unknown']),
 });
@@ -89,7 +136,7 @@ export const MediaCapabilityDescriptorSchema = z.object({
 export const RecordingAttemptRightSchema = z.object({
   id: z.string(),
   recordingId: z.string(),
-  permittedAt: z.string(),
-  consumedAt: z.string().optional(),
-  result: z.enum(['uploaded', 'failed', 'abandoned']).optional(),
+  permittedAt: iso8601String,
+  consumedAt: iso8601String.optional(),
+  result: z.enum(['uploaded', 'failed', 'abandoned', 'expired']).optional(),
 });

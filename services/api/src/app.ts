@@ -9,6 +9,7 @@ import { getAccountById } from './auth/accounts.js';
 import { contentProvenancePlugin } from './content-provenance/plugin.js';
 import { phaseHPlugin } from './phase-h/plugin.js';
 import { phaseIPlugin } from './phase-i/plugin.js';
+import { phaseLPlugin } from './phase-l/plugin.js';
 
 export type App = FastifyInstance;
 
@@ -100,6 +101,7 @@ export async function buildApp(config: Config, options: { skipDb?: boolean } = {
     await app.register(contentProvenancePlugin, { db: dbConnection });
     await app.register(phaseHPlugin, { db: dbConnection });
     await app.register(phaseIPlugin, { db: dbConnection });
+    await app.register(phaseLPlugin, { db: dbConnection });
   }
 
   return app;

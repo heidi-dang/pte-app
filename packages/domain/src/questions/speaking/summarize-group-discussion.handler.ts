@@ -24,7 +24,9 @@ export function createSummarizeGroupDiscussionHandler(): QuestionTypeHandler<
 
     getResponseState(response: SummarizeGroupDiscussionResponse): 'empty' | 'incomplete' | 'complete' | 'submitted' {
       if (!response.recordingId) return 'empty';
-      if (response.writtenSummary !== undefined && response.writtenSummary.length === 0) return 'incomplete';
+      if (response.writtenSummary === undefined || response.writtenSummary.trim().length === 0) {
+        return 'incomplete';
+      }
       return 'complete';
     },
 
@@ -35,11 +37,20 @@ export function createSummarizeGroupDiscussionHandler(): QuestionTypeHandler<
       if (!allowsEmptySubmission && !response.recordingId) {
         return { valid: false, reason: 'Recording is required' };
       }
-      if (response.writtenSummary !== undefined) {
-        const wordCount = response.writtenSummary.trim().split(/\s+/).filter(Boolean).length;
+      if (response.writtenSummary !== undefined && response.writtenSummary.trim().length > 0) {
+        const words = response.writtenSummary.trim().split(/\s+/).filter(Boolean);
+        const wordCount = words.length;
         if (wordCount > question.maxWords) {
           return { valid: false, reason: `Word count ${wordCount} exceeds maximum ${question.maxWords}` };
         }
+        if (wordCount < question.minWords) {
+          return { valid: false, reason: `Word count ${wordCount} is below minimum ${question.minWords}` };
+        }
+      } else if (response.writtenSummary !== undefined && response.writtenSummary.trim().length === 0) {
+        return { valid: false, reason: 'Written summary must not be whitespace-only' };
+      }
+      if (response.recordingId && response.recordingId.trim().length === 0) {
+        return { valid: false, reason: 'Recording ID must not be whitespace-only' };
       }
       return { valid: true };
     },

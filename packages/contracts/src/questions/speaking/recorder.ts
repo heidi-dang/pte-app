@@ -1,4 +1,4 @@
-import type { RecordingProfileId, ScoringProfileId } from '../../question-engine/identifiers.js';
+import type { RecordingProfileId } from '../../question-engine/identifiers.js';
 
 /**
  * Recording profile versioned configuration.
@@ -59,13 +59,14 @@ export type RecordingState =
   | 'processing'
   | 'available'
   | 'failed'
-  | 'abandoned';
+  | 'abandoned'
+  | 'expired';
 
 export interface RecordingResponse {
   recordingId: string;
   mediaObjectId?: string;
   uploadSessionId?: string;
-  recordingProfileId: ScoringProfileId;
+  recordingProfileId: RecordingProfileId;
   durationMs: number;
   localPreservationState: 'none' | 'preserved' | 'expired';
   uploadedChunkCount: number;
@@ -79,7 +80,7 @@ export interface UploadSession {
   recordingId: string;
   totalChunks: number;
   acknowledgedChunks: number;
-  state: 'active' | 'paused' | 'completed' | 'failed';
+  state: 'active' | 'paused' | 'completed' | 'failed' | 'expired';
   createdAt: string;
   updatedAt: string;
 }

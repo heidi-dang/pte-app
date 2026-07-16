@@ -21,6 +21,7 @@ export async function loadMigrations(): Promise<Migration[]> {
     await loadMigration('0007', 'phase_h_version_status'),
     await loadMigration('0008', 'phase_i'),
     await loadMigration('0009', 'phase_i_max_plays_check'),
+    await loadMigration('0010', 'phase_l_speaking_recordings'),
   ];
 }
 

@@ -1,5 +1,6 @@
 export {
   ScoringProfileSchema,
+  ScoringRuleDefinitionSchema,
   ScoringInputSchema,
   ScoringEvidenceSchema,
   ScoringResultSchema,

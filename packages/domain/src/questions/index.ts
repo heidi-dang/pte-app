@@ -5,6 +5,7 @@ export {
   isTerminalRecordingState,
   canTransitionRecording,
   isActiveRecordingState,
+  isMutableRecordingState,
 } from './speaking/recording-state-machine.js';
 export {
   createUploadSession,

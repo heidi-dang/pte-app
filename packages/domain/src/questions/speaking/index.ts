@@ -1,9 +1,11 @@
-export { SPEAKING_MANIFEST_BASE } from './common.js';
+export { SPEAKING_MANIFEST_BASE, validateRecordingSubmission } from './common.js';
+export type { ValidatedRecordingContext } from './common.js';
 export {
   canTransitionRecording,
   transitionRecording,
   isTerminalRecordingState,
   isActiveRecordingState,
+  isMutableRecordingState,
 } from './recording-state-machine.js';
 export { createDefaultRecordingProfile } from './recording-profile.js';
 export {

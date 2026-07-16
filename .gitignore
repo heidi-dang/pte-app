@@ -12,4 +12,3 @@ coverage
 test-results/
 e2e-state.json
 playwright-report/
-phase-l-extract*

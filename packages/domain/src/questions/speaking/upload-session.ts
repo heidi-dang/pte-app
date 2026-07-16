@@ -1,9 +1,5 @@
 import type { UploadSession } from '@pte-app/contracts';
 
-/**
- * Pure persisted upload session state.
- * All acknowledgement state is explicit and survives reconstruction.
- */
 export interface UploadSessionState {
   session: UploadSession;
   acknowledgedSequenceNumbers: number[];
@@ -14,6 +10,9 @@ export function createUploadSession(
   generatedId: string,
   timestamp: string,
 ): UploadSessionState {
+  if (input.totalChunks <= 0) {
+    throw new Error('totalChunks must be greater than 0');
+  }
   const session: UploadSession = {
     id: generatedId,
     recordingId: input.recordingId,
@@ -30,6 +29,15 @@ export function acknowledgeChunk(
   state: UploadSessionState,
   chunk: { sequenceNumber: number; acknowledgedAt: string },
 ): UploadSessionState {
+  if (state.session.state === 'completed') {
+    throw new Error('Cannot acknowledge chunk: upload session is already completed');
+  }
+  if (state.session.state === 'failed') {
+    throw new Error('Cannot acknowledge chunk: upload session has failed');
+  }
+  if (state.session.state === 'expired') {
+    throw new Error('Cannot acknowledge chunk: upload session has expired');
+  }
   if (chunk.sequenceNumber < 0) {
     throw new Error(`Invalid negative sequence number: ${chunk.sequenceNumber}`);
   }
@@ -66,10 +74,22 @@ export function detectMissingChunks(state: UploadSessionState): number[] {
 }
 
 export function canFinaliseUpload(state: UploadSessionState): boolean {
+  if (state.session.state === 'completed') return false;
+  if (state.session.state === 'failed') return false;
+  if (state.session.state === 'expired') return false;
   return isUploadComplete(state);
 }
 
 export function finaliseUpload(state: UploadSessionState, timestamp: string): UploadSessionState {
+  if (state.session.state === 'completed') {
+    return state;
+  }
+  if (state.session.state === 'failed') {
+    throw new Error('Cannot finalise: upload session has failed');
+  }
+  if (state.session.state === 'expired') {
+    throw new Error('Cannot finalise: upload session has expired');
+  }
   const missing = detectMissingChunks(state);
   if (missing.length > 0) {
     throw new Error(`Cannot finalise: missing chunks [${missing.join(', ')}]`);
@@ -82,4 +102,8 @@ export function finaliseUpload(state: UploadSessionState, timestamp: string): Up
       updatedAt: timestamp,
     },
   };
+}
+
+export function isTerminalSessionState(state: UploadSession['state']): boolean {
+  return state === 'completed' || state === 'failed' || state === 'expired';
 }
