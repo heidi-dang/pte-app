@@ -15,3 +15,27 @@ export { EmptyState, type EmptyStateProps } from './components/EmptyState';
 export { ErrorState, type ErrorStateProps } from './components/ErrorState';
 export { Drawer, type DrawerProps } from './components/Drawer';
 export { Spinner, type SpinnerProps } from './components/Spinner';
+export { Avatar, AvatarGroup, type AvatarProps, type AvatarGroupProps } from './components/Avatar';
+export { Breadcrumb, type BreadcrumbProps, type BreadcrumbItem } from './components/Breadcrumb';
+export { StatCard, type StatCardProps } from './components/StatCard';
+export { Tabs, type TabsProps, type Tab } from './components/Tabs';
+export { Table, type TableProps, type TableColumn } from './components/Table';
+export { Select, type SelectProps } from './components/Select';
+export { TextArea, type TextAreaProps } from './components/TextArea';
+export { ThemeToggle, type ThemeToggleProps } from './components/ThemeToggle';
+export { LanguageSelector, type LanguageSelectorProps } from './components/LanguageSelector';
+export { ChartBar, ChartLine, ChartDonut, type ChartBarProps, type ChartLineProps, type ChartDonutProps } from './components/Charts';
+export {
+  IconChart,
+  IconPie,
+  IconBar,
+  IconBook,
+  IconCheck,
+  IconX,
+  IconSearch,
+  IconBell,
+  IconMenu,
+  IconHome,
+  IconUser,
+  IconSettings,
+} from './components/Icons';

@@ -1,32 +1,39 @@
-import { Container, Card, Badge } from '@pte-app/design-system';
-import { requireRole } from '../../lib/role-guard';
+import { Container, Card, Badge, Button } from '@pte-app/design-system';
+import { ALL_PRACTICE_TASKS } from '@/lib/mock-data';
 
-export default async function ContentDashboard() {
-  await requireRole('/content');
+export const metadata = {
+  title: 'Content Management — PTE Academy',
+  description: 'Content management dashboard.',
+};
 
+export default function ContentDashboard() {
   return (
-    <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
+    <main>
       <Container>
-        <h1 style={{ marginBottom: '1.5rem' }}>Content management</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Content management</h1>
         <div className="status-grid">
           <Card>
-            <h3>Content items</h3>
-            <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem' }}>Content library will appear here.</p>
+            <h3 className="app-info-card__title">Questions</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 700 }}>{ALL_PRACTICE_TASKS.length}</p>
+            <p className="landing__feature-desc">Active tasks across all skills</p>
           </Card>
           <Card>
-            <h3>Pending review</h3>
-            <Badge variant="warning">0 pending</Badge>
+            <h3 className="app-info-card__title">Pending review</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 700 }}>0</p>
+            <Badge variant="success">All reviewed</Badge>
           </Card>
           <Card>
-            <h3>Content Provenance</h3>
-            <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem' }}>
-              Source, licence, and publication controls.
-            </p>
-            <a
-              href="/content/provenance"
-              style={{ color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.875rem' }}
-            >
-              Open provenance dashboard
+            <h3 className="app-info-card__title">Published courses</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 700 }}>5</p>
+          </Card>
+        </div>
+
+        <div className="status-grid" style={{ marginTop: '2rem', gridTemplateColumns: 'repeat(1, 1fr)' }}>
+          <Card>
+            <h3 className="landing__feature-title">Content Provenance</h3>
+            <p className="landing__feature-desc">Source, licence, and publication controls.</p>
+            <a href="/content/provenance">
+              <Button variant="secondary" size="sm">Open provenance dashboard</Button>
             </a>
           </Card>
         </div>

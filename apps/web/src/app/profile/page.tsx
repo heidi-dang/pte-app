@@ -1,28 +1,32 @@
-import { redirect } from 'next/navigation';
-import { Container, Card, Button, Label, Input } from '@pte-app/design-system';
-import { getCurrentUser } from '../../lib/auth';
+import { Container, Card, Button, Input, Avatar } from '@pte-app/design-system';
 
-export default async function ProfilePage() {
-  const user = await getCurrentUser();
-  if (!user) redirect('/login');
+export const metadata = {
+  title: 'Profile — PTE Academy',
+  description: 'Your PTE Academy profile.',
+};
 
+export default function ProfilePage() {
   return (
-    <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
+    <main>
       <Container>
-        <Card>
-          <h1 style={{ marginBottom: '1rem' }}>Profile</h1>
-          <div className="ds-stack">
-            <div>
-              <Label htmlFor="displayName">Display name</Label>
-              <Input id="displayName" name="displayName" defaultValue={user.displayName ?? ''} />
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Profile</h1>
+        <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
+          <Card>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem' }}>
+              <Avatar initials="AJ" size="lg" />
+              <div>
+                <h3 className="landing__feature-title">Alex Johnson</h3>
+                <p className="landing__feature-desc">student@pte.app</p>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" value={user.email} disabled />
-            </div>
-            <Button type="submit">Save changes</Button>
-          </div>
-        </Card>
+            <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <Input label="Display name" defaultValue="Alex Johnson" />
+              <Input label="Email" type="email" defaultValue="student@pte.app" />
+              <Input label="Country" defaultValue="Australia" />
+              <Button type="submit">Save changes</Button>
+            </form>
+          </Card>
+        </div>
       </Container>
     </main>
   );

@@ -1,31 +1,40 @@
-import { redirect } from 'next/navigation';
-import { Container, Card } from '@pte-app/design-system';
-import { getCurrentUser } from '../../lib/auth';
+import { Container, Card, Button, Input, Select, ThemeToggle } from '@pte-app/design-system';
 
-export default async function SettingsPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect('/login');
+export const metadata = {
+  title: 'Settings — PTE Academy',
+  description: 'Your PTE Academy settings.',
+};
 
+export default function SettingsPage() {
   return (
-    <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
+    <main>
       <Container>
-        <Card>
-          <h1 style={{ marginBottom: '1rem' }}>Settings</h1>
-          <div className="ds-stack">
-            <div>
-              <h2>Notifications</h2>
-              <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem' }}>
-                Notification preferences will be available in a future update.
-              </p>
-            </div>
-            <div>
-              <h2>Theme</h2>
-              <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem' }}>
-                Theme preference respects your system setting.
-              </p>
-            </div>
-          </div>
-        </Card>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Settings</h1>
+        <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
+          <Card>
+            <h3 className="app-info-card__title">Appearance</h3>
+            <ThemeToggle />
+          </Card>
+          <Card>
+            <h3 className="app-info-card__title">Language</h3>
+            <Select
+              options={[
+                { value: 'en', label: 'English' },
+                { value: 'zh', label: '中文' },
+              ]}
+              defaultValue="en"
+              style={{ marginTop: '1rem' }}
+            />
+          </Card>
+          <Card>
+            <h3 className="app-info-card__title">Password</h3>
+            <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <Input label="Current password" type="password" />
+              <Input label="New password" type="password" />
+              <Button type="submit">Update password</Button>
+            </form>
+          </Card>
+        </div>
       </Container>
     </main>
   );

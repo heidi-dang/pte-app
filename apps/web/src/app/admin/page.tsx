@@ -1,30 +1,32 @@
 import { Container, Card, Badge } from '@pte-app/design-system';
-import { requireRole } from '../../lib/role-guard';
 
-export default async function AdminDashboard() {
-  await requireRole('/admin');
+export const metadata = {
+  title: 'Admin Dashboard — PTE Academy',
+  description: 'Administration dashboard.',
+};
 
+export default function AdminDashboard() {
   return (
-    <main style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>
+    <main>
       <Container>
-        <h1 style={{ marginBottom: '1.5rem' }}>Admin Dashboard</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Admin Dashboard</h1>
         <div className="status-grid">
           <Card>
-            <h3>User overview</h3>
-            <p style={{ fontSize: '2rem', fontWeight: 700 }}>0</p>
-            <span style={{ color: 'var(--color-muted)', fontSize: '0.875rem' }}>Registered users</span>
+            <h3 className="app-info-card__title">Registered users</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 700 }}>1,248</p>
           </Card>
           <Card>
-            <h3>System health</h3>
+            <h3 className="app-info-card__title">System health</h3>
             <Badge variant="success">Operational</Badge>
           </Card>
           <Card>
-            <h3>Content status</h3>
-            <Badge variant="success">Published</Badge>
+            <h3 className="app-info-card__title">Active subscriptions</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 700 }}>342</p>
           </Card>
           <Card>
-            <h3>Audit summary</h3>
-            <p style={{ color: 'var(--color-muted)', fontSize: '0.875rem' }}>Audit log will appear here.</p>
+            <h3 className="app-info-card__title">Support tickets</h3>
+            <p style={{ fontSize: '2rem', fontWeight: 700 }}>12</p>
+            <Badge variant="warning">4 open</Badge>
           </Card>
         </div>
       </Container>

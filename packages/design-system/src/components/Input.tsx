@@ -1,7 +1,15 @@
-import type { InputHTMLAttributes } from 'react';
+import type { InputHTMLAttributes, ReactNode } from 'react';
 
-export type InputProps = InputHTMLAttributes<HTMLInputElement>;
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  label?: ReactNode;
+}
 
-export function Input({ className = '', ...rest }: InputProps) {
-  return <input className={`ds-input ${className}`} {...rest} />;
+export function Input({ label, className = '', id, ...rest }: InputProps) {
+  const inputId = id || `input-${Math.random().toString(36).slice(2)}`;
+  return (
+    <div className="ds-input-wrapper">
+      {label && <label htmlFor={inputId} className="ds-label">{label}</label>}
+      <input id={inputId} className={`ds-input ${className}`} {...rest} />
+    </div>
+  );
 }

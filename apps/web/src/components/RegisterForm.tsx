@@ -21,7 +21,7 @@ export function RegisterForm() {
 
   return (
     <Card style={{ maxWidth: '24rem', margin: '0 auto' }}>
-      <h1 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Create account</h1>
+      <h1 style={{ marginBottom: '1rem', fontSize: '1.5rem', fontWeight: 700 }}>Create account</h1>
       {state && !state.success && state.error && <Alert>{state.error}</Alert>}
       <form action={formAction} className="ds-stack">
         <div>

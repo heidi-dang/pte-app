@@ -3,11 +3,11 @@ import './globals.css';
 import '@pte-app/design-system/styles';
 import { ToastProvider } from '@pte-app/design-system';
 import { getCurrentUser } from '../lib/auth';
-import { LayoutInner } from './layout-inner';
+import { AppShell } from '../components/AppShell';
 
 export const metadata: Metadata = {
-  title: 'PTE Academic Platform',
-  description: 'PTE Academic learning platform',
+  title: 'PTE Academy — Prepare with Confidence',
+  description: 'Adaptive PTE Academic practice, instant AI feedback, and progress tracking.',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -20,7 +20,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <ToastProvider>
-          <LayoutInner user={user}>{children}</LayoutInner>
+          <AppShell user={user}>{children}</AppShell>
         </ToastProvider>
       </body>
     </html>
