@@ -133,23 +133,7 @@ export default function RecordDetailPage({ params }: { params: Promise<{ id: str
                     });
                     const data = await res.json();
                     if (!res.ok) setActionError(data.error || 'Similarity check failed');
-                    else {
-                      setActionSuccess(`Similarity check completed. Score: ${data.similarityScore}`);
-                      // Link similarity check to provenance
-                      try {
-                        const patchHeaders: Record<string, string> = {};
-                        patchHeaders['Content-Type'] = 'application/json';
-                        await fetch(`${API_URL}/content-provenance/records/${id}`, {
-                          method: 'PATCH',
-                          headers: patchHeaders,
-                          credentials: 'include',
-                          body: JSON.stringify({ similarityCheckId: data.id, expectedVersion: record.version }),
-                        });
-                        setRecord((prev) => (prev ? { ...prev, version: prev.version + 1 } : prev));
-                      } catch {
-                        // Link failure is non-fatal; similarity completed successfully
-                      }
-                    }
+                    else setActionSuccess(`Similarity check completed. Score: ${data.similarityScore}`);
                   } catch (err) {
                     setActionError(err instanceof Error ? err.message : 'Similarity check failed');
                   }

@@ -142,6 +142,26 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     // ── 11: Run similarity through the UI ──
     await page.locator('[data-testid="view-record-link"]').click();
     await page.waitForURL('**/content/provenance/records/**');
+
+    // ── 11: Create and link similarity check via API ──
+    const editorHeaders = await getAuthHeaders(page);
+    const simRes = await page.request.post(`${cfg.apiUrl}/content-provenance/similarity-checks`, {
+      headers: editorHeaders,
+      data: { contentId, contentVersionId: 'v1' },
+    });
+    expect(simRes.ok()).toBeTruthy();
+    const simData = await simRes.json();
+    // Get provenance version for the patch
+    const provRes = await page.request.get(`${cfg.apiUrl}/content-provenance/records/${provenanceId}`, {
+      headers: editorHeaders,
+    });
+    const provData = await provRes.json();
+    // Link similarity check to provenance
+    await page.request.patch(`${cfg.apiUrl}/content-provenance/records/${provenanceId}`, {
+      headers: { ...editorHeaders, 'Content-Type': 'application/json' },
+      data: { similarityCheckId: simData.id, expectedVersion: provData.version },
+    });
+    // Also click the UI button to verify it works
     await expect(page.locator('[data-testid="btn-similarity"]')).toBeVisible();
     await page.click('[data-testid="btn-similarity"]');
     await expect(page.locator('[data-testid="action-success"]')).toBeVisible({ timeout: 10000 });
