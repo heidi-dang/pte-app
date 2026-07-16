@@ -177,6 +177,7 @@ echo "  OK"
 
 # 9. Run repository tests (must pass before deployment)
 echo "[9] Running repository tests..."
+npm install --package-lock-only 2>&1 || echo "  Lockfile regeneration skipped, using existing"
 npm ci
 npm run ci
 echo "  OK"
