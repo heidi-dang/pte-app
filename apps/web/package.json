@@ -10,7 +10,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "test:unit": "node --test 'src/**/*.unit.test.ts'",
-    "test:integration": "node --test 'src/**/*.integration.test.ts'"
+    "test:integration": "node --test 'src/**/*.integration.test.ts'",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@pte-app/design-system": "*",

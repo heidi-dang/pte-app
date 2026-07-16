@@ -10,3 +10,5 @@ coverage
 .local-runtime/
 .config/
 test-results/
+e2e-state.json
+playwright-report/

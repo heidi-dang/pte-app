@@ -8,6 +8,31 @@
     "typecheck": {},
     "test:unit": {},
     "test:integration": { "dependsOn": ["build"] },
+    "test:api": { "dependsOn": ["build"], "outputs": ["test-results/**"] },
+    "test:e2e": {
+      "dependsOn": ["build"],
+      "outputs": ["test-results/**", "playwright-report/**"],
+      "cache": false,
+      "env": [
+        "E2E_API_URL",
+        "E2E_WEB_URL",
+        "E2E_DATABASE_HOST",
+        "E2E_DATABASE_PORT",
+        "E2E_DATABASE_NAME",
+        "E2E_DATABASE_USER",
+        "E2E_DATABASE_PASSWORD",
+        "SESSION_COOKIE_NAME",
+        "API_HOST",
+        "API_PORT",
+        "WEB_HOST",
+        "WEB_PORT",
+        "POSTGRES_HOST",
+        "POSTGRES_PORT",
+        "POSTGRES_DATABASE",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD"
+      ]
+    },
     "start": { "dependsOn": ["build"], "persistent": true }
   }
 }
