@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
 import { createUserWithRole, setSessionCookie, getConfig } from './helpers';
 
 /* eslint-disable no-useless-assignment */
@@ -316,7 +317,7 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     const token = await createUserWithRole(email, pw, 'admin');
     const auth = { headers: { authorization: `Bearer ${token}` } };
     const testContentId = `idem-seq-${Date.now()}`;
-    const requestId = `req-seq-${Date.now()}`;
+    const requestId = randomUUID();
 
     const res1 = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
       ...auth,
@@ -343,14 +344,14 @@ test.describe('Phase G browser-driven provenance workflow', () => {
 
     const res1 = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
       ...auth,
-      data: { contentId: testContentId, contentVersionId: 'v1', requestId: `req-diff-1-${Date.now()}` },
+      data: { contentId: testContentId, contentVersionId: 'v1', requestId: randomUUID() },
     });
     expect(res1.status()).toBe(200);
     const body1 = await res1.json();
 
     const res2 = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
       ...auth,
-      data: { contentId: testContentId, contentVersionId: 'v1', requestId: `req-diff-2-${Date.now()}` },
+      data: { contentId: testContentId, contentVersionId: 'v1', requestId: randomUUID() },
     });
     expect(res2.status()).toBe(200);
     const body2 = await res2.json();
@@ -362,7 +363,7 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     const token = await createUserWithRole(email, pw, 'admin');
     const auth = { headers: { authorization: `Bearer ${token}` } };
     const testContentId = `idem-ver-${Date.now()}`;
-    const requestId = `req-ver-${Date.now()}`;
+    const requestId = randomUUID();
 
     const res1 = await request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
       ...auth,
