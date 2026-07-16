@@ -729,10 +729,10 @@ export async function contentProvenancePlugin(
     if (!requireRoles(auth, ['content_editor', 'admin', 'support'], reply)) return;
     const { contentId } = request.params as { contentId: string };
     const result = await db.pool.query(
-      `SELECT id, eligible, blockers, warnings, policy_version, created_at
+      `SELECT id, eligible, blockers, warnings, policy_version, evaluated_at as "createdAt"
        FROM content_publication_decisions
        WHERE content_id = $1
-       ORDER BY created_at DESC`,
+       ORDER BY evaluated_at DESC`,
       [contentId],
     );
     return reply.status(200).send(result.rows);
