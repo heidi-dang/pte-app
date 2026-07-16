@@ -219,11 +219,17 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     // Append corrected evidence ID to the provenance evidence input
     // We use the update endpoint directly for evidence attachment since the UI form is simple
     const editorHeaders = await getAuthHeaders(page);
+    // Get current version before patching
+    const current = await page.request.get(`${cfg.apiUrl}/content-provenance/records/${provenanceId}`, {
+      headers: editorHeaders,
+    });
+    const currentData = await current.json();
     const updateRes = await page.request.patch(`${cfg.apiUrl}/content-provenance/records/${provenanceId}`, {
       headers: editorHeaders,
       data: {
         evidenceIds: [evidenceId, correctedEvidenceId],
         attribution: 'E2E Attribution (corrected)',
+        expectedVersion: currentData.version ?? 1,
       },
     });
     expect(updateRes.ok()).toBeTruthy();
