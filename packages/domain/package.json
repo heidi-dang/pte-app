@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@pte-app/contracts": "*",
+    "@pte-app/schemas": "*",
     "@pte-app/types": "*"
   },
   "devDependencies": {
