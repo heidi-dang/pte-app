@@ -16,10 +16,9 @@ env:
 
 jobs:
   static-checks:
-    runs-on: [self-hosted, linux, x64, alienware-r8]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      TURBO_CACHE_DIR: /home/heidi/.turbo-cache
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,13 +38,12 @@ jobs:
       - run: npm run test:tooling
 
   unit-integration-api:
-    runs-on: [self-hosted, linux, x64, alienware-r8]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: build
     env:
       PG_REQUIRED: 'true'
       CI: 'true'
-      TURBO_CACHE_DIR: /home/heidi/.turbo-cache
     services:
       postgres:
         image: postgres:17-alpine
@@ -108,10 +106,9 @@ jobs:
       - run: npm run test:api
 
   build:
-    runs-on: [self-hosted, linux, x64, alienware-r8]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      TURBO_CACHE_DIR: /home/heidi/.turbo-cache
     steps:
       - uses: actions/checkout@v4
         with:
@@ -125,13 +122,12 @@ jobs:
       - run: npm run build
 
   e2e:
-    runs-on: [self-hosted, linux, x64, alienware-r8]
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     needs: build
     env:
       PG_REQUIRED: 'true'
       CI: 'true'
-      TURBO_CACHE_DIR: /home/heidi/.turbo-cache
     services:
       postgres:
         image: postgres:17-alpine
@@ -216,7 +212,7 @@ jobs:
           retention-days: 7
 
   final-workspace-check:
-    runs-on: [self-hosted, linux, x64, alienware-r8]
+    runs-on: ubuntu-latest
     needs: [static-checks, unit-integration-api, build, e2e]
     timeout-minutes: 10
     steps:
