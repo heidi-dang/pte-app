@@ -98,9 +98,10 @@ if [ -n "$INFRA_BACKUP_DIR" ]; then
   echo "  Infra files backed up to $INFRA_BACKUP_DIR"
 fi
 
-git checkout --detach "$release_commit"
+release_commit_full=$(git rev-parse "$release_commit")
+git checkout --detach "$release_commit_full"
 checked_out=$(git rev-parse HEAD)
-if [ "$checked_out" != "$release_commit" ]; then
+if [ "$checked_out" != "$release_commit_full" ]; then
   echo "ERROR: Checked out commit $checked_out does not match RELEASE_COMMIT $release_commit" >&2
   exit 1
 fi
