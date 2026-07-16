@@ -68,10 +68,35 @@ cleanup() {
   if [ "$deployment_succeeded" != true ]; then
     echo "  Restoring original ref ($original_ref)..."
     git checkout "$original_ref" 2>/dev/null || true
+    if [ -d "$INFRA_BACKUP_DIR" ]; then
+      for f in $INFRA_FILES; do
+        if [ -f "$INFRA_BACKUP_DIR/$f" ]; then
+          mkdir -p "$(dirname "$f")"
+          cp "$INFRA_BACKUP_DIR/$f" "$f"
+        fi
+      done
+      rm -rf "$INFRA_BACKUP_DIR"
+    fi
   fi
 }
 
 trap cleanup EXIT
+
+INFRA_FILES="compose.production.yml infrastructure/caddy/Caddyfile secrets/origin.pem secrets/origin-key.pem"
+INFRA_BACKUP_DIR=""
+for f in $INFRA_FILES; do
+  if [ -f "$f" ]; then
+    if [ -z "$INFRA_BACKUP_DIR" ]; then
+      INFRA_BACKUP_DIR="/tmp/pte-infra-$$"
+      rm -rf "$INFRA_BACKUP_DIR"
+    fi
+    mkdir -p "$(dirname "$INFRA_BACKUP_DIR/$f")"
+    cp "$f" "$INFRA_BACKUP_DIR/$f"
+  fi
+done
+if [ -n "$INFRA_BACKUP_DIR" ]; then
+  echo "  Infra files backed up to $INFRA_BACKUP_DIR"
+fi
 
 git checkout --detach "$release_commit"
 checked_out=$(git rev-parse HEAD)
@@ -80,6 +105,17 @@ if [ "$checked_out" != "$release_commit" ]; then
   exit 1
 fi
 echo "  Checked out: $checked_out"
+
+if [ -d "$INFRA_BACKUP_DIR" ]; then
+  for f in $INFRA_FILES; do
+    if [ -f "$INFRA_BACKUP_DIR/$f" ]; then
+      mkdir -p "$(dirname "$f")"
+      cp "$INFRA_BACKUP_DIR/$f" "$f"
+    fi
+  done
+  rm -rf "$INFRA_BACKUP_DIR"
+  echo "  Infra files restored"
+fi
 
 # 7. Record previous state for rollback
 echo "[7] Recording previous deployment state..."
@@ -175,20 +211,23 @@ if [ "$validation_failed" = true ]; then
 fi
 echo "  OK"
 
-# 9. Run repository tests (must pass before deployment)
-echo "[9] Running repository tests..."
+# 9. Install dependencies and build
+echo "[9] Installing dependencies..."
 rm -rf node_modules package-lock.json
 npm install
-npm run build 2>&1 || true
 echo "  OK"
 
-# 10. Validate Compose configuration
-echo "[10] Validating Compose configuration..."
+echo "[10] Building..."
+npm run build
+echo "  OK"
+
+# 11. Validate Compose configuration
+echo "[11] Validating Compose configuration..."
 docker compose -f compose.production.yml config > /dev/null
 echo "  OK"
 
-# 11. Validate Caddy configuration with full env vars
-echo "[11] Validating Caddy configuration..."
+# 12. Validate Caddy configuration with full env vars
+echo "[12] Validating Caddy configuration..."
 docker run --rm \
   -e ACME_EMAIL="$ACME_EMAIL" \
   -e WEB_DOMAIN="$WEB_DOMAIN" \
@@ -216,13 +255,13 @@ docker run --rm \
   caddy adapt --config /etc/caddy/Caddyfile 2>&1 > /dev/null
 echo "  OK"
 
-# 12. Build production images
-echo "[12] Building production images..."
+# 13. Build production images
+echo "[13] Building production images..."
 docker compose -f compose.production.yml build --pull
 echo "  OK"
 
-# 13. Create pre-deployment backup
-echo "[13] Creating pre-deployment backup..."
+# 14. Create pre-deployment backup
+echo "[14] Creating pre-deployment backup..."
 backup_timestamp=$(date +%Y%m%d-%H%M%S)
 backup_dir="${BACKUP_ROOT:-/tmp/pte-backups}/${backup_timestamp}"
 mkdir -p "$backup_dir"
@@ -268,13 +307,13 @@ else
   echo "FIRST_DEPLOYMENT=true" > "${backup_dir}/first-deployment.txt"
 fi
 
-# 14. Start or update containers
-echo "[14] Starting containers..."
+# 15. Start or update containers
+echo "[15] Starting containers..."
 docker compose -f compose.production.yml up -d --remove-orphans
 echo "  OK"
 
-# 15. Wait for health checks with visible progress
-echo "[15] Waiting for health checks..."
+# 16. Wait for health checks with visible progress
+echo "[16] Waiting for health checks..."
 service_health_ok=true
 for service in postgres redis api scoring web worker caddy; do
   container_name="pte-prod-${service}"
@@ -303,8 +342,8 @@ if [ "$service_health_ok" = false ]; then
   exit 1
 fi
 
-# 16. Run internal health checks
-echo "[16] Running internal health checks..."
+# 17. Run internal health checks
+echo "[17] Running internal health checks..."
 health_ok=true
 for endpoint in "http://api:4000/health/live" "http://api:4000/health/ready" "http://scoring:5000/health/live" "http://scoring:5000/health/ready"; do
   if docker compose -f compose.production.yml exec -T api node /app/healthcheck.mjs "$endpoint" 5000 200 3 1000; then
@@ -330,8 +369,8 @@ if [ "$health_ok" = false ]; then
   exit 1
 fi
 
-# 17. Run public HTTPS verification
-echo "[17] Running public HTTPS verification..."
+# 18. Run public HTTPS verification
+echo "[18] Running public HTTPS verification..."
 https_ok=true
 for domain in "$WEB_DOMAIN" "$API_DOMAIN" "$SCORING_DOMAIN"; do
   if curl --fail --silent --show-error --location --max-time 10 "https://$domain/" > /dev/null 2>&1; then
@@ -349,8 +388,8 @@ if [ "$https_ok" = false ]; then
   exit 1
 fi
 
-# 18. Verify TLS certificate
-echo "[18] Verifying TLS certificate..."
+# 19. Verify TLS certificate
+echo "[19] Verifying TLS certificate..."
 tls_ok=true
 for domain in "$WEB_DOMAIN" "$API_DOMAIN" "$SCORING_DOMAIN"; do
   if echo | timeout 10 openssl s_client -connect "${domain}:443" -servername "$domain" 2>/dev/null | openssl x509 -noout -subject -dates 2>/dev/null; then
@@ -368,8 +407,8 @@ if [ "$tls_ok" = false ]; then
   exit 1
 fi
 
-# 19. Record deployment metadata
-echo "[19] Recording deployment metadata..."
+# 20. Record deployment metadata
+echo "[20] Recording deployment metadata..."
 mkdir -p "$(dirname "$DEPLOY_LOG")"
 {
   echo "---"
