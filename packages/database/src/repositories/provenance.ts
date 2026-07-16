@@ -202,6 +202,10 @@ export async function updateProvenance(
     fields.push(`evidence_ids = $${idx++}::uuid[]`);
     values.push(input.evidenceIds);
   }
+  if (input.similarityCheckId !== undefined) {
+    fields.push(`similarity_check_id = $${idx++}`);
+    values.push(input.similarityCheckId);
+  }
 
   if (fields.length === 0) return current;
   fields.push(`version = version + 1, updated_at = NOW()`);

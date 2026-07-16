@@ -255,6 +255,7 @@ export const UpdateProvenanceBodySchema = z.object({
   ownershipType: OwnershipTypeSchema.optional(),
   attribution: z.string().max(5000).optional(),
   evidenceIds: z.array(z.string().uuid()).optional(),
+  similarityCheckId: z.string().uuid().nullable().optional(),
   expectedVersion: z.number().int().positive(),
 });
 
