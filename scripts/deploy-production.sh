@@ -69,11 +69,10 @@ cleanup() {
     echo "  Restoring original ref ($original_ref)..."
     git checkout "$original_ref" 2>/dev/null || true
     if [ -d "$INFRA_BACKUP_DIR" ]; then
-      for f in $INFRA_FILES; do
-        if [ -f "$INFRA_BACKUP_DIR/$f" ]; then
-          mkdir -p "$(dirname "$f")"
-          cp "$INFRA_BACKUP_DIR/$f" "$f"
-        fi
+      find "$INFRA_BACKUP_DIR" -type f | while read -r file; do
+        target="${file#$INFRA_BACKUP_DIR/}"
+        mkdir -p "$(dirname "$target")"
+        cp "$file" "$target"
       done
       rm -rf "$INFRA_BACKUP_DIR"
     fi
@@ -82,10 +81,15 @@ cleanup() {
 
 trap cleanup EXIT
 
-INFRA_FILES="Dockerfile compose.production.yml infrastructure/caddy/Caddyfile secrets/origin.pem secrets/origin-key.pem"
+INFRA_FILES="Dockerfile compose.production.yml infrastructure/ secrets/"
 INFRA_BACKUP_DIR=""
 for f in $INFRA_FILES; do
-  if [ -f "$f" ]; then
+  if [ -d "$f" ]; then
+    find "$f" -type f | while read -r file; do
+      mkdir -p "$INFRA_BACKUP_DIR/$(dirname "$file")"
+      cp "$file" "$INFRA_BACKUP_DIR/$file"
+    done
+  elif [ -f "$f" ]; then
     if [ -z "$INFRA_BACKUP_DIR" ]; then
       INFRA_BACKUP_DIR="/tmp/pte-infra-$$"
       rm -rf "$INFRA_BACKUP_DIR"
@@ -108,11 +112,10 @@ fi
 echo "  Checked out: $checked_out"
 
 if [ -d "$INFRA_BACKUP_DIR" ]; then
-  for f in $INFRA_FILES; do
-    if [ -f "$INFRA_BACKUP_DIR/$f" ]; then
-      mkdir -p "$(dirname "$f")"
-      cp "$INFRA_BACKUP_DIR/$f" "$f"
-    fi
+  find "$INFRA_BACKUP_DIR" -type f | while read -r file; do
+    target="${file#$INFRA_BACKUP_DIR/}"
+    mkdir -p "$(dirname "$target")"
+    cp "$file" "$target"
   done
   rm -rf "$INFRA_BACKUP_DIR"
   echo "  Infra files restored"
