@@ -10,10 +10,9 @@ async function apiRequest(context: any, path: string, options: Record<string, an
   const fetchOptions: Record<string, any> = { ...rest };
   if (data !== undefined) {
     fetchOptions.data = data;
-    fetchOptions.headers = { ...headers, 'content-type': 'application/json' };
+    fetchOptions.headers = { ...headers, 'content-type': data === '' ? 'text/plain' : 'application/json' };
   } else {
-    // Avoid Playwright's default content-type: application/json for bodyless requests
-    fetchOptions.headers = { ...headers, 'content-type': 'text/plain' };
+    fetchOptions.headers = { ...headers };
   }
   return context.request.fetch(fullUrl, fetchOptions);
 }
@@ -41,7 +40,7 @@ async function loginViaApi(context: any, email: string, password: string): Promi
 }
 
 async function logoutViaApi(context: any): Promise<void> {
-  await apiRequest(context, '/auth/logout', { method: 'POST' });
+  await apiRequest(context, '/auth/logout', { method: 'POST', data: '' });
   await context.clearCookies();
 }
 
