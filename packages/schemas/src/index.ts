@@ -59,5 +59,6 @@ export {
   StartSessionRequestSchema,
   AutosaveRequestSchema,
   SubmitRequestSchema,
+  PlaybackRecordRequestSchema,
   ValidTransitionSchema,
 } from './phase-i.js';

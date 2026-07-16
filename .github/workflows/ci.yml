@@ -103,6 +103,7 @@ jobs:
       - run: npm run test:unit
       - run: npm run test:integration
       - run: npm run test:api
+      - run: npm run test:phase-i
 
   build:
     runs-on: ubuntu-latest

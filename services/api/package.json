@@ -11,13 +11,15 @@
     "typecheck": "tsc --noEmit",
     "test:unit": "tsx --test 'src/**/*.unit.test.ts'",
     "test:integration": "tsx --test 'src/**/*.integration.test.ts'",
-    "test:api": "tsx --test 'src/phase-h/phase-h.api.test.ts'"
+    "test:api": "tsx --test 'src/phase-h/phase-h.api.test.ts'",
+    "test:phase-i": "tsx --test 'src/phase-i/phase-i.api.test.ts'"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.0",
     "@fastify/cors": "^11.0.0",
     "@pte-app/database": "*",
     "@pte-app/contracts": "*",
+    "@pte-app/schemas": "*",
     "@pte-app/types": "*",
     "bcrypt": "^5.1.1",
     "fastify": "^5.3.0"

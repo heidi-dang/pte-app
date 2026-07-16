@@ -85,7 +85,7 @@ export const TimerPolicySchema = z.object({
 });
 
 export const PlaybackPolicySchema = z.object({
-  maxPlays: z.number().int().min(0),
+  maxPlays: z.number().int().min(1),
   consumeOnFirstPlay: z.boolean(),
   reconnectResetsConsumed: z.boolean(),
   policyId: z.string().min(1),
@@ -134,7 +134,14 @@ export const RendererContractSchema = z.object({
 export const StartSessionRequestSchema = z.object({
   lessonId: z.string().min(1),
   mode: QuestionAttemptModeSchema,
-  questionIds: z.array(z.string().min(1)),
+  questionIds: z.array(z.string().min(1)).min(1),
+  questionTaskTypes: z.record(z.string().min(1)).optional(),
+});
+
+export const PlaybackRecordRequestSchema = z.object({
+  attemptId: z.string().min(1),
+  mediaId: z.string().min(1),
+  maxPlays: z.number().int().min(1).default(1),
 });
 
 export const AutosaveRequestSchema = z.object({
