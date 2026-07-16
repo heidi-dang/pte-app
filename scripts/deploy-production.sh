@@ -214,8 +214,8 @@ echo "  OK"
 
 # 9. Install dependencies and build
 echo "[9] Installing dependencies..."
-rm -rf node_modules package-lock.json
-npm install
+rm -rf node_modules
+npm ci || npm install
 echo "  OK"
 
 echo "[10] Building..."
