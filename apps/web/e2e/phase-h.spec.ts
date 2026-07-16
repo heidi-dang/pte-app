@@ -264,7 +264,6 @@ test.describe('Phase H Critical Journey', () => {
     } else {
       await expect(notesPanel).toContainText('Teacher note content');
     }
-    await expect(notesPanel).toContainText('Teacher note content');
 
     await logoutViaApi(context);
 
