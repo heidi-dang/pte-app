@@ -3,12 +3,6 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { startTestHarness, type TestHarness } from '../phase-h/test-harness.js';
 import { buildTestFixtures, type PhaseITestFixtures } from './test-fixtures.js';
-import { clearRegistry, registerRenderer } from './renderer-registry.js';
-import {
-  createDemoSingleAnswerRenderer,
-  createDemoTextResponseRenderer,
-  createDemoAudioPolicyRenderer,
-} from './demo-renderer.js';
 
 const runId = `api-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -61,7 +55,6 @@ describe('Phase I API Integration', () => {
   });
 
   after(async () => {
-    clearRegistry();
     await harness?.stop();
   });
 
@@ -776,36 +769,7 @@ describe('Phase I API Integration', () => {
     });
   });
 
-  describe('Renderer Fallback Enforcement', () => {
-    it('rejects response when version snapshot has no registered renderer', async () => {
-      const { data: start } = await api('/api/v1/attempt/session/start', {
-        method: 'POST',
-        token: studentToken,
-        body: JSON.stringify({
-          lessonId: fixtures.lessonId,
-          mode: 'learning',
-          questionIds: [qId0],
-          questionTaskTypes: { [qId0]: 'pte:demo:single-answer' },
-        }),
-      });
-      const attemptId = start.attempts[0].id;
-
-      // Clear registry to simulate missing renderer, then re-register after test
-      clearRegistry();
-      try {
-        const { status, data } = await api('/api/v1/attempt/autosave', {
-          method: 'POST',
-          token: studentToken,
-          body: JSON.stringify({ attemptId, response: { selectedIndex: 2 } }),
-        });
-        assert.equal(status, 400, JSON.stringify(data));
-        assert.ok(data.error.includes('No renderer registered'), data.error);
-      } finally {
-        // Re-register so subsequent tests still work
-        registerRenderer(createDemoSingleAnswerRenderer());
-        registerRenderer(createDemoTextResponseRenderer());
-        registerRenderer(createDemoAudioPolicyRenderer());
-      }
-    });
-  });
+  // Renderer Fallback Enforcement removed — renderer registry lives in the
+  // API process, not the test process, so clearRegistry() is a no-op across
+  // the process boundary. A proper test would require a test-only API endpoint.
 });
