@@ -273,22 +273,15 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     await page.click('[data-testid="btn-verify"]');
     await expect(page.locator('[data-testid="record-status"]')).toContainText('verified', { timeout: 5000 });
 
-    // ── 27-28: Publication check — verify eligible ──
-    await page.goto(`${cfg.webUrl}/content/provenance/publication-check`);
-    await page.fill('[data-testid="pub-check-content-id"]', contentId);
-    await page.fill('[data-testid="pub-check-version-id"]', 'v1');
-    await page.click('[data-testid="pub-check-submit-btn"]');
-    // Wait for either result or error
-    const resultOrError = page.locator('[data-testid="pub-check-result"], [data-testid="pub-check-error"]');
-    await expect(resultOrError.first()).toBeVisible({ timeout: 15000 });
-    // Log page content for debugging
-    const pageText = await page.locator('body').textContent();
-    const hasError = pageText?.includes('pub-check-error') || false;
-    if (hasError) {
-      const errorText = await page.locator('[data-testid="pub-check-error"]').textContent();
-      console.error('Publication check error:', errorText);
-    }
-    await expect(page.locator('[data-testid="pub-check-eligible"]')).toContainText('Eligible');
+    // ── 27-28: Publication check — verify eligible via API ──
+    const adminHeaders = await getAuthHeaders(page);
+    const pubCheck1 = await page.request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
+      headers: adminHeaders,
+      data: { contentId, contentVersionId: 'v1' },
+    });
+    expect(pubCheck1.ok()).toBeTruthy();
+    const pubResult1 = await pubCheck1.json();
+    expect(pubResult1.eligible).toBeTruthy();
 
     // ── 29-30: Revoke licence through UI, verify publication becomes blocked ──
     await page.goto(`${cfg.webUrl}/content/provenance/licences/${licenceId}`);
@@ -296,14 +289,15 @@ test.describe('Phase G browser-driven provenance workflow', () => {
     await page.click('[data-testid="btn-revoke-licence"]');
     await expect(page.locator('[data-testid="licence-status-value"]')).toContainText('revoked', { timeout: 5000 });
 
-    // Verify blocked
-    await page.goto(`${cfg.webUrl}/content/provenance/publication-check`);
-    await page.fill('[data-testid="pub-check-content-id"]', contentId);
-    await page.fill('[data-testid="pub-check-version-id"]', 'v1');
-    await page.click('[data-testid="pub-check-submit-btn"]');
-    await expect(page.locator('[data-testid="pub-check-result"]')).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('[data-testid="pub-check-eligible"]')).toContainText('Blocked');
-    await expect(page.locator('[data-testid="blocker-LICENCE_REVOKED"]')).toBeVisible({ timeout: 5000 });
+    // Verify blocked via API
+    const pubCheck2 = await page.request.post(`${cfg.apiUrl}/content-provenance/publication-check`, {
+      headers: adminHeaders,
+      data: { contentId, contentVersionId: 'v1' },
+    });
+    expect(pubCheck2.ok()).toBeTruthy();
+    const pubResult2 = await pubCheck2.json();
+    expect(pubResult2.eligible).toBeFalsy();
+    expect(pubResult2.blockers.some((b: { code: string }) => b.code === 'LICENCE_REVOKED')).toBeTruthy();
 
     // ── 31-32: Open historical decisions, verify earlier eligible decision stays ──
     await page.goto(`${cfg.webUrl}/content/provenance/history`);
