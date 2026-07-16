@@ -19,6 +19,11 @@ export type SectionId = Brand<string, 'SectionId'>;
 export type TaskId = Brand<string, 'TaskId'>;
 export type ScoringProfileId = Brand<string, 'ScoringProfileId'>;
 export type LanguageCode = Brand<string, 'LanguageCode'>;
+export type QuestionAttemptId = Brand<string, 'QuestionAttemptId'>;
+export type QuestionSessionId = Brand<string, 'QuestionSessionId'>;
+export type QuestionVersionSnapshotId = Brand<string, 'QuestionVersionSnapshotId'>;
+export type PlaybackConsumptionId = Brand<string, 'PlaybackConsumptionId'>;
+export type IdempotencyKey = Brand<string, 'IdempotencyKey'>;
 
 export type ISO8601DateTime = Brand<string, 'ISO8601DateTime'>;
 export type ISO8601Date = Brand<string, 'ISO8601Date'>;

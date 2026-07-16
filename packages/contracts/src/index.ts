@@ -84,3 +84,4 @@ export {
 
 export * from './content-provenance/index.js';
 export * from './phase-h/index.js';
+export * from './phase-i/index.js';
