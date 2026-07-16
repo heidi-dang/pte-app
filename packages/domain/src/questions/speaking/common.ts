@@ -1,6 +1,4 @@
 import type { SubmissionValidationResult } from '@pte-app/contracts';
-import type { RecordingState } from '@pte-app/contracts';
-import { isTerminalRecordingState } from './recording-state-machine.js';
 
 export const SPEAKING_MANIFEST_BASE = {
   contractVersion: '1.0.0',
@@ -40,7 +38,7 @@ export interface ValidatedRecordingContext {
 export function validateRecordingSubmission(
   recording: ValidatedRecordingContext | null | undefined,
   expectedUserId: string,
-  allowsEmptySubmission: boolean,
+  _allowsEmptySubmission: boolean,
 ): SubmissionValidationResult {
   if (!recording) {
     return { valid: true };
