@@ -19,7 +19,7 @@ async function logout(page: Page): Promise<string> {
   expect(oldToken).toBeTruthy();
 
   await page.request.post(`${cfg.apiUrl}/auth/logout`, {
-    headers: { authorization: `Bearer ${oldToken}` },
+    headers: { authorization: `Bearer ${oldToken}`, 'content-type': 'text/plain' },
   });
 
   const cookiesAfter = await page.context().cookies();

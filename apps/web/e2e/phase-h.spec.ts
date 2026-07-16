@@ -12,7 +12,8 @@ async function apiRequest(context: any, path: string, options: Record<string, an
     fetchOptions.data = data;
     fetchOptions.headers = { ...headers, 'content-type': 'application/json' };
   } else {
-    fetchOptions.headers = { ...headers };
+    // Avoid Playwright's default content-type: application/json for bodyless requests
+    fetchOptions.headers = { ...headers, 'content-type': 'text/plain' };
   }
   return context.request.fetch(fullUrl, fetchOptions);
 }
