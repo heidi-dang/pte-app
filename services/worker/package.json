@@ -10,7 +10,7 @@
     "healthcheck": "node dist/check.js",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
-    "test:unit": "node --test --test-force-exit --import tsx/esm 'src/**/*.unit.test.ts'",
+    "test:unit": "tsx --test --test-force-exit 'src/**/*.unit.test.ts'",
     "test:integration": "npm run build && tsx --test 'src/**/*.integration.test.ts'"
   },
   "devDependencies": {

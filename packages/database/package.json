@@ -23,8 +23,8 @@
     "build": "tsc && mkdir -p dist/migrations && cp src/migrations/*.sql dist/migrations/",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts",
-    "test:unit": "node --test --test-force-exit --import tsx/esm 'src/**/*.unit.test.ts'",
-    "test:integration": "node --test --test-force-exit --import tsx/esm 'src/**/*.integration.test.ts'"
+    "test:unit": "tsx --test --test-force-exit 'src/**/*.unit.test.ts'",
+    "test:integration": "tsx --test --test-force-exit 'src/**/*.integration.test.ts'"
   },
   "dependencies": {
     "@pte-app/contracts": "*",
