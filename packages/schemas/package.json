@@ -15,7 +15,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts",
-    "test:unit": "node --test --import tsx/esm 'src/**/*.unit.test.ts'"
+    "test:unit": "node --test --test-force-exit --import tsx/esm 'src/**/*.unit.test.ts'"
   },
   "dependencies": {
     "@pte-app/contracts": "*",
