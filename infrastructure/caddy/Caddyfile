@@ -1,0 +1,15 @@
+{
+    admin off
+}
+
+{$WEB_DOMAIN} {
+    tls internal
+    encode zstd gzip
+    reverse_proxy web:3000
+}
+
+{$API_DOMAIN} {
+    tls internal
+    encode zstd gzip
+    reverse_proxy api:4000
+}
