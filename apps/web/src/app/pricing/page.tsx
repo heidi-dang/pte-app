@@ -84,8 +84,24 @@ export default function PricingPage() {
           </p>
 
           {/* Billing cycle toggle */}
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem', marginTop: '2rem' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: !isAnnual ? 600 : 400, color: !isAnnual ? '#10b981' : '#94a3b8' }}>Monthly</span>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '0.75rem',
+              marginTop: '2rem',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '0.875rem',
+                fontWeight: !isAnnual ? 600 : 400,
+                color: !isAnnual ? '#10b981' : '#94a3b8',
+              }}
+            >
+              Monthly
+            </span>
             <button
               onClick={() => setIsAnnual((prev) => !prev)}
               style={{
@@ -112,8 +128,26 @@ export default function PricingPage() {
                 }}
               />
             </button>
-            <span style={{ fontSize: '0.875rem', fontWeight: isAnnual ? 600 : 400, color: isAnnual ? '#10b981' : '#94a3b8' }}>
-              Annual <span style={{ fontSize: '0.7rem', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '0.15rem 0.4rem', borderRadius: '9999px', marginLeft: '0.25rem' }}>Save 20%</span>
+            <span
+              style={{
+                fontSize: '0.875rem',
+                fontWeight: isAnnual ? 600 : 400,
+                color: isAnnual ? '#10b981' : '#94a3b8',
+              }}
+            >
+              Annual{' '}
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  color: '#10b981',
+                  padding: '0.15rem 0.4rem',
+                  borderRadius: '9999px',
+                  marginLeft: '0.25rem',
+                }}
+              >
+                Save 20%
+              </span>
             </span>
           </div>
         </div>
@@ -127,185 +161,185 @@ export default function PricingPage() {
             alignItems: 'start',
           }}
         >
-              {PRICING_PLANS.map((plan) => {
-                const tier = TIER_FEATURES[plan.id];
-                const price = isAnnual ? (ANNUAL_PRICES[plan.id] ?? plan.price ?? 0) : (plan.price ?? 0);
-                const isPopular = plan.popular;
+          {PRICING_PLANS.map((plan) => {
+            const tier = TIER_FEATURES[plan.id];
+            const price = isAnnual ? (ANNUAL_PRICES[plan.id] ?? plan.price ?? 0) : (plan.price ?? 0);
+            const isPopular = plan.popular;
 
-                return (
-                  <Card
-                    key={plan.id}
+            return (
+              <Card
+                key={plan.id}
+                style={{
+                  background: isPopular
+                    ? 'linear-gradient(145deg, #0f1f1a 0%, #1a2f28 100%)'
+                    : 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)',
+                  border: isPopular ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '16px',
+                  padding: '2rem',
+                  position: 'relative',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  boxShadow: isPopular
+                    ? '0 25px 50px -12px rgba(16, 185, 129, 0.25)'
+                    : '0 10px 40px -10px rgba(0, 0, 0, 0.5)',
+                }}
+              >
+                {isPopular && (
+                  <div
                     style={{
-                      background: isPopular
-                        ? 'linear-gradient(145deg, #0f1f1a 0%, #1a2f28 100%)'
-                        : 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)',
-                      border: isPopular ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.06)',
-                      borderRadius: '16px',
-                      padding: '2rem',
-                      position: 'relative',
-                      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                      boxShadow: isPopular
-                        ? '0 25px 50px -12px rgba(16, 185, 129, 0.25)'
-                        : '0 10px 40px -10px rgba(0, 0, 0, 0.5)',
+                      position: 'absolute',
+                      top: '-12px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      color: '#fff',
+                      padding: '0.4rem 1.2rem',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
                     }}
                   >
-                    {isPopular && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '-12px',
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          background: 'linear-gradient(135deg, #10b981, #059669)',
-                          color: '#fff',
-                          padding: '0.4rem 1.2rem',
-                          borderRadius: '9999px',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
-                        }}
-                      >
-                        Most Popular
-                      </div>
-                    )}
+                    Most Popular
+                  </div>
+                )}
 
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      <h3
-                        style={{
-                          fontSize: '1.25rem',
-                          fontWeight: 700,
-                          color: '#f8fafc',
-                          marginBottom: '0.5rem',
-                        }}
-                      >
-                        {tier?.name || plan.name}
-                      </h3>
-                      <p
-                        style={{
-                          fontSize: '0.875rem',
-                          color: '#94a3b8',
-                          lineHeight: 1.5,
-                        }}
-                      >
-                        {plan.description}
-                      </p>
-                    </div>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h3
+                    style={{
+                      fontSize: '1.25rem',
+                      fontWeight: 700,
+                      color: '#f8fafc',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    {tier?.name || plan.name}
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: '0.875rem',
+                      color: '#94a3b8',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {plan.description}
+                  </p>
+                </div>
 
-                    <div
+                <div
+                  style={{
+                    marginBottom: '1.5rem',
+                    padding: '1.5rem 0',
+                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
+                    <span
                       style={{
-                        marginBottom: '1.5rem',
-                        padding: '1.5rem 0',
-                        borderTop: '1px solid rgba(255,255,255,0.06)',
-                        borderBottom: '1px solid rgba(255,255,255,0.06)',
+                        fontSize: '3rem',
+                        fontWeight: 800,
+                        color: '#f8fafc',
+                        lineHeight: 1,
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-                        <span
-                          style={{
-                            fontSize: '3rem',
-                            fontWeight: 800,
-                            color: '#f8fafc',
-                            lineHeight: 1,
-                          }}
-                        >
-                          ${price}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: '1rem',
-                            color: '#64748b',
-                            fontWeight: 500,
-                          }}
-                        >
-                          /{isAnnual ? 'mo' : 'forever'}
-                        </span>
-                      </div>
-                      {isAnnual && price != null && price > 0 && (
-                        <p
-                          style={{
-                            fontSize: '0.8rem',
-                            color: '#10b981',
-                            marginTop: '0.5rem',
-                            fontWeight: 600,
-                          }}
-                        >
-                          Billed ${price * 12}/year — Save ${plan.price * 12 - price * 12}
-                        </p>
-                      )}
-                    </div>
-
-                    <ul
+                      ${price}
+                    </span>
+                    <span
                       style={{
-                        listStyle: 'none',
-                        padding: 0,
-                        margin: 0,
-                        marginBottom: '1.5rem',
-                        flex: 1,
-                      }}
-                    >
-                      {tier?.items.map((feature, i) => (
-                        <li
-                          key={i}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.75rem',
-                            padding: '0.6rem 0',
-                            fontSize: '0.9rem',
-                            color: '#e2e8f0',
-                            borderBottom: i < tier.items.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: '20px',
-                              height: '20px',
-                              borderRadius: '50%',
-                              background: 'rgba(16, 185, 129, 0.15)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                              <path
-                                d="M10 3L4.5 8.5L2 6"
-                                stroke="#10b981"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </span>
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-
-                    <Button
-                      variant={isPopular ? 'primary' : 'secondary'}
-                      style={{
-                        width: '100%',
-                        padding: '1rem',
                         fontSize: '1rem',
-                        fontWeight: 600,
-                        borderRadius: '12px',
-                        background: isPopular ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255,255,255,0.05)',
-                        border: isPopular ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
+                        color: '#64748b',
+                        fontWeight: 500,
                       }}
                     >
-                      {plan.cta}
-                    </Button>
-                  </Card>
-                );
-              })}
-            </div>
+                      /{isAnnual ? 'mo' : 'forever'}
+                    </span>
+                  </div>
+                  {isAnnual && price != null && price > 0 && (
+                    <p
+                      style={{
+                        fontSize: '0.8rem',
+                        color: '#10b981',
+                        marginTop: '0.5rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Billed ${price * 12}/year — Save ${plan.price * 12 - price * 12}
+                    </p>
+                  )}
+                </div>
+
+                <ul
+                  style={{
+                    listStyle: 'none',
+                    padding: 0,
+                    margin: 0,
+                    marginBottom: '1.5rem',
+                    flex: 1,
+                  }}
+                >
+                  {tier?.items.map((feature, i) => (
+                    <li
+                      key={i}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '0.6rem 0',
+                        fontSize: '0.9rem',
+                        color: '#e2e8f0',
+                        borderBottom: i < tier.items.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          background: 'rgba(16, 185, 129, 0.15)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                          <path
+                            d="M10 3L4.5 8.5L2 6"
+                            stroke="#10b981"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </span>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                <Button
+                  variant={isPopular ? 'primary' : 'secondary'}
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    borderRadius: '12px',
+                    background: isPopular ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255,255,255,0.05)',
+                    border: isPopular ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {plan.cta}
+                </Button>
+              </Card>
+            );
+          })}
+        </div>
 
         <div
           style={{
