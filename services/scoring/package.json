@@ -9,8 +9,8 @@
     "start": "tsx src/main.ts",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
-    "test:unit": "tsx --test 'src/**/*.unit.test.ts'",
-    "test:integration": "tsx --test 'src/**/*.integration.test.ts'"
+    "test:unit": "node --test 'dist/**/*.unit.test.js'",
+    "test:integration": "node --test 'dist/**/*.integration.test.js'"
   },
   "dependencies": {
     "@fastify/cors": "^11.0.0",

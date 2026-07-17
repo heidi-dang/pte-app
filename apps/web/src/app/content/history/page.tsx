@@ -15,7 +15,9 @@ export default function VersionHistoryPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Version history</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Version history
+        </h1>
         <Card>
           <div className="ds-table-wrapper">
             <table className="ds-table">

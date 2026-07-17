@@ -127,7 +127,7 @@ export async function loginAccount(formData: FormData): Promise<AuthResult> {
   // Frontend-only mock fallback
   const user = findMockUserByCredentials(email, password);
   if (!user) {
-    return { success: false, error: 'Demo credentials are invalid. Try student@pte.app / Password123' };
+    return { success: false, error: 'Invalid email or password' };
   }
   const token = createMockToken();
   const cookieStore = await cookies();

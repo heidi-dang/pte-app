@@ -14,7 +14,9 @@ export default function SessionsPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Sessions</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Sessions
+        </h1>
         <Card>
           <div className="ds-table-wrapper">
             <table className="ds-table">
@@ -35,7 +37,11 @@ export default function SessionsPage() {
                       {session.current ? <Badge variant="success">Current</Badge> : <Badge>Inactive</Badge>}
                     </td>
                     <td className="ds-table__td">
-                      {!session.current && <Button size="sm" variant="danger">Revoke</Button>}
+                      {!session.current && (
+                        <Button size="sm" variant="danger">
+                          Revoke
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}

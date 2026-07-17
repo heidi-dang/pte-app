@@ -33,17 +33,27 @@ export default function SupportTicketsPage() {
                     <td className="ds-table__td">{ticket.id}</td>
                     <td className="ds-table__td">{ticket.subject}</td>
                     <td className="ds-table__td">
-                      <Badge variant={ticket.priority === 'high' ? 'danger' : ticket.priority === 'medium' ? 'warning' : 'default'}>
+                      <Badge
+                        variant={
+                          ticket.priority === 'high' ? 'danger' : ticket.priority === 'medium' ? 'warning' : 'default'
+                        }
+                      >
                         {ticket.priority}
                       </Badge>
                     </td>
                     <td className="ds-table__td">
-                      <Badge variant={ticket.status === 'resolved' ? 'success' : ticket.status === 'open' ? 'warning' : 'default'}>
+                      <Badge
+                        variant={
+                          ticket.status === 'resolved' ? 'success' : ticket.status === 'open' ? 'warning' : 'default'
+                        }
+                      >
                         {ticket.status}
                       </Badge>
                     </td>
                     <td className="ds-table__td">{ticket.assignee}</td>
-                    <td className="ds-table__td"><Button size="sm">View</Button></td>
+                    <td className="ds-table__td">
+                      <Button size="sm">View</Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

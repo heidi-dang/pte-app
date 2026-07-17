@@ -15,7 +15,9 @@ export default function DevicesPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Devices</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Devices
+        </h1>
         <Card>
           <div className="ds-table-wrapper">
             <table className="ds-table">
@@ -36,7 +38,11 @@ export default function DevicesPage() {
                       {device.current ? <Badge variant="success">Current</Badge> : <Badge>Inactive</Badge>}
                     </td>
                     <td className="ds-table__td">
-                      {!device.current && <Button size="sm" variant="danger">Revoke</Button>}
+                      {!device.current && (
+                        <Button size="sm" variant="danger">
+                          Revoke
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}

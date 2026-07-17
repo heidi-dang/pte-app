@@ -9,7 +9,9 @@ export default function WritingFeedbackPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Writing analysis</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Writing analysis
+        </h1>
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           <Card>
             <h3 className="app-info-card__title">Score breakdown</h3>
@@ -22,7 +24,14 @@ export default function WritingFeedbackPage() {
               { label: 'Spelling', value: 88 },
             ].map((item) => (
               <div key={item.label} style={{ marginBottom: '0.75rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '0.875rem',
+                    marginBottom: '0.25rem',
+                  }}
+                >
                   <span>{item.label}</span>
                   <strong>{item.value}</strong>
                 </div>
@@ -35,8 +44,18 @@ export default function WritingFeedbackPage() {
           </Card>
           <Card>
             <h3 className="app-info-card__title">Improvement suggestions</h3>
-            <ul style={{ listStyle: 'disc', paddingLeft: '1.25rem', color: 'var(--color-muted)', fontSize: '0.875rem', lineHeight: '1.6' }}>
-              <li>Use more academic transition words such as &ldquo;furthermore&rdquo; and &ldquo;consequently&rdquo;.</li>
+            <ul
+              style={{
+                listStyle: 'disc',
+                paddingLeft: '1.25rem',
+                color: 'var(--color-muted)',
+                fontSize: '0.875rem',
+                lineHeight: '1.6',
+              }}
+            >
+              <li>
+                Use more academic transition words such as &ldquo;furthermore&rdquo; and &ldquo;consequently&rdquo;.
+              </li>
               <li>Vary sentence structure to include more complex sentences.</li>
               <li>Check subject-verb agreement in long sentences.</li>
               <li>Expand your lexical range by replacing common words with synonyms.</li>

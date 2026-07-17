@@ -1,16 +1,25 @@
+import { redirect } from 'next/navigation';
 import { Container, Card, Badge, Button } from '@pte-app/design-system';
 import { ALL_PRACTICE_TASKS } from '@/lib/mock-data';
+import { getCurrentUser } from '@/lib/auth';
 
 export const metadata = {
   title: 'Content Management — PTE Academy',
   description: 'Content management dashboard.',
 };
 
-export default function ContentDashboard() {
+export default async function ContentDashboard() {
+  const user = await getCurrentUser();
+  if (!user || (!user.roles.includes('content_editor') && !user.roles.includes('admin'))) {
+    redirect('/permission-denied');
+  }
+
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Content management</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Content management
+        </h1>
         <div className="status-grid">
           <Card>
             <h3 className="app-info-card__title">Questions</h3>
@@ -33,7 +42,9 @@ export default function ContentDashboard() {
             <h3 className="landing__feature-title">Content Provenance</h3>
             <p className="landing__feature-desc">Source, licence, and publication controls.</p>
             <a href="/content/provenance">
-              <Button variant="secondary" size="sm">Open provenance dashboard</Button>
+              <Button variant="secondary" size="sm">
+                Open provenance dashboard
+              </Button>
             </a>
           </Card>
         </div>

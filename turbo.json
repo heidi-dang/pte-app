@@ -10,7 +10,7 @@
     "dev": { "cache": false, "persistent": true },
     "lint": {},
     "typecheck": {},
-    "test:unit": {},
+    "test:unit": { "dependsOn": ["build"] },
     "test:integration": { "dependsOn": ["build"] },
     "test:api": { "dependsOn": ["build"], "outputs": ["test-results/**"] },
     "test:phase-i": { "dependsOn": ["build"], "outputs": ["test-results/**"] },

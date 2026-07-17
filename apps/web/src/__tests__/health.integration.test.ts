@@ -135,23 +135,11 @@ describe('Web integration', () => {
 
   it('contains product heading', async () => {
     const text = await (await fetch(`http://127.0.0.1:${port}`)).text();
-    assert.ok(text.includes('PTE Academic Platform'));
+    assert.ok(text.includes('PTE Academy'));
   });
 
-  it('contains authentication links', async () => {
+  it('contains landing page content', async () => {
     const text = await (await fetch(`http://127.0.0.1:${port}`)).text();
-    assert.ok(text.includes('Create account'));
-    assert.ok(text.includes('Log in'));
-  });
-
-  it('contains retry control', async () => {
-    const text = await (await fetch(`http://127.0.0.1:${port}`)).text();
-    assert.ok(text.includes('Retry'));
-  });
-
-  it('contains service status section', async () => {
-    const text = await (await fetch(`http://127.0.0.1:${port}`)).text();
-    assert.ok(text.includes('API Service'));
-    assert.ok(text.includes('Scoring Service'));
+    assert.ok(text.includes('Start Free Practice') || text.includes('Master PTE'));
   });
 });

@@ -15,7 +15,9 @@ export default function NotificationsPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Notifications</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Notifications
+        </h1>
         <Card>
           <div className="ds-table-wrapper">
             <table className="ds-table">
@@ -32,10 +34,14 @@ export default function NotificationsPage() {
                   <tr key={n.id} className="ds-table__row">
                     <td className="ds-table__td">{n.title}</td>
                     <td className="ds-table__td">
-                      <Badge variant={n.type === 'success' ? 'success' : n.type === 'warning' ? 'warning' : 'default'}>{n.type}</Badge>
+                      <Badge variant={n.type === 'success' ? 'success' : n.type === 'warning' ? 'warning' : 'default'}>
+                        {n.type}
+                      </Badge>
                     </td>
                     <td className="ds-table__td">{n.read ? 'Read' : 'Unread'}</td>
-                    <td className="ds-table__td"><Button size="sm">Mark read</Button></td>
+                    <td className="ds-table__td">
+                      <Button size="sm">Mark read</Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

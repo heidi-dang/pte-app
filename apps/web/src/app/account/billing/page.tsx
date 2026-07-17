@@ -1,4 +1,4 @@
-import { Container, Card, Button, Badge } from '@pte-app/design-system';
+import { Container, Card, Badge } from '@pte-app/design-system';
 import { MOCK_INVOICES } from '@/lib/mock-data';
 
 export const metadata = {
@@ -10,24 +10,25 @@ export default function BillingPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Billing</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Billing
+        </h1>
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           <Card>
-            <h3 className="app-info-card__title">Current plan</h3>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700 }}>Premium</p>
-            <p className="landing__feature-desc">$29.99/month · Next billing: 1 Aug 2026</p>
-            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-              <Button variant="secondary" size="sm">Update payment</Button>
-              <Button variant="secondary" size="sm">Cancel</Button>
-            </div>
+            <h3 className="app-info-card__title">Plan Preview</h3>
+            <p style={{ fontSize: '1.5rem', fontWeight: 700 }}>Phase T Preview</p>
+            <p className="landing__feature-desc">
+              Visual preview — billing will come from real account data when connected.
+            </p>
           </Card>
           <Card>
-            <h3 className="app-info-card__title">Payment method</h3>
-            <p className="landing__feature-desc">Visa ending in 4242 · Expires 12/28</p>
-            <Button variant="secondary" size="sm" style={{ marginTop: '1rem' }}>Change</Button>
+            <h3 className="app-info-card__title">Payment Method</h3>
+            <p className="landing__feature-desc">No payment method on file — billing preview only.</p>
           </Card>
         </div>
-        <h2 className="app-section__title" style={{ marginTop: '2rem' }}>Invoices</h2>
+        <h2 className="app-section__title" style={{ marginTop: '2rem' }}>
+          Invoices
+        </h2>
         <Card>
           <div className="ds-table-wrapper">
             <table className="ds-table">
@@ -48,7 +49,13 @@ export default function BillingPage() {
                     <td className="ds-table__td">{invoice.plan}</td>
                     <td className="ds-table__td">${invoice.amount}</td>
                     <td className="ds-table__td">
-                      <Badge variant={invoice.status === 'paid' ? 'success' : invoice.status === 'pending' ? 'warning' : 'danger'}>{invoice.status}</Badge>
+                      <Badge
+                        variant={
+                          invoice.status === 'paid' ? 'success' : invoice.status === 'pending' ? 'warning' : 'danger'
+                        }
+                      >
+                        {invoice.status}
+                      </Badge>
                     </td>
                   </tr>
                 ))}

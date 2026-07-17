@@ -10,7 +10,9 @@ export default function InvoicesPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Invoices</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Invoices
+        </h1>
         <Card>
           <div className="ds-table-wrapper">
             <table className="ds-table">

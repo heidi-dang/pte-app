@@ -16,11 +16,17 @@ export function StatCard({ title, value, trend, icon, children, className = '', 
           <p className="ds-stat-card__title">{title}</p>
           <p className="ds-stat-card__value">{value}</p>
         </div>
-        {icon && <div className="ds-stat-card__icon" aria-hidden="true">{icon}</div>}
+        {icon && (
+          <div className="ds-stat-card__icon" aria-hidden="true">
+            {icon}
+          </div>
+        )}
       </div>
       {trend && (
         <div className={`ds-stat-card__trend ${trend.positive === false ? 'ds-stat-card__trend--negative' : ''}`}>
-          <span className="ds-stat-card__trend-value">{trend.positive === false ? '↓' : '↑'} {Math.abs(trend.value)}%</span>
+          <span className="ds-stat-card__trend-value">
+            {trend.positive === false ? '↓' : '↑'} {Math.abs(trend.value)}%
+          </span>
           <span className="ds-stat-card__trend-label">{trend.label}</span>
         </div>
       )}

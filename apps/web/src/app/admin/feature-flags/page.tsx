@@ -16,7 +16,9 @@ export default function FeatureFlagsPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Feature flags</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Feature flags
+        </h1>
         <Card>
           <div className="ds-table-wrapper">
             <table className="ds-table">
@@ -32,7 +34,9 @@ export default function FeatureFlagsPage() {
                   <tr key={flag.name} className="ds-table__row">
                     <td className="ds-table__td">{flag.name}</td>
                     <td className="ds-table__td">
-                      <Badge variant={flag.enabled ? 'success' : 'default'}>{flag.enabled ? 'Enabled' : 'Disabled'}</Badge>
+                      <Badge variant={flag.enabled ? 'success' : 'default'}>
+                        {flag.enabled ? 'Enabled' : 'Disabled'}
+                      </Badge>
                     </td>
                     <td className="ds-table__td">
                       <Button size="sm">Toggle</Button>

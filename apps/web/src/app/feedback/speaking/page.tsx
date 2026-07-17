@@ -9,7 +9,9 @@ export default function SpeakingFeedbackPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Speaking analysis</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Speaking analysis
+        </h1>
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           <Card>
             <h3 className="app-info-card__title">Score breakdown</h3>
@@ -19,7 +21,14 @@ export default function SpeakingFeedbackPage() {
               { label: 'Pronunciation', value: 72 },
             ].map((item) => (
               <div key={item.label} style={{ marginBottom: '0.75rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: '0.875rem',
+                    marginBottom: '0.25rem',
+                  }}
+                >
                   <span>{item.label}</span>
                   <strong>{item.value}</strong>
                 </div>
@@ -32,7 +41,15 @@ export default function SpeakingFeedbackPage() {
           </Card>
           <Card>
             <h3 className="app-info-card__title">Improvement suggestions</h3>
-            <ul style={{ listStyle: 'disc', paddingLeft: '1.25rem', color: 'var(--color-muted)', fontSize: '0.875rem', lineHeight: '1.6' }}>
+            <ul
+              style={{
+                listStyle: 'disc',
+                paddingLeft: '1.25rem',
+                color: 'var(--color-muted)',
+                fontSize: '0.875rem',
+                lineHeight: '1.6',
+              }}
+            >
               <li>Reduce hesitations by practising with shorter chunks first.</li>
               <li>Stress the final word of each sentence more clearly.</li>
               <li>Use intonation to mark list items and contrasts.</li>

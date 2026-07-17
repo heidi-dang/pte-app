@@ -8,9 +8,44 @@ export const metadata = {
 
 export default function RegisterPage() {
   return (
-    <main>
+    <main
+      style={{
+        background: 'var(--color-bg)',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <Container>
-        <RegisterForm />
+        <div
+          style={{
+            maxWidth: '26rem',
+            margin: '0 auto',
+            padding: '2.5rem',
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-lg)',
+          }}
+        >
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <h1
+              style={{
+                fontSize: '1.5rem',
+                fontWeight: 800,
+                color: 'var(--color-text)',
+                fontFamily: 'var(--font-display)',
+                marginBottom: '0.375rem',
+              }}
+            >
+              Create Your Account
+            </h1>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>
+              Start your PTE Academic preparation journey
+            </p>
+          </div>
+          <RegisterForm />
+        </div>
       </Container>
     </main>
   );

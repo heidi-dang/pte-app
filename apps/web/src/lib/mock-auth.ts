@@ -76,10 +76,8 @@ export function setMockUserInStorage(user: User | null): void {
 export function findMockUserByCredentials(email: string, password: string): User | null {
   const found = MOCK_USERS[email.toLowerCase()];
   if (found && found.password === password) {
-  const user = Object.fromEntries(
-    Object.entries(found).filter(([key]) => key !== 'password'),
-  ) as unknown as User;
-  return user;
+    const user = Object.fromEntries(Object.entries(found).filter(([key]) => key !== 'password')) as unknown as User;
+    return user;
   }
   return null;
 }

@@ -43,7 +43,9 @@ export default function GoalsPage() {
                   }}
                 />
               </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--color-muted)', marginTop: '0.5rem' }}>Deadline: {goal.deadline}</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--color-muted)', marginTop: '0.5rem' }}>
+                Deadline: {goal.deadline}
+              </p>
             </Card>
           ))}
         </div>
