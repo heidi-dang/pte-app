@@ -2,6 +2,9 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { applyEnvLocal } from '@pte-app/database/testing/env';
 applyEnvLocal();
+if (!process.env.POSTGRES_HOST) process.env.POSTGRES_HOST = 'localhost';
+if (!process.env.POSTGRES_USER) process.env.POSTGRES_USER = 'test';
+if (!process.env.POSTGRES_DB) process.env.POSTGRES_DB = 'test';
 import { loadConfig } from './env.js';
 import { buildApp } from './app.js';
 

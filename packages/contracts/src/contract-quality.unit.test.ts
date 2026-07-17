@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import type {
   UserId,
   QuestionId,
@@ -26,6 +27,7 @@ import type {
   ConfigurationStatus,
   Brand,
 } from '@pte-app/types';
+import * as barrelExports from './index.js';
 import {
   CONTRACT_VERSION,
   TRAINING_TIMING_PROFILES,
@@ -431,52 +433,47 @@ describe('contract quality', () => {
   });
 
   describe('complete barrel exports', () => {
-    it('contracts index exports CONTRACT_VERSION', async () => {
-      const mod = await import('./index.js');
-      assert.ok('CONTRACT_VERSION' in mod);
+    it('contracts index exports CONTRACT_VERSION', () => {
+      assert.ok('CONTRACT_VERSION' in barrelExports);
     });
 
-    it('contracts index exports all contract types', async () => {
-      const mod = await import('./index.js');
-      assert.ok('QuestionContract' in mod || true); // types are erased at runtime
+    it('contracts index exports all contract types', () => {
+      assert.ok('QuestionContract' in barrelExports || true); // types are erased at runtime
     });
 
-    it('contracts index exports all config functions', async () => {
-      const mod = await import('./index.js');
-      assert.equal(typeof mod.requireTimingProfile, 'function');
-      assert.equal(typeof mod.requireQuestionConfig, 'function');
-      assert.equal(typeof mod.requireExamConfig, 'function');
-      assert.equal(typeof mod.requireMediaConfig, 'function');
-      assert.equal(typeof mod.requireLanguageConfig, 'function');
-      assert.equal(typeof mod.requireFeatureFlags, 'function');
-      assert.equal(typeof mod.requireFeatureFlagsForEnvironment, 'function');
-      assert.equal(typeof mod.getTimingProfile, 'function');
-      assert.equal(typeof mod.getTimingProfileById, 'function');
-      assert.equal(typeof mod.getActiveTimingProfiles, 'function');
-      assert.equal(typeof mod.getEnabledLanguages, 'function');
-      assert.equal(typeof mod.getLanguageByCode, 'function');
-      assert.equal(typeof mod.isLanguageEnabled, 'function');
-      assert.equal(typeof mod.isFeatureEnabled, 'function');
-      assert.equal(typeof mod.getFeatureFlagValue, 'function');
+    it('contracts index exports all config functions', () => {
+      assert.equal(typeof barrelExports.requireTimingProfile, 'function');
+      assert.equal(typeof barrelExports.requireQuestionConfig, 'function');
+      assert.equal(typeof barrelExports.requireExamConfig, 'function');
+      assert.equal(typeof barrelExports.requireMediaConfig, 'function');
+      assert.equal(typeof barrelExports.requireLanguageConfig, 'function');
+      assert.equal(typeof barrelExports.requireFeatureFlags, 'function');
+      assert.equal(typeof barrelExports.requireFeatureFlagsForEnvironment, 'function');
+      assert.equal(typeof barrelExports.getTimingProfile, 'function');
+      assert.equal(typeof barrelExports.getTimingProfileById, 'function');
+      assert.equal(typeof barrelExports.getActiveTimingProfiles, 'function');
+      assert.equal(typeof barrelExports.getEnabledLanguages, 'function');
+      assert.equal(typeof barrelExports.getLanguageByCode, 'function');
+      assert.equal(typeof barrelExports.isLanguageEnabled, 'function');
+      assert.equal(typeof barrelExports.isFeatureEnabled, 'function');
+      assert.equal(typeof barrelExports.getFeatureFlagValue, 'function');
     });
 
-    it('contracts index exports all config fixtures', async () => {
-      const mod = await import('./index.js');
-      assert.ok(mod.TRAINING_TIMING_PROFILES);
-      assert.ok(mod.TRAINING_QUESTION_CONFIG);
-      assert.ok(mod.TRAINING_EXAM_CONFIG);
-      assert.ok(mod.TRAINING_MEDIA_CONFIG);
-      assert.ok(mod.TRAINING_LANGUAGE_CONFIG);
-      assert.ok(mod.TRAINING_DEFAULT_FLAGS);
-      assert.ok(mod.TRAINING_DEVELOPMENT_FLAGS);
-      assert.ok(mod.TRAINING_STAGING_FLAGS);
-      assert.ok(mod.TRAINING_PRODUCTION_FLAGS);
+    it('contracts index exports all config fixtures', () => {
+      assert.ok(barrelExports.TRAINING_TIMING_PROFILES);
+      assert.ok(barrelExports.TRAINING_QUESTION_CONFIG);
+      assert.ok(barrelExports.TRAINING_EXAM_CONFIG);
+      assert.ok(barrelExports.TRAINING_MEDIA_CONFIG);
+      assert.ok(barrelExports.TRAINING_LANGUAGE_CONFIG);
+      assert.ok(barrelExports.TRAINING_DEFAULT_FLAGS);
+      assert.ok(barrelExports.TRAINING_DEVELOPMENT_FLAGS);
+      assert.ok(barrelExports.TRAINING_STAGING_FLAGS);
+      assert.ok(barrelExports.TRAINING_PRODUCTION_FLAGS);
     });
   });
 
   describe('absence of infrastructure imports', () => {
-    it('no HTTP imports in contracts', async () => {
-      const fs = await import('node:fs');
+    it('no HTTP imports in contracts', () => {
       const indexContent = fs.readFileSync(new URL('./index.ts', import.meta.url), 'utf-8');
       assert.ok(!indexContent.includes("from 'http"));
       assert.ok(!indexContent.includes("from 'https"));
@@ -484,8 +481,7 @@ describe('contract quality', () => {
       assert.ok(!indexContent.includes("from 'node:https"));
     });
 
-    it('no database imports in contracts', async () => {
-      const fs = await import('node:fs');
+    it('no database imports in contracts', () => {
       const files = [new URL('./index.ts', import.meta.url), new URL('./configuration.ts', import.meta.url)];
       for (const f of files) {
         const content = fs.readFileSync(f, 'utf-8');
