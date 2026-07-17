@@ -34,11 +34,17 @@ export default function QuestionBankPage() {
                     <td className="ds-table__td">{task.title}</td>
                     <td className="ds-table__td">{task.skill}</td>
                     <td className="ds-table__td">
-                      <Badge variant={task.difficulty === 'Easy' ? 'success' : task.difficulty === 'Medium' ? 'warning' : 'danger'}>
+                      <Badge
+                        variant={
+                          task.difficulty === 'Easy' ? 'success' : task.difficulty === 'Medium' ? 'warning' : 'danger'
+                        }
+                      >
                         {task.difficulty}
                       </Badge>
                     </td>
-                    <td className="ds-table__td"><Badge variant="success">Published</Badge></td>
+                    <td className="ds-table__td">
+                      <Badge variant="success">Published</Badge>
+                    </td>
                     <td className="ds-table__td">
                       <Button size="sm">Edit</Button>
                     </td>

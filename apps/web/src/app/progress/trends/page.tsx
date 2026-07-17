@@ -11,7 +11,9 @@ export default function TrendsPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Skill trends</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Skill trends
+        </h1>
         <Card>
           <h3 className="app-info-card__title">Overall estimated score</h3>
           <ChartLine data={MONTHLY_TREND} />

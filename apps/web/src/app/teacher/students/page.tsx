@@ -31,9 +31,15 @@ export default function StudentsPage() {
                   <tr key={student.id} className="ds-table__row">
                     <td className="ds-table__td">{student.name}</td>
                     <td className="ds-table__td">{student.targetScore}</td>
-                    <td className="ds-table__td"><strong>{student.estimatedScore}</strong></td>
                     <td className="ds-table__td">
-                      <Badge variant={student.plan === 'free' ? 'default' : student.plan === 'premium' ? 'warning' : 'success'}>
+                      <strong>{student.estimatedScore}</strong>
+                    </td>
+                    <td className="ds-table__td">
+                      <Badge
+                        variant={
+                          student.plan === 'free' ? 'default' : student.plan === 'premium' ? 'warning' : 'success'
+                        }
+                      >
                         {student.plan}
                       </Badge>
                     </td>

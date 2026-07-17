@@ -15,9 +15,13 @@ export default function CalendarPage() {
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           <Card>
             <h3 className="app-info-card__title">Upcoming exam</h3>
-            <p><strong>{UPCOMING_EXAM.date}</strong> at {UPCOMING_EXAM.time}</p>
+            <p>
+              <strong>{UPCOMING_EXAM.date}</strong> at {UPCOMING_EXAM.time}
+            </p>
             <p style={{ color: 'var(--color-muted)' }}>{UPCOMING_EXAM.location}</p>
-            <Badge variant="warning" style={{ marginTop: '1rem' }}>{UPCOMING_EXAM.countdownDays} days left</Badge>
+            <Badge variant="warning" style={{ marginTop: '1rem' }}>
+              {UPCOMING_EXAM.countdownDays} days left
+            </Badge>
           </Card>
           <Card>
             <h3 className="app-info-card__title">Study heatmap</h3>

@@ -1,5 +1,3 @@
-
-
 export interface AvatarProps {
   src?: string | null;
   alt?: string;
@@ -12,7 +10,11 @@ export function Avatar({ src, alt = '', initials = '?', size = 'md', className =
   const sizeClass = `ds-avatar--${size}`;
   return (
     <div className={`ds-avatar ${sizeClass} ${className}`} aria-label={alt || undefined} role="img">
-      {src ? <img src={src} alt={alt} className="ds-avatar__image" /> : <span className="ds-avatar__initials">{initials}</span>}
+      {src ? (
+        <img src={src} alt={alt} className="ds-avatar__image" />
+      ) : (
+        <span className="ds-avatar__initials">{initials}</span>
+      )}
     </div>
   );
 }
@@ -31,9 +33,7 @@ export function AvatarGroup({ avatars, max = 3, size = 'sm' }: AvatarGroupProps)
       {visible.map((a, i) => (
         <Avatar key={i} src={a.src} initials={a.initials || '?'} alt={a.alt} size={size} />
       ))}
-      {remaining > 0 && (
-        <div className={`ds-avatar ds-avatar--${size} ds-avatar--more`}>+{remaining}</div>
-      )}
+      {remaining > 0 && <div className={`ds-avatar ds-avatar--${size} ds-avatar--more`}>+{remaining}</div>}
     </div>
   );
 }

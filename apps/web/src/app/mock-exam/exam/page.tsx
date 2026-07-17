@@ -38,7 +38,9 @@ export default function ExamPage() {
           <Card style={{ maxWidth: '36rem', margin: '4rem auto', textAlign: 'center' }}>
             <h2 className="app-page-header__title">Optional break</h2>
             <p className="landing__feature-desc">Relax for a moment. The next section will begin when you are ready.</p>
-            <div style={{ fontSize: '3rem', fontWeight: 800, margin: '1.5rem 0', color: 'var(--color-primary)' }}>10:00</div>
+            <div style={{ fontSize: '3rem', fontWeight: 800, margin: '1.5rem 0', color: 'var(--color-primary)' }}>
+              10:00
+            </div>
             <Button onClick={() => setBreakMode(false)}>Resume exam</Button>
           </Card>
         </Container>
@@ -49,14 +51,27 @@ export default function ExamPage() {
   return (
     <main>
       <Container>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem',
+            marginBottom: '1.5rem',
+          }}
+        >
           <div>
             <h1 className="app-page-header__title">{currentSection?.name}</h1>
-            <p className="app-page-header__subtitle">Question {currentQuestion + 1} of {QUESTIONS.length}</p>
+            <p className="app-page-header__subtitle">
+              Question {currentQuestion + 1} of {QUESTIONS.length}
+            </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <Badge variant="warning">{formatTime(timeLeft)}</Badge>
-            <Button variant="secondary" size="sm" onClick={() => setBreakMode(true)}>Break</Button>
+            <Button variant="secondary" size="sm" onClick={() => setBreakMode(true)}>
+              Break
+            </Button>
           </div>
         </div>
 
@@ -70,10 +85,26 @@ export default function ExamPage() {
               {currentSection?.name === 'Reading' && 'Read the passage and select the best answer.'}
               {currentSection?.name === 'Listening' && 'Listen to the audio and answer the question.'}
             </p>
-            <div style={{ padding: '2rem', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', border: '1px dashed var(--color-border)', textAlign: 'center' }}>
+            <div
+              style={{
+                padding: '2rem',
+                background: 'var(--color-surface)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px dashed var(--color-border)',
+                textAlign: 'center',
+              }}
+            >
               <p style={{ color: 'var(--color-muted)' }}>Task content area</p>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: '1.5rem',
+                flexWrap: 'wrap',
+                gap: '0.75rem',
+              }}
+            >
               <Button
                 variant="secondary"
                 disabled={currentQuestion === 0}
@@ -120,8 +151,12 @@ export default function ExamPage() {
               ))}
             </div>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-              <Button variant="secondary" size="sm">Bookmark</Button>
-              <Button variant="secondary" size="sm">Flag for review</Button>
+              <Button variant="secondary" size="sm">
+                Bookmark
+              </Button>
+              <Button variant="secondary" size="sm">
+                Flag for review
+              </Button>
             </div>
           </Card>
         </div>

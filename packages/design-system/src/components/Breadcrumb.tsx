@@ -1,5 +1,3 @@
-
-
 export interface BreadcrumbItem {
   label: string;
   href?: string;
@@ -19,13 +17,22 @@ export function Breadcrumb({ items, className = '' }: BreadcrumbProps) {
           return (
             <li key={index} className="ds-breadcrumb__item">
               {isLast || !item.href ? (
-                <span className={`ds-breadcrumb__link ${isLast ? 'ds-breadcrumb__link--current' : ''}`} aria-current={isLast ? 'page' : undefined}>
+                <span
+                  className={`ds-breadcrumb__link ${isLast ? 'ds-breadcrumb__link--current' : ''}`}
+                  aria-current={isLast ? 'page' : undefined}
+                >
                   {item.label}
                 </span>
               ) : (
-                <a className="ds-breadcrumb__link" href={item.href}>{item.label}</a>
+                <a className="ds-breadcrumb__link" href={item.href}>
+                  {item.label}
+                </a>
               )}
-              {!isLast && <span className="ds-breadcrumb__separator" aria-hidden="true">/</span>}
+              {!isLast && (
+                <span className="ds-breadcrumb__separator" aria-hidden="true">
+                  /
+                </span>
+              )}
             </li>
           );
         })}

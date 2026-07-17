@@ -9,7 +9,9 @@ export default function SettingsPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Settings</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Settings
+        </h1>
         <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
           <Card>
             <h3 className="app-info-card__title">Appearance</h3>

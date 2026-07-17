@@ -15,9 +15,14 @@ export default function PrivacyPage() {
             Your privacy is important to us. This policy outlines how PTE Academy handles your data.
           </p>
           <h2 className="app-section__title">Data collection</h2>
-          <p className="landing__feature-desc">We collect only the data necessary to provide our services, including account information and study progress.</p>
+          <p className="landing__feature-desc">
+            We collect only the data necessary to provide our services, including account information and study
+            progress.
+          </p>
           <h2 className="app-section__title">Data sharing</h2>
-          <p className="landing__feature-desc">We do not sell or share your personal data with third parties without your consent.</p>
+          <p className="landing__feature-desc">
+            We do not sell or share your personal data with third parties without your consent.
+          </p>
           <h2 className="app-section__title">Contact</h2>
           <p className="landing__feature-desc">Contact us at privacy@pte.academy for privacy-related inquiries.</p>
         </Card>

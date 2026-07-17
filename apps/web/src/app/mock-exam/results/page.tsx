@@ -82,11 +82,15 @@ export default function MockExamResultsPage() {
                 <div className="status-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
                   <Card>
                     <h3 className="app-info-card__title">Speaking</h3>
-                    <p className="landing__feature-desc">Strong fluency. Work on word stress at the end of sentences.</p>
+                    <p className="landing__feature-desc">
+                      Strong fluency. Work on word stress at the end of sentences.
+                    </p>
                   </Card>
                   <Card>
                     <h3 className="app-info-card__title">Writing</h3>
-                    <p className="landing__feature-desc">Good structure. Add more academic vocabulary and complex sentences.</p>
+                    <p className="landing__feature-desc">
+                      Good structure. Add more academic vocabulary and complex sentences.
+                    </p>
                   </Card>
                 </div>
               ),

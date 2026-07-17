@@ -34,7 +34,9 @@ export default function MockExamHubPage() {
             <h3 className="landing__feature-title">Your last exam</h3>
             <p className="landing__feature-desc">Full Mock Exam #4 · Score 70 · Taken 2 days ago</p>
             <a href="/mock-exam/results">
-              <Button variant="secondary" size="sm">Review results</Button>
+              <Button variant="secondary" size="sm">
+                Review results
+              </Button>
             </a>
           </Card>
         </div>

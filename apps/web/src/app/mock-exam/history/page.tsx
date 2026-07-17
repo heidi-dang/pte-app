@@ -16,7 +16,9 @@ export default function MockExamHistoryPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Mock exam history</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Mock exam history
+        </h1>
         <Card>
           <div className="ds-table-wrapper">
             <table className="ds-table">
@@ -34,8 +36,12 @@ export default function MockExamHistoryPage() {
                   <tr key={exam.id} className="ds-table__row">
                     <td className="ds-table__td">{exam.id}</td>
                     <td className="ds-table__td">{exam.date}</td>
-                    <td className="ds-table__td"><strong>{exam.score}</strong></td>
-                    <td className="ds-table__td"><Badge variant="success">{exam.status}</Badge></td>
+                    <td className="ds-table__td">
+                      <strong>{exam.score}</strong>
+                    </td>
+                    <td className="ds-table__td">
+                      <Badge variant="success">{exam.status}</Badge>
+                    </td>
                     <td className="ds-table__td">
                       <a href="/mock-exam/results">
                         <Button size="sm">Review</Button>

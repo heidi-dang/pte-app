@@ -32,7 +32,13 @@ export default function LeaderboardPage() {
                     <td className="ds-table__td">{index + 1}</td>
                     <td className="ds-table__td">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <Avatar initials={student.name.split(' ').map((n) => n[0]).join('')} size="sm" />
+                        <Avatar
+                          initials={student.name
+                            .split(' ')
+                            .map((n) => n[0])
+                            .join('')}
+                          size="sm"
+                        />
                         <span>{student.name}</span>
                       </div>
                     </td>
@@ -41,7 +47,11 @@ export default function LeaderboardPage() {
                       <strong>{student.estimatedScore}</strong>
                     </td>
                     <td className="ds-table__td">
-                      <Badge variant={student.plan === 'free' ? 'default' : student.plan === 'premium' ? 'warning' : 'success'}>
+                      <Badge
+                        variant={
+                          student.plan === 'free' ? 'default' : student.plan === 'premium' ? 'warning' : 'success'
+                        }
+                      >
                         {student.plan}
                       </Badge>
                     </td>

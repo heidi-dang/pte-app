@@ -9,7 +9,9 @@ export default function DailyProgressPage() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Daily progress</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Daily progress
+        </h1>
         <Card>
           <h3 className="app-info-card__title">Minutes studied today</h3>
           <div style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--color-primary)' }}>65</div>

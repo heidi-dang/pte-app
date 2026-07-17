@@ -10,7 +10,9 @@ export default function ContentDashboard() {
   return (
     <main>
       <Container>
-        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>Content management</h1>
+        <h1 className="app-page-header__title" style={{ marginBottom: '1.5rem' }}>
+          Content management
+        </h1>
         <div className="status-grid">
           <Card>
             <h3 className="app-info-card__title">Questions</h3>
@@ -33,7 +35,9 @@ export default function ContentDashboard() {
             <h3 className="landing__feature-title">Content Provenance</h3>
             <p className="landing__feature-desc">Source, licence, and publication controls.</p>
             <a href="/content/provenance">
-              <Button variant="secondary" size="sm">Open provenance dashboard</Button>
+              <Button variant="secondary" size="sm">
+                Open provenance dashboard
+              </Button>
             </a>
           </Card>
         </div>
