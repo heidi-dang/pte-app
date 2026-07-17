@@ -6,8 +6,8 @@ import { MOCK_TESTIMONIALS, MOCK_BLOG_POSTS } from '@/lib/mock-data';
 
 const FEATURES = [
   {
-    title: 'Pearson-Matching Interface',
-    desc: 'Practise in an interface modelled on the real PTE Academic test. Timed sections, question navigators, and authentic task layouts build familiarity before test day.',
+    title: 'PTE-Style Practice Interface',
+    desc: 'Practise in an interface inspired by the PTE Academic format. Timed sections, question navigators, and authentic task layouts build familiarity before test day.',
     icon: '🖥️',
   },
   {
@@ -34,7 +34,7 @@ export default function Home() {
       <section className="landing__hero">
         <Container>
           <div className="landing__hero-content">
-            <Badge variant="success">Updated for 2026 Pearson Guidelines</Badge>
+            <Badge variant="success">Practice workflows inspired by the PTE Academic format</Badge>
             <h1 className="landing__title">Master PTE Academic with AI-Powered Practice</h1>
             <p className="landing__subtitle">
               Your all-in-one PTE practice portal. Adaptive lessons, realistic mock exams, and instant AI feedback for
@@ -52,10 +52,10 @@ export default function Home() {
             </div>
             <div className="landing__metrics">
               {[
-                { value: '98%', label: 'Pass Rate' },
                 { value: '22', label: 'Task Types' },
-                { value: 'AI', label: 'Scoring' },
-                { value: '12k+', label: 'Students' },
+                { value: 'AI', label: 'Feedback' },
+                { value: '4', label: 'Skill Areas' },
+                { value: '24/7', label: 'Access' },
               ].map((m) => (
                 <div key={m.label} className="landing__metric">
                   <span className="landing__metric-value">{m.value}</span>
@@ -91,7 +91,7 @@ export default function Home() {
         <Container>
           <div className="landing__section-header">
             <h2 className="landing__section-title">What students say</h2>
-            <p className="landing__section-subtitle">Real results from students using PTE Academy every day.</p>
+            <p className="landing__section-subtitle">Sample training profiles from students using PTE Academy every day.</p>
           </div>
           <div className="landing__testimonials">
             {MOCK_TESTIMONIALS.slice(0, 4).map((t) => (

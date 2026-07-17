@@ -1,5 +1,7 @@
+import { redirect } from 'next/navigation';
 import { Container, Card, Badge, Button, Table, type TableColumn } from '@pte-app/design-system';
 import { MOCK_STUDENTS } from '@/lib/mock-data';
+import { getCurrentUser } from '@/lib/auth';
 
 export const metadata = {
   title: 'Teacher Portal — PTE Academy',
@@ -94,7 +96,12 @@ const studentColumns: TableColumn<(typeof MOCK_STUDENTS)[number]>[] = [
   { key: 'country', header: 'Country', cell: (row) => row.country },
 ];
 
-export default function TeacherPortal() {
+export default async function TeacherPortal() {
+  const user = await getCurrentUser();
+  if (!user || !user.roles.includes('teacher')) {
+    redirect('/permission-denied');
+  }
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       {/* Sidebar navigation */}

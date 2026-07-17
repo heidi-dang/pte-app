@@ -12,7 +12,7 @@ export default function TestimonialsPage() {
       <Container>
         <div className="landing__section-header">
           <h1 className="landing__section-title">Student testimonials</h1>
-          <p className="landing__section-subtitle">Real students. Real results. Real journeys to PTE success.</p>
+          <p className="landing__section-subtitle">Sample training profiles from students using PTE Academy.</p>
         </div>
         <div className="status-grid">
           {MOCK_TESTIMONIALS.map((t) => (

@@ -47,7 +47,7 @@ export default function SubscriptionPage() {
                   <Badge variant="success">Active</Badge>
                 </div>
                 <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>
-                  $29.99/month · Renews on August 1, 2026
+                  Phase T billing preview — prices and entitlements will come from configuration
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 'var(--space-3)' }}>

@@ -1,5 +1,7 @@
+import { redirect } from 'next/navigation';
 import { Container, Card, Badge, Button, Table, StatCard, type TableColumn } from '@pte-app/design-system';
 import { SUPPORT_TICKETS } from '@/lib/mock-data';
+import { getCurrentUser } from '@/lib/auth';
 
 export const metadata = {
   title: 'Admin Portal — PTE Academy',
@@ -92,7 +94,12 @@ const questionColumns: TableColumn<(typeof MOCK_QUESTION_BANK)[number]>[] = [
   },
 ];
 
-export default function AdminDashboard() {
+export default async function AdminDashboard() {
+  const user = await getCurrentUser();
+  if (!user || !user.roles.includes('admin')) {
+    redirect('/permission-denied');
+  }
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       {/* Sidebar navigation */}

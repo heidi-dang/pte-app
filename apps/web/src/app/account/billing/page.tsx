@@ -17,7 +17,7 @@ export default function BillingPage() {
           <Card>
             <h3 className="app-info-card__title">Current plan</h3>
             <p style={{ fontSize: '1.5rem', fontWeight: 700 }}>Premium</p>
-            <p className="landing__feature-desc">$29.99/month · Next billing: 1 Aug 2026</p>
+            <p className="landing__feature-desc">Placeholder plan · Phase T billing preview</p>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
               <Button variant="secondary" size="sm">
                 Update payment

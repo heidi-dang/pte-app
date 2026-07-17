@@ -29,6 +29,9 @@ export default function ExamLobbyPage() {
         <div className="lobby-header">
           <h1 className="lobby-title">Mock Exam Center</h1>
           <p className="lobby-subtitle">Simulate the real PTE Academic experience with a full-length timed exam</p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--color-muted, #64748b)', marginTop: '0.5rem' }}>
+            Visual preview only — exam engine not yet connected.
+          </p>
         </div>
 
         <div className="lobby-layout">
@@ -97,6 +100,9 @@ export default function ExamLobbyPage() {
                 <Button className="lobby-start-btn">Start Mock Exam</Button>
               </a>
               <p className="lobby-start-note">Do not refresh the page during the exam.</p>
+              <p className="lobby-start-note" style={{ color: '#f59e0b' }}>
+                Visual preview — Start button is not yet functional.
+              </p>
             </Card>
 
             <Card className="lobby-info-card">

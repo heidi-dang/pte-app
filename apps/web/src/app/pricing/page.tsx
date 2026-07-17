@@ -1,31 +1,27 @@
 'use client';
 
-import { useState } from 'react';
 import { Container, Card, Button, Badge } from '@pte-app/design-system';
 import { PRICING_PLANS } from '@/lib/mock-data';
 
-const ANNUAL_PRICES: Record<string, number> = {
-  free: 0,
-  premium: 31,
-  pro: 79,
-};
+// TODO(Phase T): All prices and entitlements below are placeholders.
+// Final prices, limits, and entitlements will come from configuration when Phase T billing is connected.
 
 const TIER_FEATURES: Record<string, { name: string; items: string[] }> = {
   free: {
     name: 'Standard Explorer',
     items: [
-      '5 practice tasks per day',
-      '3 free lessons',
+      'Limited daily practice tasks',
+      'A few free lessons',
       'Basic progress tracking',
       'Community support',
-      'Limited task types',
+      'Select task types',
     ],
   },
   premium: {
     name: 'Premium Academic',
     items: [
-      'Unlimited practice tasks',
-      'All courses and lessons',
+      'Extended practice access',
+      'Full course library',
       'AI speaking feedback',
       'Writing feedback',
       'Progress dashboard',
@@ -48,7 +44,6 @@ const TIER_FEATURES: Record<string, { name: string; items: string[] }> = {
 };
 
 export default function PricingPage() {
-  const [isAnnual, setIsAnnual] = useState(false);
 
   return (
     <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0a0a1a 0%, #111827 100%)' }}>
@@ -83,73 +78,17 @@ export default function PricingPage() {
             tools.
           </p>
 
-          {/* Billing cycle toggle */}
-          <div
+          <p
             style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: '0.75rem',
-              marginTop: '2rem',
+              fontSize: '0.8rem',
+              color: '#64748b',
+              maxWidth: '500px',
+              margin: '1rem auto 0',
+              lineHeight: 1.5,
             }}
           >
-            <span
-              style={{
-                fontSize: '0.875rem',
-                fontWeight: !isAnnual ? 600 : 400,
-                color: !isAnnual ? '#10b981' : '#94a3b8',
-              }}
-            >
-              Monthly
-            </span>
-            <button
-              onClick={() => setIsAnnual((prev) => !prev)}
-              style={{
-                width: '3rem',
-                height: '1.5rem',
-                borderRadius: '9999px',
-                background: 'rgba(16, 185, 129, 0.2)',
-                border: '1px solid rgba(16, 185, 129, 0.4)',
-                padding: '0.25rem',
-                display: 'flex',
-                alignItems: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-              }}
-            >
-              <div
-                style={{
-                  width: '1rem',
-                  height: '1rem',
-                  borderRadius: '9999px',
-                  background: '#10b981',
-                  transition: 'transform 0.3s ease',
-                  transform: isAnnual ? 'translateX(1.5rem)' : 'translateX(0)',
-                }}
-              />
-            </button>
-            <span
-              style={{
-                fontSize: '0.875rem',
-                fontWeight: isAnnual ? 600 : 400,
-                color: isAnnual ? '#10b981' : '#94a3b8',
-              }}
-            >
-              Annual{' '}
-              <span
-                style={{
-                  fontSize: '0.7rem',
-                  background: 'rgba(16, 185, 129, 0.15)',
-                  color: '#10b981',
-                  padding: '0.15rem 0.4rem',
-                  borderRadius: '9999px',
-                  marginLeft: '0.25rem',
-                }}
-              >
-                Save 20%
-              </span>
-            </span>
-          </div>
+            Phase T billing preview — placeholder plan comparison. Final prices and entitlements will come from configuration.
+          </p>
         </div>
 
         <div
@@ -163,7 +102,7 @@ export default function PricingPage() {
         >
           {PRICING_PLANS.map((plan) => {
             const tier = TIER_FEATURES[plan.id];
-            const price = isAnnual ? (ANNUAL_PRICES[plan.id] ?? plan.price ?? 0) : (plan.price ?? 0);
+  const price = plan.price ?? 0;
             const isPopular = plan.popular;
 
             return (
@@ -253,21 +192,9 @@ export default function PricingPage() {
                         fontWeight: 500,
                       }}
                     >
-                      /{isAnnual ? 'mo' : 'forever'}
+                      /{plan.period}
                     </span>
                   </div>
-                  {isAnnual && price != null && price > 0 && (
-                    <p
-                      style={{
-                        fontSize: '0.8rem',
-                        color: '#10b981',
-                        marginTop: '0.5rem',
-                        fontWeight: 600,
-                      }}
-                    >
-                      Billed ${price * 12}/year — Save ${plan.price * 12 - price * 12}
-                    </p>
-                  )}
                 </div>
 
                 <ul
@@ -349,10 +276,10 @@ export default function PricingPage() {
           }}
         >
           <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-            All prices in AUD. Cancel anytime. No hidden fees.
+            Cancel anytime. No hidden fees. Final prices will come from configuration.
           </p>
           <p style={{ color: '#64748b', fontSize: '0.8rem' }}>
-            Scores shown are estimated training scores only. Official PTE scores are issued by Pearson.
+            Scores shown are estimated training scores only.
           </p>
         </div>
       </Container>

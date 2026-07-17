@@ -1,12 +1,19 @@
+import { redirect } from 'next/navigation';
 import { Container, Card, Badge, Button } from '@pte-app/design-system';
 import { ALL_PRACTICE_TASKS } from '@/lib/mock-data';
+import { getCurrentUser } from '@/lib/auth';
 
 export const metadata = {
   title: 'Content Management — PTE Academy',
   description: 'Content management dashboard.',
 };
 
-export default function ContentDashboard() {
+export default async function ContentDashboard() {
+  const user = await getCurrentUser();
+  if (!user || (!user.roles.includes('content_editor') && !user.roles.includes('admin'))) {
+    redirect('/permission-denied');
+  }
+
   return (
     <main>
       <Container>
