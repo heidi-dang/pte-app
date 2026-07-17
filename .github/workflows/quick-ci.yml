@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      TURBO_CACHE_DIR: /home/heidi/.turbo-cache
+      TURBO_CACHE_DIR: /tmp/.turbo-cache
     steps:
       - uses: actions/checkout@v4
         with:
