@@ -21,9 +21,9 @@ export default function SubscriptionPage() {
           </div>
         </div>
 
-        {/* Current plan status */}
+        {/* Plan preview status */}
         <section style={{ marginBottom: 'var(--space-8)' }}>
-          <h2 className="app-section__title">Current Plan</h2>
+          <h2 className="app-section__title">Plan Preview</h2>
           <Card>
             <div
               style={{
@@ -43,20 +43,12 @@ export default function SubscriptionPage() {
                     marginBottom: 'var(--space-2)',
                   }}
                 >
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Premium</h3>
-                  <Badge variant="success">Active</Badge>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Phase T Preview</h3>
+                  <Badge variant="default">Preview</Badge>
                 </div>
                 <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>
-                  Phase T billing preview — prices and entitlements will come from configuration
+                  Visual preview — plan data will come from real account entitlements when billing is connected.
                 </p>
-              </div>
-              <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-                <Button variant="danger" size="sm">
-                  Cancel Plan
-                </Button>
-                <Button variant="secondary" size="sm">
-                  Upgrade
-                </Button>
               </div>
             </div>
           </Card>
@@ -90,7 +82,7 @@ export default function SubscriptionPage() {
                       }}
                     >
                       <h3 style={{ fontSize: '1.125rem', fontWeight: 700 }}>{plan.name}</h3>
-                      {plan.popular && <Badge variant="success">Current</Badge>}
+                      {plan.popular && <Badge variant="default">Preview</Badge>}
                     </div>
                     <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>{plan.description}</p>
                   </div>
@@ -98,7 +90,7 @@ export default function SubscriptionPage() {
 
                 <p style={{ marginBottom: 'var(--space-4)' }}>
                   <span style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
-                    ${plan.price}
+                    {plan.price != null ? `$${plan.price}` : 'TBD'}
                   </span>
                   <span style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>/{plan.period}</span>
                 </p>
@@ -124,7 +116,7 @@ export default function SubscriptionPage() {
                 </ul>
 
                 {plan.id === 'premium' ? (
-                  <Badge variant="success">Your current plan</Badge>
+                  <Badge variant="default">Phase T Preview</Badge>
                 ) : plan.id === 'free' ? (
                   <Button variant="secondary" size="sm" style={{ width: '100%' }}>
                     Downgrade

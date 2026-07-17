@@ -96,7 +96,13 @@ const questionColumns: TableColumn<(typeof MOCK_QUESTION_BANK)[number]>[] = [
 
 export default async function AdminDashboard() {
   const user = await getCurrentUser();
-  if (!user || !user.roles.includes('admin')) {
+  const canAccessAdmin =
+    user?.roles.includes('admin') ||
+    user?.roles.includes('administrator') ||
+    user?.roles.includes('super_admin') ||
+    user?.roles.includes('super-administrator') ||
+    user?.roles.includes('super_administrator');
+  if (!user || !canAccessAdmin) {
     redirect('/permission-denied');
   }
 

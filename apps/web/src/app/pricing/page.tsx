@@ -102,7 +102,7 @@ export default function PricingPage() {
         >
           {PRICING_PLANS.map((plan) => {
             const tier = TIER_FEATURES[plan.id];
-            const price = plan.price ?? 0;
+            const price = plan.price;
             const isPopular = plan.popular;
 
             return (
@@ -183,7 +183,7 @@ export default function PricingPage() {
                         lineHeight: 1,
                       }}
                     >
-                      ${price}
+                      {price != null ? `$${price}` : 'TBD'}
                     </span>
                     <span
                       style={{

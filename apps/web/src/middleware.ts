@@ -11,7 +11,6 @@ const authRequiredPaths = [
   '/teacher',
   '/admin',
   '/content',
-  '/support',
 ];
 
 const guestPaths = ['/login', '/register'];

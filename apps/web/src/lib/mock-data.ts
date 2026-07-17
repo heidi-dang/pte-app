@@ -765,7 +765,8 @@ export const MONTHLY_TREND = [
 export const CALENDAR_HEATMAP = Array.from({ length: 30 }, (_, i) => {
   const date = new Date('2026-07-16');
   date.setDate(date.getDate() - i);
-  const value = Math.random() > 0.25 ? Math.floor(Math.random() * 120) : 0;
+  const seed = (i * 7 + 3) % 100;
+  const value = seed > 25 ? Math.floor((seed / 100) * 120) : 0;
   return { date: date.toISOString().split('T')[0], value };
 }).reverse();
 
@@ -861,7 +862,7 @@ export const PRICING_PLANS = [
   {
     id: 'premium',
     name: 'Premium',
-    price: 29.99,
+    price: null,
     period: 'month',
     description: 'Placeholder plan — final prices and entitlements from configuration.',
     features: [
@@ -878,7 +879,7 @@ export const PRICING_PLANS = [
   {
     id: 'pro',
     name: 'Pro',
-    price: 79.99,
+    price: null,
     period: 'month',
     description: 'Placeholder plan — final prices and entitlements from configuration.',
     features: [
