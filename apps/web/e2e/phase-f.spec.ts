@@ -19,7 +19,7 @@ test.describe('Phase F browser E2E', () => {
     const token = await register(email, pw);
     await setSessionCookie(page.context(), token);
     await page.goto(`${cfg.webUrl}/dashboard`);
-    await expect(page.locator('h1')).toContainText('Dashboard');
+    await expect(page.locator('h1')).toContainText('Welcome back');
   });
 
   test('3. refresh preserves session', async ({ page }) => {
@@ -27,9 +27,9 @@ test.describe('Phase F browser E2E', () => {
     const token = await register(email, pw);
     await setSessionCookie(page.context(), token);
     await page.goto(`${cfg.webUrl}/dashboard`);
-    await expect(page.locator('h1')).toContainText('Dashboard');
+    await expect(page.locator('h1')).toContainText('Welcome back');
     await page.reload();
-    await expect(page.locator('h1')).toContainText('Dashboard');
+    await expect(page.locator('h1')).toContainText('Welcome back');
   });
 
   test('4. student blocked from /admin', async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe('Phase F browser E2E', () => {
     const token = await register(email, pw);
     await setSessionCookie(page.context(), token);
     await page.goto(`${cfg.webUrl}/dashboard`);
-    await expect(page.locator('h1')).toContainText('Dashboard');
+    await expect(page.locator('h1')).toContainText('Welcome back');
 
     await page.click('button:has-text("Log out")');
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
@@ -98,7 +98,7 @@ test.describe('Phase F browser E2E', () => {
     const token = await createUserWithRole(email, pw, 'support');
     await setSessionCookie(page.context(), token);
     await page.goto(`${cfg.webUrl}/support`);
-    await expect(page.locator('h1')).toContainText('Support Dashboard');
+    await expect(page.locator('h1')).toContainText('Support Center');
   });
 
   test('12. mobile drawer opens and closes', async ({ page }) => {

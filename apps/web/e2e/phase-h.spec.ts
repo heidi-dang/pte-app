@@ -179,7 +179,7 @@ test.describe('Phase H Critical Journey', () => {
 
     // Quiz
     await page.getByTestId('quiz-link').click();
-    await page.getByLabel('4').click();
+    await page.getByRole('checkbox', { name: '4' }).click();
     await page.getByTestId('quiz-submit').click();
     await expect(page.getByTestId('quiz-result')).toContainText('passed', { timeout: 10000 });
 
