@@ -9,10 +9,10 @@
     "start": "tsx src/main.ts",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
-    "test:unit": "tsx --test --test-force-exit 'src/**/*.unit.test.ts'",
-    "test:integration": "tsx --test --test-force-exit 'src/**/*.integration.test.ts'",
-    "test:api": "tsx --test --test-force-exit 'src/phase-h/phase-h.api.test.ts'",
-    "test:phase-i": "tsx --test --test-force-exit 'src/phase-i/phase-i.api.test.ts'"
+    "test:unit": "node --test 'dist/**/*.unit.test.js'",
+    "test:integration": "node --test 'dist/**/*.integration.test.js'",
+    "test:api": "node --test 'dist/phase-h/phase-h.api.test.js'",
+    "test:phase-i": "node --test 'dist/phase-i/phase-i.api.test.js'"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.0",

@@ -10,8 +10,8 @@
     "healthcheck": "node dist/check.js",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit",
-    "test:unit": "tsx --test --test-force-exit 'src/**/*.unit.test.ts'",
-    "test:integration": "npm run build && tsx --test 'src/**/*.integration.test.ts'"
+    "test:unit": "node --test 'dist/**/*.unit.test.js'",
+    "test:integration": "node --test 'dist/**/*.integration.test.js'"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -1,6 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
+
+const srcDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../src');
 import type {
   UserId,
   QuestionId,
@@ -474,7 +477,7 @@ describe('contract quality', () => {
 
   describe('absence of infrastructure imports', () => {
     it('no HTTP imports in contracts', () => {
-      const indexContent = fs.readFileSync(new URL('./index.ts', import.meta.url), 'utf-8');
+      const indexContent = fs.readFileSync(path.join(srcDir, 'index.ts'), 'utf-8');
       assert.ok(!indexContent.includes("from 'http"));
       assert.ok(!indexContent.includes("from 'https"));
       assert.ok(!indexContent.includes("from 'node:http"));
@@ -482,7 +485,7 @@ describe('contract quality', () => {
     });
 
     it('no database imports in contracts', () => {
-      const files = [new URL('./index.ts', import.meta.url), new URL('./configuration.ts', import.meta.url)];
+      const files = [path.join(srcDir, 'index.ts'), path.join(srcDir, 'configuration.ts')];
       for (const f of files) {
         const content = fs.readFileSync(f, 'utf-8');
         assert.ok(!content.includes("from 'pg"));
