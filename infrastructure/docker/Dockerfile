@@ -28,5 +28,6 @@ COPY --from=builder /app/turbo.json ./
 COPY --from=builder /app/packages packages/
 COPY --from=builder /app/apps apps/
 COPY --from=builder /app/services services/
+COPY --from=builder /app/apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
 
 ENV NODE_ENV=production
