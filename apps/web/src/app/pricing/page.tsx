@@ -44,7 +44,6 @@ const TIER_FEATURES: Record<string, { name: string; items: string[] }> = {
 };
 
 export default function PricingPage() {
-
   return (
     <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0a0a1a 0%, #111827 100%)' }}>
       <Container>
@@ -87,7 +86,8 @@ export default function PricingPage() {
               lineHeight: 1.5,
             }}
           >
-            Phase T billing preview — placeholder plan comparison. Final prices and entitlements will come from configuration.
+            Phase T billing preview — placeholder plan comparison. Final prices and entitlements will come from
+            configuration.
           </p>
         </div>
 
@@ -102,7 +102,7 @@ export default function PricingPage() {
         >
           {PRICING_PLANS.map((plan) => {
             const tier = TIER_FEATURES[plan.id];
-  const price = plan.price ?? 0;
+            const price = plan.price ?? 0;
             const isPopular = plan.popular;
 
             return (
@@ -278,9 +278,7 @@ export default function PricingPage() {
           <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
             Cancel anytime. No hidden fees. Final prices will come from configuration.
           </p>
-          <p style={{ color: '#64748b', fontSize: '0.8rem' }}>
-            Scores shown are estimated training scores only.
-          </p>
+          <p style={{ color: '#64748b', fontSize: '0.8rem' }}>Scores shown are estimated training scores only.</p>
         </div>
       </Container>
     </main>

@@ -91,7 +91,9 @@ export default function Home() {
         <Container>
           <div className="landing__section-header">
             <h2 className="landing__section-title">What students say</h2>
-            <p className="landing__section-subtitle">Sample training profiles from students using PTE Academy every day.</p>
+            <p className="landing__section-subtitle">
+              Sample training profiles from students using PTE Academy every day.
+            </p>
           </div>
           <div className="landing__testimonials">
             {MOCK_TESTIMONIALS.slice(0, 4).map((t) => (
